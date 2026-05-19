@@ -69,12 +69,12 @@ For Applied Scientist II:
 - **Bedrock + GenAI:** Amazon Bedrock is their LLM orchestration product. Your work maps directly.
 - **Rufus (shopping LLM):** retrieval + ranking + agents. Your RAG work fits.
 - **Alexa+ (LLM rewrite):** speech + agents. ECHOME's voice cloning (XTTSv2) maps.
-- **LP stories from SpaceDrift founder experience:**
-  - Customer Obsession: 12 international clients, 100% satisfaction
-  - Ownership: founded and scaled a consultancy
-  - Bias for Action: shipping 40+ pipelines fast
-  - Earn Trust: stakeholder management
-  - Deliver Results: measurable outcomes (97% OCR accuracy, 30% cost reduction)
+- **LP stories from SpaceDrift solo-founder experience:**
+  - Customer Obsession: solo operator → every client interaction had direct financial consequence; specific moments of advocating for client over self-interest
+  - Ownership: founded MSME and operated it solo for 16 months
+  - Bias for Action: chose solo founding over safer entry-level role straight after graduating
+  - Earn Trust: built repeat business through honest scoping + delivery
+  - Deliver Results: measurable outcomes from Sujanix (production accuracy lift, infra cost reduction)
 
 ### Realistic odds for you
 **30-40%.** Amazon hires lots, the bar is more "consistent execution" than "extraordinary brilliance". Your founder story + production ML work is a strong fit.

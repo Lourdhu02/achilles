@@ -16,9 +16,10 @@ Re-audit this file every 3 months. Profile shifts. Plan adapts.
 
 > **Why this is a moat:** Most 2-YOE applicants have toy projects. You have systems with real users and real engineering tradeoffs (memory, latency, security). Lead with this.
 
-### S2. Founder/leadership story (SpaceDrift)
-- 40+ pipelines delivered, 12 international clients, 5-engineer team led. Even if the consultancy was small, the *narrative* is strong: ownership, ambiguity, customer-facing, P&L thinking.
-- This is what differentiates you from a "good IC at TCS" candidate. Anthropic, Stripe, and startup-y arms of FAANG (Google Labs, Meta AI Eng) value this heavily.
+### S2. Solo-founder story (SpaceDrift)
+- MSME-registered sole proprietorship (Aug 2024 – Dec 2025). 16 months running your own business straight out of college. Service mix: engineering project builds + professional data annotation + research support to PhD scholars. Paid 3 friend-contractors per-project when workload exceeded solo capacity.
+- The narrative is strong without inflation: real ownership, customer-facing delivery, operating under freelance financial constraint, judgment about when to bring in paid help.
+- This differentiates you from a "good IC at TCS" candidate. Anthropic, Stripe, and startup-y arms of FAANG (Google Labs, Meta AI Eng) value the solo-operator story heavily — it signals you can do scope, delivery, and customer communication without supervision.
 
 ### S3. Full-stack ML chops
 - Training: PyTorch, TensorFlow, LoRA, FocalCTCLoss
@@ -31,7 +32,7 @@ Re-audit this file every 3 months. Profile shifts. Plan adapts.
 - Signals you do ML, not just describe it. Many candidates claim Kaggle exposure and have a Novice account. Yours is verifiable.
 
 ### S5. Customer/business communication
-- "100% positive feedback" + technical documentation track record. Most engineers can't do this. Behavioral interviews will favor you if you tell these stories well.
+- Customer-facing delivery + technical documentation track record from solo SpaceDrift work. Most engineers can't scope, price, and deliver to paying clients without supervision. Behavioral interviews will favor you if you tell these stories well.
 
 ---
 

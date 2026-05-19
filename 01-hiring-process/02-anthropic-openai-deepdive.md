@@ -127,7 +127,7 @@ Pipeline, 5-7 rounds:
 - **Use their products extensively** — have specific opinions on ChatGPT, the API, Codex, Sora
 - **Have built on their APIs** — your work clearly does this (FinSentinelAI uses local LLMs, but you also have GPT/Claude API experience)
 - **Read their tech blog** — understand recent posts on training, inference, evals
-- **Have shipped fast** — your founder story (40 pipelines, 12 clients) is a velocity signal
+- **Have shipped fast** — your solo founder story (16 months running SpaceDrift, multi-service delivery under financial constraint) is a velocity signal
 
 ### OpenAI-specific red flags
 - Being overly cautious ("I'd want to wait until X before...") — they want decisive

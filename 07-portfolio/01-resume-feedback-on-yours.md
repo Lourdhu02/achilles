@@ -40,20 +40,15 @@ Total: ~23 months ≈ **1.9 years**, not "2+".
 
 **Fix:** Round honestly. "Approximately 2 years" is fine; "2+ years" reads as inflation. Senior reviewers spot this.
 
-### Issue 2: "40+ production ML pipelines" is unverifiable + reads as inflated
-Founder of a small consultancy claiming 40 pipelines in 16 months = ~2.5/month. Each "pipeline" was probably small. Senior reviewers will be skeptical.
+### Issue 2: "40+ production ML pipelines" is unverifiable + inflated [RESOLVED 2026-05-19]
 
-**Fix:** Reframe with specifics:
-- "Delivered ML systems for 12+ international clients across NLP, CV, and RAG domains, including [name 2-3 specific systems with anonymized client context]"
-- Drop the "40+" entirely or significantly reduce
+**Honest framing confirmed by Lourdu:** SpaceDrift was an MSME-registered **sole proprietorship**. Activities: freelance + engineering project builds, professional data annotation services, research support to PhD scholars. When workload exceeded capacity, he paid 3 friend-contractors on a per-project basis. **NOT** "led a 5-engineer team" or "40+ pipelines" or "12 international clients."
 
-### Issue 3: "100% positive feedback" lacks anchor
-Sounds like a vanity metric without context. Did clients write LinkedIn recommendations? Repeat-business? Renewals?
+**Fix already incorporated into the rewrite below.** The honest version is still a strong founder story — it shows initiative, financial discipline, customer obsession, delegation judgment.
 
-**Fix:** Anchor it:
-- "Maintained 100% renewal rate across 12 international clients" (if true)
-- "All 12 clients provided positive references" (if true)
-- Or just drop the claim entirely; let the project bullets carry the credibility
+### Issue 3: "100% positive feedback" lacks anchor [REMOVED]
+
+This was unverifiable and tied to the inflated framing. **Drop entirely.** The honest projects (ECHOME, FinSentinelAI, Transformers-OCR, MARKIQ, NoiseCut) carry the credibility without needing this claim.
 
 ### Issue 4: SVRT not widely-known acronym
 "SVRT (Swin-V2-Regression-Transformer)" — interviewers may Google this during interview. Make sure it holds up to scrutiny.
@@ -73,14 +68,13 @@ These are universal interview questions. Have answers ready even if not on resum
 **Fix:** Add to bullets where defensible. Example:
 - "Improved meter reading accuracy by 2.74% on **1.2M-image training set**, deployed at **~200 req/sec sustained**"
 
-### Issue 6: "Founded SpaceDrift" framing
-Solo founder of consultancy framed as "led cross-functional team of 5" → reads as inflation. If you genuinely had 5 engineers (employees, contractors, part-time?), be specific.
+### Issue 6: "Founded SpaceDrift" framing [RESOLVED 2026-05-19]
 
-**Fix:**
-- "Founded SpaceDrift and grew a team of 5 (full-time + contractors) over 16 months"
-- Or: "Founded SpaceDrift; partnered with a network of 5 specialized engineers for client engagements"
+**Honest framing:** Solo founder of MSME-registered sole proprietorship. Engaged 3 paid friend-contractors on a project-basis when workload required it. Not a team led; not employees.
 
-Be precise. Senior reviewers Google company names.
+**Correct phrasing in resume (incorporated below):** "Founded and operated SpaceDrift, an MSME-registered sole proprietorship. Engaged paid contractors on a per-project basis when workload exceeded capacity."
+
+This is honest AND respectable. Senior reviewers respect founders who don't inflate.
 
 ### Issue 7: Skills section is too long
 The "Technical Skills" section is bullet-heavy. Hard to skim. ATS keyword-stuffs work but humans want signal.
@@ -168,15 +162,16 @@ Machine Learning Engineer
 
 For SpaceDrift:
 ```
-SPACEDRIFT | Bengaluru (Founded)                            Sep 2024 – Dec 2025
-Founder & Lead ML Engineer
-• Founded an AI engineering consultancy; delivered production ML systems for 12+ international 
-  clients across NLP, GenAI, and Computer Vision domains.
-• Developed custom Agentic RAG framework using Ollama + ChromaDB + LangGraph for privacy-first 
-  financial document intelligence; deployed for regulated finance customers.
-• Established production engineering standards (CI/CD, monitoring, comprehensive docs) across 
-  all client deliverables; achieved repeat business with majority of clients.
-• Managed P&L, stakeholder relationships, and a 5-person engineering network.
+SPACEDRIFT | Bengaluru (Founded)                            Aug 2024 – Dec 2025
+Founder · MSME-registered sole proprietorship
+• Founded and operated an MSME-registered sole proprietorship delivering engineering project 
+  builds, professional data annotation services, and research support to PhD scholars on 
+  problem framing, dataset curation, and experimental pipelines.
+• Worked across NLP, Computer Vision, and RAG domains under freelance financial constraints; 
+  built ECHOME (agentic AI) and FinSentinelAI (privacy-first RAG) as flagship demonstrations.
+• Engaged 3 paid contractors on a project basis when workload exceeded solo capacity; owned 
+  customer scoping, pricing, delivery, and stakeholder communication independently.
+• Transitioned to full-time ML Engineer role at Sujanix to deepen production engineering exposure.
 ```
 
 For BrainOvision:

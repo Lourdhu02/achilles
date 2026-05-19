@@ -29,7 +29,7 @@ Practice for each target company. Below: pre-filled drafts to refine.
 ### Google
 "I've been engaged with Google's work on Vertex AI Agent Builder and the Gemini family — specifically how they're democratizing agent development for enterprises. As someone who built agentic systems at consultancy scale (ECHOME, FinSentinelAI), I've felt firsthand the gap between research papers and production-ready agent tooling. Google is in a unique position to close that gap globally — you have the model, the cloud, the developer mindshare.
 
-Personally, my SpaceDrift work delivered 40+ pipelines for international clients, all needing the kind of infrastructure Vertex AI is building toward. Joining means I'd contribute to a platform reaching millions of developers rather than dozens of clients.
+Personally, my SpaceDrift work as a solo founder put me in direct contact with the practical pain of agent deployment — every client I delivered to needed infrastructure that Vertex AI is building toward. Joining means I'd contribute to a platform reaching millions of developers rather than the small handful I served solo.
 
 I'd want to work on the Agent Builder team specifically, or any team optimizing the LLM inference and agent orchestration stack. The technical depth on those problems is exactly where I want to grow."
 
@@ -64,7 +64,7 @@ I'd want to work on the on-device LLM team or any team pushing the boundary of w
 ### Amazon
 "Amazon's Rufus shopping assistant + Bedrock Agents + Alexa+ rewrite — together they're a bigger applied LLM deployment than almost any company. The combination of scale (billions of customers), variety (shopping, conversation, agents), and AWS infrastructure is hard to match.
 
-Personally: my SpaceDrift founder experience aligns with Amazon's customer-obsession and bias-for-action culture. I've shipped fast, owned outcomes, said no to bad-fit work.
+Personally: I ran SpaceDrift as a solo-founder MSME for 16 months out of college. Customer-obsession wasn't a slogan — one unhappy client hit my margin directly. That experience maps to Amazon's actual operating culture, not the cliché.
 
 I'd want to work on Bedrock, Rufus, or any LLM-heavy AWS team where the scale forces real engineering rigor."
 
@@ -112,7 +112,7 @@ I'd want to join an Applied Engineering team, especially Inference or Forward De
 ### OpenAI
 "OpenAI's ship velocity is unmatched. Every major leap — ChatGPT, GPT-4o, o1 reasoning, Realtime API — comes faster than the rest of the industry, and they ship to billions of users.
 
-My founder story at SpaceDrift — 40 pipelines, 12 international clients in 16 months — gave me the same velocity instincts: build, ship, learn, iterate. I've felt the discomfort of choosing speed over polish and learning when each is right.
+My SpaceDrift founder story — solo MSME operator for 16 months across freelance, engineering builds, and PhD research support — taught me the velocity discipline of build / ship / learn / iterate under real financial constraint. I've felt the discomfort of choosing speed over polish and learning when each is right.
 
 I'd want to work on the API engineering team or Agents team — places where production velocity + technical depth combine."
 

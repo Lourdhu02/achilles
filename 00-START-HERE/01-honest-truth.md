@@ -8,10 +8,10 @@
 
 1. **2+ years of real production ML experience.** Most candidates applying to these companies are either fresh grads (no production) or pure researchers (no shipping). You've shipped to real users. That's rarer than you think.
 2. **GenAI-native at the right moment.** ECHOME (LangGraph + memory architecture) and FinSentinelAI (production RAG with VLMs) are *exactly* the projects every top company wants to see in 2026. The market is in your favor for the next 18 months specifically.
-3. **Founder/consultancy story.** SpaceDrift (40+ pipelines, 12+ clients) gives you a leadership/ambiguity-navigation story that pure SDE candidates don't have. This matters enormously for Anthropic, Stripe, and any "principal engineer track" interview.
+3. **Solo-founder story.** SpaceDrift (MSME sole proprietorship, 16 months running it solo, engaged paid contractors when needed) gives you an ownership + customer-facing-delivery story that pure SDE candidates don't have. This matters enormously for Anthropic, Stripe, and any "principal engineer track" interview.
 4. **Kaggle Expert.** Not Grandmaster, but signals you actually do ML, not just talk about it. Strong baseline.
 5. **Domain breadth.** You touch CV (OCR, ViT, YOLO), NLP/LLMs, MLOps. Most candidates are narrow.
-6. **Customer-facing experience.** "100% positive feedback from 12 international clients" — most engineers can't translate technical to business. You can.
+6. **Customer-facing experience.** Solo SpaceDrift founding meant you scoped, priced, and delivered for paying clients directly — most engineers can't translate technical to business. You can.
 
 ---
 
@@ -28,7 +28,7 @@ Sit with these. Do not flinch.
 
 3. **DSA is your single biggest unknown.** You said intermediate (50-200 LC). For FAANG ML Eng, the coding bar is **2 LC-mediums in 45 min, clean code, optimal-or-near-optimal, while explaining out loud.** Intermediate is not enough. You need to get to "LC-mediums in 20 min, hards in 40 min" by November 2026. If you can't, you will not pass the phone screen at Google/Meta/Amazon, no matter how good your projects are.
 
-4. **No "scale" stories on resume.** Your projects are impressive but small. "40+ pipelines" is good but the *individual* pipeline depth/scale isn't visible. Interviewers will ask "how many requests/sec did your RAG handle?", "what was the largest model you fine-tuned?", "how many GPUs?". You need answers — even if you have to retro-engineer them or build a flagship "scale" project (planned in `07-portfolio/06-new-projects-to-build.md`).
+4. **No "scale" stories on resume.** Your projects are impressive but individual pipeline depth/scale isn't visible. Interviewers will ask "how many requests/sec did your RAG handle?", "what was the largest model you fine-tuned?", "how many GPUs?". You need answers — even if you have to retro-engineer them or build a flagship "scale" project (planned in `07-portfolio/06-new-projects-to-build.md`).
 
 5. **No ML system design experience yet.** Building a project is not the same as designing a system that serves 100M users with 99.99% uptime. This is the hardest interview round and where most 2-YOE ML candidates fail. You will spend 3+ months on this.
 

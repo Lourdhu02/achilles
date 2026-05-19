@@ -30,11 +30,11 @@ For Amazon: prepare **2 stories per LP = 32 stories minimum.** Most candidates h
 ## Story map: matching YOUR resume to LPs
 
 ### Customer Obsession
-- **Story A:** SpaceDrift 12 international clients, 100% positive feedback. Frame: how you built trust by listening; specific instance where you advocated for the customer against an internal preference.
-- **Story B:** Sujanix OCR — customer (government utility) required 95%+; you pushed to 97%.
+- **Story A:** SpaceDrift — operating as a solo founder forced rigorous customer obsession (one unhappy client = real financial hit). Frame: a specific moment where you listened to a client's underlying problem (not the stated ask) and reframed scope.
+- **Story B:** Sujanix OCR — customer (government utility) required 95%+; you pushed to higher production accuracy.
 
 ### Ownership
-- **Story A:** Founding SpaceDrift — full P&L, hiring, customer ownership.
+- **Story A:** Founding and operating SpaceDrift solo for 16 months — full P&L, customer scoping, delivery, and operational ownership. Choosing to engage paid contractors for capacity vs hire employees was an ownership-driven judgment call.
 - **Story B:** A time at Sujanix where you stepped outside your ML role to fix an infra issue, or unblock a customer.
 
 ### Invent and Simplify
@@ -50,8 +50,8 @@ For Amazon: prepare **2 stories per LP = 32 stories minimum.** Most candidates h
 - **Story B:** Following recent papers + tool ecosystem changes; cite specific recent paper you implemented.
 
 ### Hire and Develop the Best
-- **Story A:** Hiring + leading 5 engineers at SpaceDrift; how you identified, developed talent.
-- **Story B:** Mentoring an intern at BrainOvision or a junior at Sujanix.
+- **Story A:** Engaging 3 paid friend-contractors at SpaceDrift for project-basis work. The interesting story: how you scoped + briefed them, gave feedback without damaging friendships, separated working relationships from personal. (Honest framing — not "hired 5 engineers"; smaller scope, real lessons.)
+- **Story B:** Mentoring a junior at Sujanix OR a PhD scholar you supported.
 
 ### Insist on the Highest Standards
 - **Story A:** Sujanix accuracy bar (89% → 97%) — refusing to ship at "good enough".
@@ -62,15 +62,15 @@ For Amazon: prepare **2 stories per LP = 32 stories minimum.** Most candidates h
 - **Story B:** A time you proposed something bigger than asked.
 
 ### Bias for Action
-- **Story A:** SpaceDrift velocity — 40 pipelines, 12 clients in ~16 months. Compare to typical agency.
+- **Story A:** Choosing to go solo-founder straight out of college instead of taking a safer entry-level role — high-velocity bet on yourself. Frame: the decision-making, what you committed to ship in the first 90 days.
 - **Story B:** A 48-hour turnaround on a customer crisis (find a real one).
 
 ### Frugality
-- **Story A:** AWS Lambda 30% cost reduction story.
-- **Story B:** Using free/open tools (Ollama, ChromaDB) for FinSentinelAI for cost + privacy.
+- **Story A:** Running SpaceDrift for 16 months on freelance income with zero buffer/investors. Every dollar of margin mattered. Specific scoping/pricing decisions that maximized output per cost.
+- **Story B:** Using free/open tools (Ollama, ChromaDB) for FinSentinelAI for cost + privacy; MARKIQ's zero-infra-cost design on free tiers.
 
 ### Earn Trust
-- **Story A:** 100% positive feedback from 12 international clients — how did you build trust?
+- **Story A:** A SpaceDrift client where you built trust by being straight about scope, timeline, or limitations — even when honesty cost you margin. (Specific instance > vague claim.)
 - **Story B:** A specific case where you delivered bad news honestly and maintained the relationship.
 
 ### Dive Deep
@@ -82,12 +82,12 @@ For Amazon: prepare **2 stories per LP = 32 stories minimum.** Most candidates h
 - **Story B:** A disagreement with your manager — productive outcome.
 
 ### Deliver Results
-- **Story A:** Sujanix OCR delivery (concrete metrics).
-- **Story B:** SpaceDrift consistent delivery (40 pipelines, 0 missed major deadlines — assuming truth).
+- **Story A:** Sujanix OCR delivery (concrete metrics — production accuracy lift, infra outcomes).
+- **Story B:** A specific SpaceDrift project where you delivered against a hard deadline / constraint that mattered to the client.
 
 ### Earth's Best Employer (often combined with hiring)
-- **Story A:** Building healthy team culture at SpaceDrift.
-- **Story B:** Promoting / advocating for a junior teammate.
+- **Story A:** How you treated the 3 paid contractors at SpaceDrift — paying promptly, scoping fairly, separating friendship from work.
+- **Story B:** Advocating for a junior teammate at Sujanix.
 
 ### Broad Responsibility
 - **Story A:** Privacy-first FinSentinelAI choices — long-term responsibility to customers' data and regulated environments.

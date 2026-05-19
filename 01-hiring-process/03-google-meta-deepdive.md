@@ -135,7 +135,7 @@ Two flavors:
 
 ### Your specific angle for Meta
 - **Llama-related work:** If you can demonstrate Llama fine-tuning, evaluation, or inference work (even on a small scale), Meta engineers respect that.
-- **Velocity stories:** Your SpaceDrift founder pace (40 pipelines, 12 clients in ~16 months) is exactly the velocity signal Meta wants.
+- **Velocity stories:** Your SpaceDrift solo-founder experience — 16 months running an MSME with multi-service delivery under no-buffer freelance income — is exactly the velocity-under-constraint signal Meta wants.
 - **A/B-testing literacy:** If you can speak to experiment design crisply (statistical significance, MDE, holdout cohorts), this differentiates you.
 
 ### Realistic odds for you

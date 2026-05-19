@@ -61,7 +61,7 @@ interested in the [team / role area].
 I'm a Bengaluru-based ML Engineer with 2 years building production GenAI and CV 
 systems. My background:
 - Current: ML Engineer at Sujanix, OCR pipelines (97% production accuracy)
-- Previous: Founded SpaceDrift (consultancy, 12+ international clients)
+- Previous: Founded SpaceDrift (MSME sole proprietorship, 16 months solo delivery across freelance, engineering, and PhD-scholar research support)
 - Notable: Kaggle Expert; ECHOME (agentic AI with novel memory); FinSentinelAI 
   (production enterprise RAG)
 

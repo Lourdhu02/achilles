@@ -111,37 +111,38 @@ This is the kind of work I'd want to scale — production AI where research qual
 
 ---
 
-## Pre-filled Story #2: SpaceDrift founding (your hero leadership story)
+## Pre-filled Story #2: SpaceDrift sole-proprietorship founder
 
 **Primary LP:** Ownership
-**Secondary LPs:** Customer Obsession, Bias for Action, Earn Trust, Deliver Results, Think Big
-**Best for question:** "Tell me about a time you took ownership" / "Leadership" / "Bias for action"
+**Secondary LPs:** Bias for Action, Frugality, Earn Trust, Customer Obsession
+**Best for question:** "Tell me about taking ownership" / "Operating under constraint" / "What did you do right after college?"
 
 ### Situation
-After graduating in May 2024, I founded SpaceDrift, an AI engineering consultancy in Bangalore. I'd seen many enterprises struggle to operationalize their AI ideas due to a gap between research-trained ML engineers and the production engineering that actually ships ML to users. I bet that gap was a real market — and that I could build the team to close it.
+After graduating in May 2024, I deliberately chose NOT to take a standard entry-level role. Instead I founded SpaceDrift in Aug 2024 — an MSME-registered sole proprietorship. The bet was that 16 months of solo customer-facing delivery would build skills no junior dev role would: scoping, pricing, customer obsession, technical breadth, and operating under real financial constraint.
 
 ### Task
-Lead end-to-end: customer acquisition, scoping engagements, hiring, technical delivery, P&L. With no prior management experience and zero brand recognition.
+Build a sustainable freelance + engineering business as a solo operator, while staying technically sharp enough to land a strong full-time ML role afterward.
 
 ### Action
-- **Customer acquisition:** Cold outbound + LinkedIn content + 1:1 calls. Built 12 client base over 16 months across 3 continents.
-- **Team building:** Hired 5 ML engineers over the period. Implemented "production-first" engineering standards — every project ships with CI/CD, monitoring, comprehensive docs.
-- **Delivery rigor:** 40+ pipelines shipped across NLP, CV, RAG. Built a templated approach to scope+spec+ship lifecycles.
-- **Customer obsession:** Maintained 100% positive feedback. When a 3-week project unexpectedly hit a model performance ceiling, I personally extended timeline by 1 week (took the financial hit) rather than ship subpar work.
+- **Service mix:** Took on freelance engineering project builds, professional data annotation services, and research support to PhD scholars (problem framing, dataset curation, experimental pipelines). Diversified intentionally because no single line gave me enough income alone.
+- **Capacity management:** When workload exceeded my solo capacity, I engaged 3 trusted friend-contractors on a per-project basis. I paid them out of project margin. Taught me real lessons about delegation, scoping clarity, and that managing other people's quality is harder than doing the work yourself.
+- **Skill-building loop:** Used the diversity of projects as a training ground — every client taught me a new domain (NLP, CV, RAG). Built ECHOME (agentic AI with 3-tier memory) and FinSentinelAI (privacy-first enterprise RAG) as flagship demonstrations during this period.
+- **Financial discipline:** Operated on freelance income — no buffer, no investors. Every customer mattered. Pricing decisions had immediate consequences.
 
 ### Result
-- 12+ international clients with 100% positive feedback
-- 40+ production pipelines delivered
-- Repeat business from majority of clients
-- Wound down in Dec 2025 to take the Sujanix role (deeper applied ML work)
+- Sustained 16 months of independent operation
+- Delivered for paying clients across NLP, CV, and RAG domains
+- Built two flagship public projects (ECHOME, FinSentinelAI) that became the credibility anchor for my next role
+- Built customer-facing skills (scoping, pricing, communication) most fresh grads don't get for 3+ years
+- Transitioned to ML Engineer role at Sujanix when the right deeper-engineering opportunity arose
 
 ### Learning
-- The hardest part of consultancy isn't engineering — it's saying no to bad-fit projects. I said no maybe 4-5 times; should have said no 10 times. Lost weeks on misaligned scopes.
-- Hiring slowly was right. We had zero attrition over 16 months.
-- The "production-first" standard was non-negotiable from day one — that's what made customers trust us with regulated workloads.
+- The hardest part of solo founding isn't the work — it's saying no to bad-fit projects. I took on a few that ate weeks of margin. Lesson: scoping discipline matters more than throughput.
+- Paying friends to help me work was a real lesson in delegation. Hard to give up control. Harder still to give honest feedback to friends. I learned to separate the working relationship from the friendship explicitly.
+- Solo operation forced rigorous customer obsession in a way salaried roles don't — one upset client could swing my month.
 
 ### Link to role
-[Company] is at a scale where production rigor + customer focus matter enormously. My experience scaling these is directly relevant.
+This founder experience is why I'm confident about taking on ambiguous, high-ownership work at [Company]. Most candidates with 2 years of standard ML experience haven't had to scope a project from scratch with their own money on the line. That changes how you approach customer-facing engineering work.
 
 ---
 
