@@ -83,17 +83,19 @@
 
 %----------- SUMMARY -----------
 \section{Professional Summary}
-Machine Learning Engineer with 2 years building production GenAI and Computer Vision systems. Specialized in agentic AI (LangGraph, RAG, fine-tuning) and end-to-end ML deployment (FastAPI, Docker, AWS, ONNX/TensorRT). Kaggle Expert. Currently architecting Transformer-based OCR pipelines at production scale.
+Machine Learning Engineer with 2 years of experience building production GenAI, NLP, and Computer Vision systems at scale. Specialized in agentic AI (LangGraph, RAG, LoRA fine-tuning), low-latency model serving (vLLM, ONNX, TensorRT), and full-stack ML deployment (FastAPI, Docker, Kubernetes, AWS SageMaker). Strong CS foundations --- data structures \& algorithms, ML system design, and distributed systems. Kaggle Expert currently architecting Transformer-based OCR pipelines at production scale.
 
 %----------- SKILLS -----------
 \section{Technical Skills}
 \begin{itemize}[leftmargin=0.15in, label={}]
   \small{\item{
-    \textbf{Languages}: Python, SQL \\
-    \textbf{ML / Deep Learning}: PyTorch, TensorFlow, Hugging Face, scikit-learn, OpenCV \\
-    \textbf{GenAI / LLM}: LangGraph, LangChain, LoRA, Ollama, vLLM, RAG patterns, agentic systems, Qdrant, ChromaDB \\
-    \textbf{Computer Vision}: ViTs, YOLO, OCR (CRNN, SVRT, SVTR), ONNX, TensorRT \\
-    \textbf{MLOps \& Infrastructure}: Docker, Kubernetes, AWS (EC2 / Lambda / S3 / SageMaker), MLflow, Weights \& Biases, ONNX Runtime, REST / gRPC APIs
+    \textbf{Languages}: Python, SQL, C++, Bash \\
+    \textbf{ML / Deep Learning}: PyTorch, TensorFlow, Hugging Face Transformers, scikit-learn, NumPy, Pandas, OpenCV, XGBoost \\
+    \textbf{GenAI \& LLM}: LangChain, LangGraph, LlamaIndex, Ollama, vLLM; OpenAI / Anthropic / Groq APIs; LoRA fine-tuning, prompt engineering, function calling, agentic systems \\
+    \textbf{RAG \& Vector Search}: Hybrid retrieval, dense embeddings, reranking, semantic search; ChromaDB, Qdrant, Pinecone, FAISS; sentence-transformers \\
+    \textbf{Computer Vision \& NLP}: ViT, YOLO, CLIP; OCR (CRNN, SVRT, SVTR, PaddleOCR); BERT, RoBERTa, T5; spaCy, NLTK \\
+    \textbf{MLOps, Cloud \& Databases}: ONNX, TensorRT, INT8 quantization; FastAPI, REST / gRPC; Docker, Kubernetes; MLflow, Weights \& Biases, DVC, Git, GitHub Actions, CI / CD; AWS (EC2, Lambda, S3, SageMaker), GCP (Vertex AI); PostgreSQL, MongoDB, Redis \\
+    \textbf{CS Foundations \& Math}: Data Structures \& Algorithms, ML system design, OOP, operating systems, computer networks, DBMS; linear algebra, probability, statistics
   }}
 \end{itemize}
 
@@ -107,8 +109,7 @@ Machine Learning Engineer with 2 years building production GenAI and Computer Vi
     \resumeItemListStart
       \resumeItem{Architected Transformer-based OCR pipelines using \textbf{SVRT} (a Swin-V2-based regression transformer) for government utility automation; improved exact-match accuracy from \textbf{82.74\% to 97.04\%}.}
       \resumeItem{Designed a custom \textbf{FocalCTCLoss} combining focal loss with CTC decoding to handle severe character-class imbalance; stabilized training and reduced run-to-run variance.}
-      \resumeItem{Deployed via INT8 ONNX on AWS Lambda + FastAPI behind a Docker-based serving stack; reduced inference cost \textbf{30\%} with \textbf{99.9\%} uptime.}
-      \resumeItem{Owned the full lifecycle: data labeling specs, model architecture, custom loss design, quantization, deployment, and production monitoring.}
+      \resumeItem{Deployed via INT8 ONNX on AWS Lambda + FastAPI behind a Docker-based serving stack; reduced inference cost \textbf{30\%} at \textbf{99.9\%} uptime; owned the full lifecycle from labeling spec to production monitoring.}
     \resumeItemListEnd
 
   \resumeSubheading
@@ -116,9 +117,8 @@ Machine Learning Engineer with 2 years building production GenAI and Computer Vi
     {Founder \textbar{} MSME-registered sole proprietorship}{Bengaluru, India}
     \resumeItemListStart
       \resumeItem{Founded and operated an MSME-registered sole proprietorship delivering engineering project builds, professional data annotation services, and research support to PhD scholars on problem framing, dataset curation, and experimental pipelines.}
-      \resumeItem{Worked across NLP, Computer Vision, and RAG domains under freelance financial constraints; built \textbf{ECHOME} (agentic AI) and \textbf{FinSentinelAI} (privacy-first RAG) as flagship demonstrations.}
+      \resumeItem{Spanned NLP, Computer Vision, and RAG domains as a self-funded operator; shipped \textbf{ECHOME} (agentic AI) and \textbf{FinSentinelAI} (privacy-first RAG) as flagship demonstrations.}
       \resumeItem{Engaged 3 paid contractors on a per-project basis when workload exceeded solo capacity; owned customer scoping, pricing, delivery, and stakeholder communication independently.}
-      \resumeItem{Transitioned to a full-time ML Engineer role at Sujanix to deepen production engineering exposure.}
     \resumeItemListEnd
 
   \resumeSubheading
@@ -132,7 +132,7 @@ Machine Learning Engineer with 2 years building production GenAI and Computer Vi
 \resumeSubHeadingListEnd
 
 %----------- PROJECTS -----------
-\section{Key Projects}
+\section{Projects}
 \resumeSubHeadingListStart
 
   \resumeProjectHeading
