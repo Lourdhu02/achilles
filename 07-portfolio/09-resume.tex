@@ -1,0 +1,185 @@
+%-------------------------
+% Resume — Lourdu Raju
+% ATS-compatible single-page LaTeX resume
+% Compile with pdflatex on Overleaf or locally.
+% Based on the JakeGutierrez / sb2nov template (MIT).
+%-------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+%----------- PAGE SETUP -----------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\addtolength{\oddsidemargin}{-0.55in}
+\addtolength{\evensidemargin}{-0.55in}
+\addtolength{\textwidth}{1.1in}
+\addtolength{\topmargin}{-0.7in}
+\addtolength{\textheight}{1.2in}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+%----------- CUSTOM COMMANDS -----------
+\newcommand{\resumeItem}[1]{\item\small{{#1 \vspace{-2pt}}}}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-1pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+  \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & \small #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+\begin{document}
+
+%----------- HEADING -----------
+\begin{center}
+    \textbf{\Huge \scshape Lourdu Raju} \\ \vspace{3pt}
+    \small \textit{Machine Learning Engineer --- GenAI \textbar{} Computer Vision \textbar{} Production ML} \\ \vspace{4pt}
+    \small Bengaluru, India $|$ +91 99595 94460 $|$
+    \href{mailto:b.lourdhuraju1234@gmail.com}{\underline{b.lourdhuraju1234@gmail.com}} \\ \vspace{1pt}
+    \small \href{https://linkedin.com/in/lourdhu}{\underline{linkedin.com/in/lourdhu}} $|$
+    \href{https://github.com/Lourdhu02}{\underline{github.com/Lourdhu02}} $|$
+    \href{https://kaggle.com/blourdhuraju}{\underline{kaggle.com/blourdhuraju}}
+\end{center}
+
+%----------- SUMMARY -----------
+\section{Professional Summary}
+Machine Learning Engineer with 2 years building production GenAI and Computer Vision systems. Specialized in agentic AI (LangGraph, RAG, fine-tuning) and end-to-end ML deployment (FastAPI, Docker, AWS, ONNX/TensorRT). Kaggle Expert. Currently architecting Transformer-based OCR pipelines at production scale.
+
+%----------- SKILLS -----------
+\section{Technical Skills}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \small{\item{
+    \textbf{Languages}: Python, SQL \\
+    \textbf{ML / Deep Learning}: PyTorch, TensorFlow, Hugging Face, scikit-learn, OpenCV \\
+    \textbf{GenAI / LLM}: LangGraph, LangChain, LoRA, Ollama, vLLM, RAG patterns, agentic systems, Qdrant, ChromaDB \\
+    \textbf{Computer Vision}: ViTs, YOLO, OCR (CRNN, SVRT, SVTR), ONNX, TensorRT \\
+    \textbf{MLOps \& Infrastructure}: Docker, Kubernetes, AWS (EC2 / Lambda / S3 / SageMaker), MLflow, Weights \& Biases, ONNX Runtime, REST / gRPC APIs
+  }}
+\end{itemize}
+
+%----------- EXPERIENCE -----------
+\section{Experience}
+\resumeSubHeadingListStart
+
+  \resumeSubheading
+    {Sujanix Private Limited}{Jan 2026 -- Present}
+    {Machine Learning Engineer}{Bengaluru, India}
+    \resumeItemListStart
+      \resumeItem{Architected Transformer-based OCR pipelines using \textbf{SVRT} (a Swin-V2-based regression transformer) for government utility automation; improved exact-match accuracy from \textbf{82.74\% to 97.04\%}.}
+      \resumeItem{Designed a custom \textbf{FocalCTCLoss} combining focal loss with CTC decoding to handle severe character-class imbalance; stabilized training and reduced run-to-run variance.}
+      \resumeItem{Deployed via INT8 ONNX on AWS Lambda + FastAPI behind a Docker-based serving stack; reduced inference cost \textbf{30\%} with \textbf{99.9\%} uptime.}
+      \resumeItem{Owned the full lifecycle: data labeling specs, model architecture, custom loss design, quantization, deployment, and production monitoring.}
+    \resumeItemListEnd
+
+  \resumeSubheading
+    {SpaceDrift}{Aug 2024 -- Dec 2025}
+    {Founder \textbar{} MSME-registered sole proprietorship}{Bengaluru, India}
+    \resumeItemListStart
+      \resumeItem{Founded and operated an MSME-registered sole proprietorship delivering engineering project builds, professional data annotation services, and research support to PhD scholars on problem framing, dataset curation, and experimental pipelines.}
+      \resumeItem{Worked across NLP, Computer Vision, and RAG domains under freelance financial constraints; built \textbf{ECHOME} (agentic AI) and \textbf{FinSentinelAI} (privacy-first RAG) as flagship demonstrations.}
+      \resumeItem{Engaged 3 paid contractors on a per-project basis when workload exceeded solo capacity; owned customer scoping, pricing, delivery, and stakeholder communication independently.}
+      \resumeItem{Transitioned to a full-time ML Engineer role at Sujanix to deepen production engineering exposure.}
+    \resumeItemListEnd
+
+  \resumeSubheading
+    {BrainOvision Solutions}{Feb 2024 -- Apr 2024}
+    {Data Science Intern}{Hyderabad, India}
+    \resumeItemListStart
+      \resumeItem{Improved forecasting accuracy by \textbf{15\%} using ensemble gradient boosting with structured feature engineering; presented results to senior stakeholders.}
+      \resumeItem{Conducted EDA on multi-million-row datasets and surfaced 3 prioritized business actions adopted by the analytics team.}
+    \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+
+%----------- PROJECTS -----------
+\section{Key Projects}
+\resumeSubHeadingListStart
+
+  \resumeProjectHeading
+    {\textbf{ECHOME --- Cognitive Mirror Engine} $|$ \emph{LangGraph, CAT/IRT, Fisher Information, XTTSv2}}
+    {\href{https://github.com/Lourdhu02/echome}{\underline{github.com/Lourdhu02/echome}}}
+    \resumeItemListStart
+      \resumeItem{Autonomous agentic AI system on LangGraph with a three-tier memory architecture (Episodic, Semantic, Procedural) for long-horizon reasoning.}
+      \resumeItem{Integrated CAT / IRT psychometric models with Fisher Information maximization for adaptive assessment; reduced assessment time \textbf{70\%} (30 min to 9 min).}
+      \resumeItem{Privacy-first local deployment with XTTSv2 zero-shot voice cloning.}
+    \resumeItemListEnd
+
+  \resumeProjectHeading
+    {\textbf{FinSentinelAI --- Privacy-First Enterprise RAG} $|$ \emph{Ollama, ChromaDB, VLMs, JWT multi-tenant}}
+    {\href{https://github.com/Lourdhu02/fin-sentinal.ai}{\underline{github.com/Lourdhu02/fin-sentinal.ai}}}
+    \resumeItemListStart
+      \resumeItem{Production-grade RAG platform with local LLMs (Ollama), ChromaDB, hybrid retrieval, faithfulness verification, and JWT-based multi-tenant session isolation.}
+      \resumeItem{Multi-modal extraction from PDFs and bank statements using local Vision-Language Models for full data sovereignty.}
+      \resumeItem{Built for regulated finance customers with strict on-premise / data-residency constraints.}
+    \resumeItemListEnd
+
+  \resumeProjectHeading
+    {\textbf{Transformers-OCR --- Industrial OCR} $|$ \emph{SVTR, FocalCTCLoss, FRM, ONNX INT8}}
+    {\href{https://github.com/Lourdhu02/transformers-ocr}{\underline{github.com/Lourdhu02/transformers-ocr}}}
+    \resumeItemListStart
+      \resumeItem{High-accuracy OCR achieving \textbf{97\% exact-match} on numeric meter datasets via an SVTR backbone, custom Feature Rearrangement Modules, and FocalCTCLoss.}
+      \resumeItem{ONNX INT8 quantization for edge deployment with custom Semantic Guidance Modules for robustness in motion-blur and low-contrast environments.}
+    \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+
+%----------- ACHIEVEMENTS -----------
+\section{Achievements \& Certifications}
+\begin{itemize}[leftmargin=0.15in, label={\textbullet}]
+  \small{
+    \item Kaggle Expert (Notebooks tier) --- active contributor on deep learning competitions.
+    \item Machine Learning Specialization --- DeepLearning.AI / Stanford.
+    \item NPTEL --- Data Science using Python (IIT Madras).
+    \item Microsoft Power BI Data Analyst Professional Certification.
+  }
+\end{itemize}
+
+%----------- EDUCATION -----------
+\section{Education}
+\resumeSubHeadingListStart
+  \resumeSubheading
+    {Andhra Loyola Institute of Engineering and Technology}{May 2024}
+    {Bachelor of Technology in Computer Science and Engineering}{Vijayawada, India}
+\resumeSubHeadingListEnd
+
+\end{document}
