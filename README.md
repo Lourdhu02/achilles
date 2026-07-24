@@ -99,3 +99,6 @@ I have your full context saved (your resume, your goals, your constraints) — I
 You'll be tempted to keep refining this repo, reading more, building more lists. That's procrastination dressed as productivity. The minimum viable version of this plan, executed, beats the perfect plan, deferred.
 
 Start with `00-START-HERE/01-honest-truth.md`. Now.
+
+## Interview Prep
+Coding questions and system design
