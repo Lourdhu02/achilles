@@ -1,25 +1,3 @@
-# OS metadata
-.DS_Store
-Thumbs.db
-desktop.ini
-*.lnk
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*~
-
-# Python (for any code you add later)
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.env
-.env.local
-
-# Notebooks
-.ipynb_checkpoints/
-
-# Logs
 *.log
+__pycache__/
+*.pyc
