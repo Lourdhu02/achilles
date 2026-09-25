@@ -23,3 +23,8 @@ wandb/
 .idea/
 .vscode/
 *.log
+
+# Local-only: downloaded papers, docs build output, editor/agent settings
+library/pdfs/
+site/
+.claude/
