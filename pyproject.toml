@@ -1,0 +1,29 @@
+[project]
+name = "core-ai-curriculum"
+version = "2.0.0"
+description = "First-principles curriculum for core AI engineering: from-scratch labs, research and founder tracks."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "regex>=2024.4",
+    # RTX 50-series (Blackwell, sm_120) needs a CUDA 12.8+ build: torch>=2.7. See SETUP.md.
+    "torch>=2.7",
+    "pytest>=8.0",
+]
+
+[project.optional-dependencies]
+# Real-data scale-up runs (pretraining on TinyStories / FineWeb-Edu samples).
+data = ["tiktoken>=0.7", "datasets>=2.19"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["labs"]
+addopts = "-ra --import-mode=importlib"
+pythonpath = ["."]
+markers = [
+    "slow: takes more than ~10 seconds on a laptop CPU",
+    "gpu: needs a CUDA GPU (skipped otherwise)",
+]
