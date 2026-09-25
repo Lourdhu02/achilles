@@ -27,9 +27,9 @@ Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md
 |---|---|
 | What NVIDIA sells to AI teams | GPUs and systems, plus a software stack (CUDA, libraries, inference and training frameworks) that most of the industry runs on |
 | Where AI engineers sit | Product engineering orgs (CUDA libraries, deep-learning frameworks, inference, compilers), NVIDIA Research, developer-technology and solutions-architecture groups |
-| How hiring works | You interview with the team you would join; technical candidates may get a HackerRank coding exercise; unapproved outside tools during interviews disqualify you (NVIDIA's "How We Hire" page) |
+| How hiring works | Postings belong to specific teams, and you interview with that team. NVIDIA's "How We Hire" page says technical candidates may get a HackerRank coding exercise and that using unapproved outside tools in an interview disqualifies you |
 | Open-source footprint | TensorRT-LLM, Megatron-LM/Megatron-Core, the NeMo libraries, CUTLASS, Transformer Engine and Dynamo are public on GitHub, so you can contribute before you apply |
-| Recent stack changes | Triton Inference Server was renamed Dynamo-Triton (March 2025); Dynamo reached 1.0 (March 2026); the NeMo monorepo was split, with LLM training recipes moving to separate repos such as Megatron Bridge; CUTLASS 4 added a Python CuTe DSL |
+| Recent stack changes | Triton Inference Server was renamed Dynamo-Triton (March 2025); Dynamo reached 1.0 (March 2026); the NeMo repository was split: `NVIDIA/NeMo` now focuses on speech, and LLM tooling lives in separate repos in the NVIDIA-NeMo organization, such as Megatron Bridge; CUTLASS 4 added a Python CuTe DSL |
 | Research models | Nemotron 3 family (Nano, December 2025; Super, April 2026; Ultra, June 2026): hybrid Mamba-Transformer mixture-of-experts, with Super and Ultra trained in NVFP4 |
 | India | Engineering in Bengaluru, Hyderabad and Pune, plus offices in Gurugram, Mumbai and New Delhi; a roughly 760,000 sq ft Bengaluru lease starting April 2026 (see [From India](#from-india)) |
 
@@ -45,7 +45,7 @@ The table groups the public software projects by what the work is. Team boundari
 | LLM inference | [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM), [TensorRT](https://github.com/NVIDIA/TensorRT) | Fused attention and MoE kernels, quantization (FP8, NVFP4, INT4-AWQ), in-flight batching, KV-cache management, speculative decoding | A quantization study with quality CIs and measured latency; a merged PR |
 | Distributed serving | [Dynamo](https://github.com/ai-dynamo/dynamo), [Dynamo-Triton](https://github.com/triton-inference-server/server) (formerly Triton Inference Server) | Dynamo orchestrates SGLang, TensorRT-LLM and vLLM across GPUs and nodes: disaggregated prefill and decode, KV-aware routing, SLA-based planning (Rust core, Python extensions) | A capacity-planning write-up; a serving benchmark with p50/p95 TTFT and ITL |
 | Training frameworks | [Megatron-LM / Megatron-Core](https://github.com/NVIDIA/Megatron-LM), the [NVIDIA-NeMo](https://github.com/NVIDIA-NeMo) repos (including Megatron Bridge for Hugging Face ↔ Megatron checkpoints), [Transformer Engine](https://github.com/NVIDIA/TransformerEngine) | Tensor, pipeline, context, expert and data parallelism (including FSDP); FP8 and FP4 training; checkpointing; MFU at thousands of GPUs | Lab 09 plus a reproduced parallelism result; a Megatron-Core or TE contribution |
-| Compilers and DSLs | CUDA compiler toolchain, [Triton](https://github.com/triton-lang/triton) GPU backend contributions, CuTe DSL | Code generation for new architectures, autotuning, graph-level fusion | A Triton kernel with an autotuning study; compiler-level reading (PTX, SASS) |
+| Compilers and DSLs | The CUDA compiler toolchain (NVCC, PTX), Python kernel DSLs such as CuTe DSL, and NVIDIA's work with open compilers such as [Triton](https://github.com/triton-lang/triton) | Code generation for new architectures, autotuning, graph-level fusion | A Triton kernel with an autotuning study; comfort reading PTX and SASS |
 | Research | [NVIDIA Research](https://research.nvidia.com/), including applied deep-learning research and the [Nemotron](https://huggingface.co/nvidia) model family | LLM pretraining and post-training, efficient architectures (hybrid Mamba-Transformer), pruning and distillation, low-precision training | Papers or reproductions with error bars; a small-model study that extends a Nemotron or Minitron result |
 | Developer technology (DevTech) | Customer and partner code, benchmarks such as MLPerf submissions | Optimizing other people's workloads on NVIDIA GPUs, upstreaming fixes to frameworks | Profiling write-ups that find and fix a real bottleneck in someone else's code |
 | Solutions architecture | Customer-facing | Designing and debugging customers' training and inference deployments | Clear system-design communication plus hands-on depth |
@@ -139,8 +139,8 @@ Ranked by how directly they show the work NVIDIA's AI teams do. Start at the top
 1. **Merged contributions to the stack the team owns**: TensorRT-LLM, Megatron-LM/Megatron-Core, NeMo, CUTLASS, Transformer Engine, Dynamo. A merged bug fix with a test outranks an unmerged feature. Start from issues labelled for newcomers or "help wanted", and read `CONTRIBUTING.md` first (TensorRT-LLM and others require signed-off commits).
 2. **Published kernel benchmarks with a roofline**: a GEMM, attention or fused kernel, compared against cuBLAS, cuDNN or a strong open baseline, with Nsight Compute evidence of why it is fast or slow. Honest losses count.
 3. **A reproduced or extended performance result**: for example an FP8 or INT4 quality-versus-latency study with confidence intervals, or a reproduction of a Megatron parallelism result at small scale.
-4. **Talks**: GTC talks (GTC and GTC India/AI Summit sessions are recorded on NVIDIA On-Demand), GPU MODE talks, or a local meetup talk on a kernel you wrote. Speaking about your own measured work is the credible version.
-5. **Deep Learning Institute (DLI) courses and certifications**: useful for structure if you are new to CUDA, weak as a hiring signal on their own. Some self-paced DLI courses are free and others are paid; check the current catalog. A certificate never substitutes for a public kernel.
+4. **Talks**: GTC talks (GTC sessions are recorded and posted on NVIDIA On-Demand, so watch last year's talks from the team you want to join), GPU MODE talks, or a local meetup talk on a kernel you wrote. Speaking about your own measured work is the credible version.
+5. **Deep Learning Institute (DLI) courses and certifications**: useful for structure if you are new to CUDA, weak as a hiring signal on their own. As of September 2026, many self-paced DLI courses are free (registration required), others are paid, and joining the free NVIDIA Developer Program includes a pass for one DLI course; the free courses generally do not carry a certificate of competency. Check the current catalog before planning around it. A certificate never substitutes for a public kernel.
 6. **General ML credentials** (degrees, Kaggle, generic LLM apps): they help you pass résumé screens but do not distinguish you for these teams.
 
 ## 90-day plan for a 2-YOE ML engineer in India
@@ -153,8 +153,8 @@ Assumes about 12 hours a week alongside a job, a laptop with an RTX 5060 (8 GB, 
 | 3–4 | CUDA C++ basics. Vector add, then a reduction, then a tiled matmul with shared memory, from the CUDA C++ Programming Guide and *Programming Massively Parallel Processors*. Learn `cudaMalloc`, `cudaMemcpy`, error checking, `nvcc -arch=sm_120`, and events for timing. | A repo with four kernels, each with a correctness test against PyTorch and a timing table |
 | 5–6 | Profiling. Nsight Systems for timelines, Nsight Compute for one kernel. Walk your tiled matmul through the steps in Simon Boehm's matmul write-up (coalescing, shared-memory blocking, register tiling). | [Project 1](projects.md#1-a-tiled-gemm-benchmarked-against-cublas-with-a-roofline) write-up: GEMM versus cuBLAS on a roofline plot |
 | 7–8 | Attention kernels. [Lab 06](../../labs/06_attention_kernels/README.md) end to end, then port the fused softmax to CUDA C++. Read FlashAttention 1 and 2. | Lab 06 tests pass; Triton versus CUDA softmax comparison |
-| 9–10 | Inference and quantization. [Lab 13](../../labs/13_quantization/README.md), [curriculum 07](../../curriculum/07-inference.md). Run a small model with FP8 or INT4 using TensorRT-LLM if your setup supports it (Linux or WSL2), or with another engine if not; measure quality with CIs. | [Project 3](projects.md#3-fp8-and-int4-quality-versus-speed-study-on-a-small-model) write-up |
-| 11 | Open source. Pick one issue in TensorRT-LLM, Megatron-LM, NeMo or CUTLASS; reproduce it, fix it, open the PR. | An open PR with a test |
+| 9–10 | Inference and quantization. [Lab 13](../../labs/13_quantization/README.md), [curriculum 07](../../curriculum/07-inference.md). Run a small model with FP8 or INT4 using TensorRT-LLM under WSL2 (its release notes list GeForce RTX 50-series support through WSL for a limited set of models; check that yours is covered), or with another engine if not; measure quality with CIs. | [Project 3](projects.md#3-fp8-and-int4-quality-versus-speed-study-on-a-small-model) write-up |
+| 11 | Open source. Pick one issue in TensorRT-LLM, Megatron-LM, an NVIDIA-NeMo repo or CUTLASS; reproduce it, fix it, open the PR. | An open PR with a test |
 | 12 | Interview loop. Mock rounds: C++ coding, CUDA concepts aloud, one napkin-math round, one serving design, one project deep dive. Apply to three to five specific postings whose "What we need to see" matches your artifacts. | Tailored résumé with numbers; applications with referrals where possible |
 
 > [!WARNING]
@@ -168,25 +168,31 @@ Assumes about 12 hours a week alongside a job, a laptop with an RTX 5060 (8 GB, 
 - **Common mistake: timing asynchronous work wrongly.** CUDA launches are asynchronous. Time with CUDA events or synchronize before reading a host timer, and exclude warm-up and compilation.
 - **Common mistake: comparing against a weak baseline.** Beating naive PyTorch eager is not a result. Compare against cuBLAS, cuDNN or `torch.compile`.
 - **Common mistake: memorizing spec numbers.** Interviewers care that you can derive the bound from peak FLOP/s and bandwidth, not that you remember the H100's TFLOP/s.
-- **Apply to several specific postings**, and use referrals: NVIDIA's India teams are large, and an engineer on the team can route your résumé to the right manager.
+- **Common mistake: leaning on AI tools in the interview.** NVIDIA states that using unapproved outside tools such as ChatGPT during an interview disqualifies you. Practise writing CUDA and C++ from memory.
+- **Common mistake: a Python-only profile for a C++ team.** Library, TensorRT-LLM and compiler postings usually list C++ as a requirement. One solid CUDA C++ project fixes this.
+- **Apply to several specific postings**, and use referrals: NVIDIA's India teams are large, and an engineer on the team can route your résumé to the right manager. Reported experience is that referred candidates sometimes skip the online assessment.
 
 ## From India
 
 As of September 2026 (re-verify on the careers site's location filter):
 
-- **Offices**: NVIDIA's largest India engineering sites are in Bengaluru and Hyderabad, with further engineering in Pune and offices in Gurugram and other cities. Search postings by city on the careers portal to see which AI teams hire locally.
-- **Roles in India**: postings in India cover CUDA libraries, deep-learning frameworks and inference, system software, and solutions architecture. Research-scientist openings are concentrated in the US and Europe, though some research engineers sit in India.
-- **Campus hiring**: NVIDIA runs new-college-graduate and intern hiring for Indian centers (for example system software roles in Bengaluru and Hyderabad).
-- **Moving abroad**: internal transfers after some time at the company are a common route to US or European teams. For direct hires abroad, see [career/visa-and-relocation.md](../../career/visa-and-relocation.md); US H-1B rules changed in 2025–2026, so check current rules rather than older blog posts.
+- **Offices**: NVIDIA operates in six Indian cities: Bengaluru, Hyderabad and Pune host engineering, with offices in Gurugram, Mumbai and New Delhi. Search postings by city on the careers portal to see which AI teams hire locally.
+- **Expansion**: in April 2026 NVIDIA took a 10-year lease on about 760,000 sq ft in Mahadevapura, Bengaluru, effective April 1, 2026, reported as the largest single-tenant office lease in India and more than doubling its Bengaluru space ([DIGITIMES](https://www.digitimes.com/news/a20260428VL217/nvidia-india-expansion-infrastructure-technology.html), [Yahoo Finance](https://finance.yahoo.com/sectors/technology/articles/nvidia-expands-india-footprint-130m-145154966.html)). More space usually means more requisitions; watch Bengaluru postings.
+- **Roles in India**: India postings cover CUDA and math libraries, deep-learning frameworks and inference, system software, autonomous-vehicle software, and solutions architecture. Research-scientist openings are concentrated in the US and Europe; check the Research postings by location rather than assuming.
+- **Campus hiring**: NVIDIA runs new-college-graduate and intern hiring for its Indian centers (for example, System Software Engineer roles for the 2026 graduating batch in Bengaluru and Hyderabad).
+- **Moving abroad**: joining in India and transferring internally later (usually on an L-1 visa to the US) avoids the H-1B lottery, though it is slow. For direct hires abroad, see [career/visa-and-relocation.md](../../career/visa-and-relocation.md): US H-1B rules changed substantially in 2025, so check the current state on official sources rather than older blog posts.
 
 ## Sources
 
 Primary, as of September 2026:
 
-- NVIDIA careers: [nvidia.com/en-us/about-nvidia/careers](https://www.nvidia.com/en-us/about-nvidia/careers/)
+- NVIDIA careers: [nvidia.com/en-us/about-nvidia/careers](https://www.nvidia.com/en-us/about-nvidia/careers/), [How We Hire](https://www.nvidia.com/en-us/about-nvidia/careers/how-we-hire/), [university recruiting](https://www.nvidia.com/en-us/about-nvidia/careers/university-recruiting/)
+- Values: [NVIDIA Code of Conduct (PDF)](https://images.nvidia.com/aem-dam/en-zz/Solutions/about-us/NVIDIA-Code-of-Conduct-External.pdf)
 - NVIDIA Research: [research.nvidia.com](https://research.nvidia.com/)
-- Repositories: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM), [Megatron-LM](https://github.com/NVIDIA/Megatron-LM), [NeMo](https://github.com/NVIDIA/NeMo), [CUTLASS](https://github.com/NVIDIA/cutlass), [Transformer Engine](https://github.com/NVIDIA/TransformerEngine), [Dynamo](https://github.com/ai-dynamo/dynamo), [Triton Inference Server](https://github.com/triton-inference-server/server)
-- NVIDIA models on Hugging Face: [huggingface.co/nvidia](https://huggingface.co/nvidia)
+- Repositories (read the README and release notes for current scope): [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM), [Megatron-LM](https://github.com/NVIDIA/Megatron-LM), [NVIDIA-NeMo organization](https://github.com/NVIDIA-NeMo), [NeMo (speech)](https://github.com/NVIDIA/NeMo), [CUTLASS](https://github.com/NVIDIA/cutlass), [Transformer Engine](https://github.com/NVIDIA/TransformerEngine), [Dynamo](https://github.com/ai-dynamo/dynamo), [Dynamo-Triton](https://github.com/triton-inference-server/server)
+- Dynamo-Triton rename: [NVIDIA Developer, Dynamo-Triton](https://developer.nvidia.com/dynamo-triton)
+- Nemotron 3: [overview report](https://arxiv.org/abs/2512.20856), [Super](https://arxiv.org/abs/2604.12374), [Ultra](https://arxiv.org/abs/2606.15007); models at [huggingface.co/nvidia](https://huggingface.co/nvidia)
+- India lease: [DIGITIMES, April 2026](https://www.digitimes.com/news/a20260428VL217/nvidia-india-expansion-infrastructure-technology.html)
 - Papers and docs: see [reading-list.md](reading-list.md)
 
-Reported, not official: candidate interview reports on Glassdoor and Blind; use them only for the rough shape of a loop.
+Reported, not official: candidate interview reports on Glassdoor and Blind, and third-party prep guides that aggregate them (for example [IGotAnOffer](https://igotanoffer.com/en/advice/nvidia-interview-process)); use them only for the rough shape of a loop.

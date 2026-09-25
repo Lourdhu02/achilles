@@ -1,6 +1,6 @@
 # NVIDIA reading list
 
-Twenty-seven papers, guides and whitepapers behind the work NVIDIA's AI teams do: GPU architecture and CUDA, GEMM and attention kernels, low-precision number formats, Megatron-style distributed training, inference, and the Nemotron models.
+Thirty papers, guides and whitepapers behind the work NVIDIA's AI teams do: GPU architecture and CUDA, GEMM and attention kernels, low-precision number formats, Megatron-style distributed training, inference, and the Nemotron models.
 Each entry says what to extract, so you read with a question instead of skimming.
 
 > [!TIP]
@@ -20,13 +20,13 @@ If you only have two weeks, read these five in this order.
 
 | Item | Year | What to extract |
 |---|---|---|
-| [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) | current | Thread hierarchy, memory spaces, warp execution, the compute-capability tables (look up 12.0 for an RTX 50-series card and 10.0 for B200) |
-| [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/) | current | The APOD cycle (assess, parallelize, optimize, deploy), coalescing rules, shared-memory bank conflicts, occupancy, how to time correctly |
+| CUDA C++ Programming Guide and the newer restructured *CUDA Programming Guide*, both linked from the [CUDA Toolkit documentation](https://docs.nvidia.com/cuda/) | current (CUDA 13.x) | Thread hierarchy, memory spaces, warp execution, the compute-capability tables (look up 12.0 for an RTX 50-series card and 10.0 for B200) |
+| [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html) | current | The APOD cycle (assess, parallelize, optimize, deploy), coalescing rules, shared-memory bank conflicts, occupancy, how to time correctly |
 | Hwu, Kirk and El Hajj, *Programming Massively Parallel Processors*, 4th ed. (Morgan Kaufmann) | 2022 | Chapters on tiling, reduction, scan and convolution; work the exercises in CUDA C++ |
 | [Williams, Waterman and Patterson, *Roofline*](https://doi.org/10.1145/1498765.1498785) (CACM) | 2009 | The model itself, and ceilings below the roof (no tensor cores, poor coalescing) |
-| [NVIDIA Hopper architecture whitepaper (H100)](https://resources.nvidia.com/en-us-tensor-core) | 2022 | Thread-block clusters, distributed shared memory, TMA, FP8 tensor cores, the Transformer Engine idea |
-| NVIDIA Blackwell architecture technical brief (B200) | 2024 | Fifth-generation tensor cores, FP4 and microscaling support, NVLink 5; contrast with Hopper |
-| NVIDIA RTX Blackwell GPU architecture whitepaper (GeForce RTX 50 series) | 2025 | What your own sm_120 card has and lacks relative to datacenter Blackwell |
+| [NVIDIA H100 Tensor Core GPU Architecture whitepaper](https://resources.nvidia.com/en-us-hopper-architecture/nvidia-h100-tensor-c) | 2022 | Thread-block clusters, distributed shared memory, TMA, FP8 tensor cores, the Transformer Engine idea |
+| [NVIDIA Blackwell architecture technical overview](https://resources.nvidia.com/en-us-blackwell-architecture) (B200) | 2024 | Fifth-generation tensor cores, FP4 and microscaling support, NVLink 5; contrast with Hopper |
+| NVIDIA RTX Blackwell GPU architecture whitepaper (GeForce RTX 50 series; linked from NVIDIA's GeForce news pages) | 2025 | What your own sm_120 card has (fifth-generation tensor cores with FP4, GDDR7) and lacks relative to datacenter Blackwell |
 | [Jia et al., *Dissecting the NVIDIA Volta GPU Architecture via Microbenchmarking*](https://arxiv.org/abs/1804.06826) | 2018 | How to measure latencies, cache sizes and bank behavior yourself; the method transfers to newer GPUs |
 
 ## GEMM and attention kernels
@@ -48,6 +48,7 @@ If you only have two weeks, read these five in this order.
 | [Micikevicius et al., *Mixed Precision Training*](https://arxiv.org/abs/1710.03740) | 2017 | fp32 master weights, loss scaling, fp32 accumulation; the reasons each is needed |
 | [Micikevicius et al., *FP8 Formats for Deep Learning*](https://arxiv.org/abs/2209.05433) | 2022 | E4M3 versus E5M2, why forward uses one and gradients the other, per-tensor scaling, the special-value choices |
 | [Rouhani et al., *Microscaling Data Formats for Deep Learning*](https://arxiv.org/abs/2310.10537) | 2023 | Block scaling (MX formats): one shared scale per 32 elements, and what it buys over per-tensor scales |
+| [NVIDIA, *Pretraining Large Language Models with NVFP4*](https://arxiv.org/abs/2509.25149) | 2025 | What it takes to train in 4-bit: block scaling, which layers stay in higher precision, and how the loss curve compares with FP8 |
 | [Transformer Engine](https://github.com/NVIDIA/TransformerEngine) docs and examples | current | Delayed versus current scaling for FP8, amax history, where FP8 is and is not applied in a transformer layer |
 
 ## Distributed training (Megatron)
@@ -71,9 +72,9 @@ If you only have two weeks, read these five in this order.
 
 | Item | Year | What to extract |
 |---|---|---|
-| [NVIDIA, *Nemotron-4 340B Technical Report*](https://arxiv.org/abs/2406.11704) | 2024 | Synthetic-data pipeline for alignment, reward model, and the training setup |
 | [Muralidharan et al., *Compact Language Models via Pruning and Knowledge Distillation* (Minitron)](https://arxiv.org/abs/2407.14679) | 2024 | Structured pruning of width and depth plus distillation, and the compute saved versus training from scratch |
-| [NVIDIA, *Nemotron-H*](https://arxiv.org/abs/2504.03624) | 2025 | Hybrid Mamba-Transformer design, inference-speed motivation, FP8 pretraining |
+| [NVIDIA, *Nemotron-H: A Family of Accurate and Efficient Hybrid Mamba-Transformer Models*](https://arxiv.org/abs/2504.03624) | 2025 | Why replace most attention layers with Mamba layers: the inference-throughput argument at long context, and FP8 pretraining |
+| [NVIDIA, *NVIDIA Nemotron 3: Efficient and Open Intelligence*](https://arxiv.org/abs/2512.20856), with the [Super](https://arxiv.org/abs/2604.12374) and [Ultra](https://arxiv.org/abs/2606.15007) reports | 2025–2026 | Hybrid Mamba-Transformer mixture-of-experts, LatentMoE, multi-token prediction as built-in speculative decoding, NVFP4 pretraining at scale; note each design choice's inference-cost justification |
 
 ## How to use this list
 
