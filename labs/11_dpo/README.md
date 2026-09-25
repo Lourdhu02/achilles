@@ -1,13 +1,10 @@
 # Lab 11 — DPO
 
-> **Status: spec lab.** Labs 01–07 ship with reference solutions and tests. For this lab, you write both,
-> following the same pattern: `solution.py` with `# BEGIN SOLUTION` / `# END SOLUTION` markers,
-> `test_*.py` that imports it with `load(__file__)`, then `python tools/make_exercises.py 11_dpo`.
-> Writing the tests yourself is part of the training: every test below states a property you must understand.
+**Run:** `pytest labs/11_dpo` (your code) · `pytest labs/11_dpo --impl=solution` (reference)
 
 **Reads first:** [post-training §4](../../curriculum/06-post-training.md#4-dpo-and-its-family)
 
-## Implement and test
+## What you implement (the tests check each property)
 - `sequence_logprobs(logits, labels, mask)`: shift by one, gather, and sum over response tokens only. This is the most common off-by-one bug in alignment code.
 - `dpo_loss(πc, πr, refc, refr, β, label_smoothing)` returns the loss and the implicit rewards `β·(logπ − logπ_ref)`. Test against hand-computed values.
 - `ipo_loss`, `simpo_loss` (length-normalized, reference-free, margin γ).
