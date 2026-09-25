@@ -25,7 +25,7 @@ python tools/progress.py                  # scoreboard across all labs
 ```
 
 ## How it works
-Each lab has a handout (`README.md`), a stub you implement (`exercise.py`), tests, and a reference (`solution.py`), which you read only after an honest attempt. Labs 01–07 ship complete; labs 08–17 are **spec labs**, where writing the tests is part of the exercise. CI verifies every reference solution on CPU.
+Each lab has a handout (`README.md`), a stub you implement (`exercise.py`), tests, and a reference (`solution.py`), which you read only after an honest attempt. All 17 labs ship complete. CI verifies every reference solution on CPU.
 
 The loop, every week: **Read → Derive → Build → Measure → Write** ([how to learn](curriculum/00-learning-os.md)).
 

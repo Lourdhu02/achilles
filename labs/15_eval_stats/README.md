@@ -1,13 +1,10 @@
 # Lab 15 — Evaluation statistics
 
-> **Status: spec lab.** Labs 01–07 ship with reference solutions and tests. For this lab, you write both,
-> following the same pattern: `solution.py` with `# BEGIN SOLUTION` / `# END SOLUTION` markers,
-> `test_*.py` that imports it with `load(__file__)`, then `python tools/make_exercises.py 15_eval_stats`.
-> Writing the tests yourself is part of the training: every test below states a property you must understand.
+**Run:** `pytest labs/15_eval_stats` (your code) · `pytest labs/15_eval_stats --impl=solution` (reference)
 
 **Reads first:** [evaluation §2](../../curriculum/08-evaluation-and-research.md#2-statistics-error-bars-or-it-didnt-happen)
 
-## Implement and test
+## What you implement (the tests check each property)
 - Normal-approximation CI, percentile bootstrap CI, clustered standard errors (questions that share a passage).
 - Paired comparison of two models on the same items: paired bootstrap, permutation test, McNemar exact test.
 - `pass_at_k(n, c, k)`: the unbiased estimator `1 − C(n−c,k)/C(n,k)`, computed stably.
