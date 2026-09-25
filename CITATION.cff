@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use these labs or notes, please cite them."
+title: "Core AI, from first principles: tested labs from autograd to GRPO"
+authors:
+  - family-names: Raju
+    given-names: Lourdu
+repository-code: "https://github.com/Lourdhu02/interview"
+license: MIT
+date-released: 2026-09-25
+keywords: [llm, transformers, pytorch, triton, flash-attention, rlhf, dpo, grpo, quantization, interpretability]
