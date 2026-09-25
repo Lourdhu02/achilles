@@ -1,3 +1,25 @@
-*.log
+# Python
 __pycache__/
 *.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+uv.lock
+
+# ML artifacts: large, regenerable, never commit
+data/
+runs/
+checkpoints/
+wandb/
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.npy
+*.memmap
+
+# OS / editors / logs
+.DS_Store
+.idea/
+.vscode/
+*.log
