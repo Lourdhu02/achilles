@@ -14,6 +14,19 @@ pip install numpy regex pytest torch
 - Use a PyTorch build for **CUDA 12.8 or newer** (PyTorch ≥ 2.7). Older builds fail with *"no kernel image is available for execution on the device."*
 - **Linux / WSL2:** recent PyPI wheels already target CUDA 12.8+; to be explicit, `pip install torch --index-url https://download.pytorch.org/whl/cu128`.
 - **Windows native:** PyPI wheels are CPU-only, so install with the `cu128` index URL above. Triton (labs 06, `--compile`) is easiest on **WSL2**; natively, try the community `triton-windows` package.
+- **Keep versions paired.** `torch` and `torchvision` must come from the same release and the same CUDA index (torchvision 0.28 needs torch 2.13, 0.26 needs 2.11, and so on). The labs don't use torchvision. If pip warns about a mismatch, install both from one index or uninstall torchvision in this repo's venv.
+
+### Windows (PowerShell), step by step
+Install into a virtual environment inside the repo, never into your global Python, so other projects keep their own torch.
+```powershell
+cd interview
+python -m venv .venv
+.venv\Scripts\Activate.ps1          # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+python -m pip install --upgrade pip
+pip install torch --index-url https://download.pytorch.org/whl/cu128   # drivers with CUDA 13 support can try .../whl/cu130 for newer releases
+pip install numpy regex pytest triton-windows
+```
+Run `.venv\Scripts\Activate.ps1` again in every new terminal. The prompt shows `(.venv)` when it is active.
 
 Verify:
 ```python
