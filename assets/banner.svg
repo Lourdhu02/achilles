@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="Core AI from first principles">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-label="Achilles: core AI from first principles">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0b1020"/>
@@ -16,24 +16,24 @@
   <rect width="1280" height="360" rx="18" fill="url(#grid)"/>
   <!-- network motif -->
   <g transform="translate(70,0)">
-  <g stroke="url(#accent)" stroke-opacity="0.55" stroke-width="1.5" fill="none">
-    <path d="M1000 80 L1120 140 L1040 230 L1170 270 M1120 140 L1200 90 M1040 230 L960 300 M1000 80 L940 170 L1040 230"/>
+    <g stroke="url(#accent)" stroke-opacity="0.55" stroke-width="1.5" fill="none">
+      <path d="M1000 80 L1120 140 L1040 230 L1170 270 M1120 140 L1200 90 M1040 230 L960 300 M1000 80 L940 170 L1040 230"/>
+    </g>
+    <g fill="#20c4ff">
+      <circle cx="1000" cy="80" r="6"/><circle cx="1120" cy="140" r="7"/><circle cx="1040" cy="230" r="8"/>
+      <circle cx="1170" cy="270" r="5"/><circle cx="1200" cy="90" r="5"/><circle cx="960" cy="300" r="5"/><circle cx="940" cy="170" r="6"/>
+    </g>
   </g>
-  <g fill="#20c4ff">
-    <circle cx="1000" cy="80" r="6"/><circle cx="1120" cy="140" r="7"/><circle cx="1040" cy="230" r="8"/>
-    <circle cx="1170" cy="270" r="5"/><circle cx="1200" cy="90" r="5"/><circle cx="960" cy="300" r="5"/><circle cx="940" cy="170" r="6"/>
-  </g>
-  </g>
-  <text x="72" y="118" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" letter-spacing="4" fill="#20c4ff">OPEN CURRICULUM · 17 TESTED LABS</text>
-  <text x="72" y="190" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#ffffff">Core AI, from first principles</text>
-  <rect x="72" y="212" width="360" height="5" rx="2.5" fill="url(#accent)"/>
-  <text x="72" y="262" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" fill="#c9d1e6">Build it. Measure it. Explain it. From autograd to GRPO on one consumer GPU.</text>
+  <text x="72" y="96" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" letter-spacing="4" fill="#20c4ff">OPEN CURRICULUM · 17 TESTED LABS · CPU OR GPU</text>
+  <text x="68" y="182" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="92" font-weight="700" letter-spacing="-1" fill="#ffffff">Achilles</text>
+  <rect x="72" y="204" width="300" height="5" rx="2.5" fill="url(#accent)"/>
+  <text x="72" y="252" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="25" fill="#c9d1e6">Core AI from first principles. Build it, measure it, explain it.</text>
   <g font-family="Consolas, Menlo, monospace" font-size="17" fill="#e6e9f5">
-    <rect x="72" y="292" width="118" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="96" y="315">autograd</text>
-    <rect x="200" y="292" width="148" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="224" y="315">transformer</text>
-    <rect x="358" y="292" width="100" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="382" y="315">triton</text>
-    <rect x="468" y="292" width="146" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="492" y="315">DPO · GRPO</text>
-    <rect x="624" y="292" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="648" y="315">inference</text>
-    <rect x="762" y="292" width="92" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="786" y="315">evals</text>
+    <rect x="72" y="284" width="118" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="96" y="307">autograd</text>
+    <rect x="200" y="284" width="158" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="224" y="307">transformers</text>
+    <rect x="368" y="284" width="100" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="392" y="307">triton</text>
+    <rect x="478" y="284" width="146" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="502" y="307">DPO · GRPO</text>
+    <rect x="634" y="284" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="658" y="307">inference</text>
+    <rect x="772" y="284" width="199" height="34" rx="17" fill="#ffffff" fill-opacity="0.08"/><text x="796" y="307">interpretability</text>
   </g>
 </svg>
