@@ -55,7 +55,7 @@ Two finished projects with honest roofline analysis beat eight half-done ones.
 
 **Scope.** Take a 0.5B–1.5B instruct model. Compare bf16, FP8 (weights and activations), INT8 weight-only and INT4 weight-only (AWQ or GPTQ), plus FP4 if your stack supports it, on quality and speed.
 
-- **Engine.** TensorRT-LLM on Linux or WSL2 if its support matrix covers your GPU; check the current release notes for GeForce Blackwell support before you start. Otherwise use another engine that supports the format, and say so.
+- **Engine.** TensorRT-LLM under WSL2 or Linux. As of September 2026 its release notes list GeForce RTX 50-series support through WSL for a limited set of models, so check that your model is covered before you start. On native Windows, NVIDIA's separate TensorRT for RTX library is the supported path for RTX GPUs. If neither fits, use another engine that supports the format (on Colab, pick an L4 or newer for FP8) and say so in the write-up.
 - **Quality.** A task accuracy (for example GSM8K-style exact match on a fixed subset) with 95% confidence intervals and a paired test between formats, plus perplexity. See [lab 15](../../labs/15_eval_stats/README.md).
 - **Speed.** Prefill tokens/s at batch 1 and 16, decode tokens/s at batch 1 and 16, time to first token, and memory.
 
