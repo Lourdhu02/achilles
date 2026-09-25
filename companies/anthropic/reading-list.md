@@ -1,6 +1,6 @@
 # Anthropic reading list
 
-Twenty-eight primary sources that define how Anthropic thinks about models, safety and engineering, grouped by theme, each with what to extract.
+Thirty primary sources that define how Anthropic thinks about models, safety and engineering, grouped by theme, each with what to extract.
 Start with the five marked **read first**; they are the minimum for a credible conversation with any Anthropic team. Everything is free to read.
 
 How to read each one: write down (1) the claim, (2) the evidence and its weakest point, (3) one experiment you could run on an 8 GB GPU to test or extend it. Item (3) is where [projects.md](projects.md) comes from.
@@ -30,7 +30,7 @@ How to read each one: write down (1) the claim, (2) the evidence and its weakest
 |---|---|---|
 | **[Core Views on AI Safety](https://www.anthropic.com/news/core-views-on-ai-safety)** (read first) | 2023 | The argument for building frontier models in order to study their safety. The optimistic, intermediate and pessimistic scenarios, and which research directions pay off in each. Decide where you disagree. |
 | [Responsible Scaling Policy](https://www.anthropic.com/responsible-scaling-policy) (v3.4, effective July 2026) | 2023–2026 | Capability thresholds, the safeguards each triggers, how capability assessments and risk reports work, who reviews them. Read the redline of the latest version to see what changed and guess why. |
-| [Claude's constitution](https://www.anthropic.com/constitution) | 2026 | How Anthropic wants Claude to weigh helpfulness, honesty and harm, and where it draws hard lines. Useful context for any post-training or safeguards role. |
+| [Claude's constitution](https://www.anthropic.com/constitution) ([announcement](https://www.anthropic.com/news/claudes-constitution)) | 2023, updated 2026 | How Anthropic wants Claude to weigh helpfulness, honesty and harm, and where it draws hard lines. Useful context for any post-training or safeguards role. |
 | [System cards](https://www.anthropic.com/system-cards) (read the latest one) | ongoing | How a model is evaluated before release: capability evals, alignment assessments, RSP determinations, welfare and safeguards sections. The best single view of what the eval, alignment and red-team teams actually do. |
 
 ## Interpretability
@@ -76,7 +76,6 @@ How to read each one: write down (1) the claim, (2) the evidence and its weakest
 | [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | 2026 | How Anthropic engineers think about building evals for agents: tasks, graders, and what to trust. |
 | [Quantifying infrastructure noise in agentic coding evals](https://www.anthropic.com/engineering/infrastructure-noise) | 2026 | How much benchmark scores move for reasons unrelated to the model. A model for how to report your own eval numbers. |
 | [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) | 2024 | Workflows versus agents; the named patterns (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer); "start simple". Required for Applied AI and forward-deployed roles. |
-| [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | 2025 | Context as a finite resource; compaction, note-taking, sub-agents. Pairs with [module 10](../../curriculum/10-applied-llm-systems.md). |
 | [A postmortem of three recent issues](https://www.anthropic.com/engineering/a-postmortem-of-three-recent-issues) | 2025 | Real inference bugs that degraded output quality, why they were hard to detect, and what changed. Essential for inference roles: precision, sampling and routing bugs are subtle. |
 | [Designing AI-resistant technical evaluations](https://www.anthropic.com/engineering/AI-resistant-technical-evaluations) | 2026 | How the performance team designs its take-home, and what it says a good evaluation looks like. Read it as a description of the candidate they want. |
 
