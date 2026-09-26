@@ -14,7 +14,7 @@ For every paper, write four lines in your journal ([paper-notes template](../jou
 ## 03 Optimization and training
 
 **Read first**
-1. Loshchilov and Hutter 2019, [*Decoupled Weight Decay Regularization*](https://arxiv.org/abs/1711.05101) (AdamW): why weight decay is not L2 regularization under Adam. [Lab 02](../labs/02_training_core/README.md) makes it bit-exact.
+1. Loshchilov and Hutter 2019, [*Decoupled Weight Decay Regularization*](https://arxiv.org/abs/1711.05101) (AdamW): why weight decay is not L2 regularization under Adam. [Lab 02](../labs/02_training_core/README.md) matches PyTorch's AdamW to 1e-10 over 25 steps.
 2. McCandlish et al. 2018, [*An Empirical Model of Large-Batch Training*](https://arxiv.org/abs/1812.06162): the critical batch size and the gradient noise scale.
 3. Wortsman et al. 2023, [*Small-scale proxies for large-scale Transformer training instabilities*](https://arxiv.org/abs/2309.14322): reproduce big-model instabilities on a small GPU.
 
