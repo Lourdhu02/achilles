@@ -18,6 +18,7 @@ import json
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -99,7 +100,7 @@ def download(entry: dict, force: bool, dry_run: bool) -> tuple[str, str]:
     if dest.exists() and not force:
         return "skipped", f"exists: {rel}"
     if dry_run:
-        return "would-get", f"{entry['pdf_url']} -> {rel}"
+        return "would-get", f"{urllib.parse.urlsplit(entry['pdf_url']).netloc} -> {rel}"
     try:
         body = fetch(entry["pdf_url"])
     except RuntimeError as e:
