@@ -1,7 +1,7 @@
 # Reading list: Google DeepMind and Google's AI teams
 
 Thirty primary sources, grouped by theme, that Google interviewers are likely to know well because their colleagues wrote them. For each: link, year, and what to extract so you can discuss it precisely.
-Start with the five marked **read first**. Pair each with its lab in this repo; reading without building does not stick (see [module 00](../../curriculum/00-learning-os.md#reading-papers)).
+Start with the five marked **read first**. Pair each with its lab in this repo; reading without building does not stick (see [module 00](../../curriculum/00-learning-os.md#6-reading-papers)).
 
 ## Contents
 
