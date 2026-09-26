@@ -275,7 +275,7 @@ Reference hardware used in the numbers below (verify spec sheets before quoting 
 
 **Answer.** Embedding 128,256 × 4,096 ≈ 525.3M, doubled for the untied LM head ≈ 1.051B. Per layer: attention Wq and Wo 2 × 4,096² = 33.6M, Wk and Wv 2 × 4,096 × 1,024 = 8.4M, total 41.9M; SwiGLU MLP 3 × 4,096 × 14,336 = 176.2M; norms 8,192. Per layer ≈ 218.1M, × 32 ≈ 6.98B. Total ≈ 8.03B.
 
-**Follow-up:** *Forward FLOPs per token at 8k context?* ≈ 2N plus attention: 2N ≈ 16.1 GFLOP (the embedding lookup is free, but the head is a matmul, so use ≈ 7.5B matmul weights → ≈ 15 GFLOP), and causal attention adds ≈ 2 · n_layers · T · d = 2 · 32 · 8,192 · 4,096 ≈ 2.1 GFLOP averaged over positions. Attention is ≈ 14% of the total at 8k context and grows linearly with T.
+**Follow-up:** *Forward FLOPs per token at 8k context?* The matmul weights are every parameter except the input embedding (its lookup is free; the untied head is a matmul): ≈ 7.5B, so 2N ≈ 15 GFLOP. Causal attention adds ≈ 2 · n_layers · T · d = 2 · 32 · 8,192 · 4,096 ≈ 2.1 GFLOP per token averaged over positions. Attention is ≈ 12% of the total at 8k context and grows linearly with T.
 
 </details>
 
