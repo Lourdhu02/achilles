@@ -63,20 +63,42 @@ def induction_scores(attn: Tensor, half: int) -> Tensor:
     # END SOLUTION
 
 
-def train_induction(steps: int = 600, half: int = 10, vocab: int = 16, seed: int = 0) -> tuple[AttnOnly, float]:
-    """Train on repeated sequences; returns the model and the final loss on the second half."""
+def previous_token_scores(attn: Tensor) -> Tensor:
+    """attn (B, H, T, T) -> per-head mean attention from each position i >= 1 to i - 1."""
+    # BEGIN SOLUTION
+    # HINT: the same pairing trick as induction_scores, with offset -1 for every i from 1 to T - 1.
+    i = torch.arange(1, attn.shape[-1])
+    return attn[:, :, i, i - 1].mean(dim=(0, 2))
+    # END SOLUTION
+
+
+def copy_loss(model: AttnOnly, seq: Tensor, half: int) -> Tensor:
+    """Cross-entropy on the second half of a repeated sequence: position t predicts token t + 1."""
+    vocab = model.unembed.out_features
+    logits = model(seq[:, :-1])
+    return F.cross_entropy(logits[:, half:].reshape(-1, vocab), seq[:, half + 1 :].reshape(-1))
+
+
+def train_induction(
+    steps: int = 1000, half: int = 10, vocab: int = 16, seed: int = 0, min_half: int = 5
+) -> tuple[AttnOnly, float]:
+    """Train on repeated sequences whose period is drawn from [min_half, half] for each batch, so no
+    fixed positional offset solves the task. min_half=half gives a fixed period, which a positional
+    shortcut solves (see the handout). Returns the model and its second-half loss on fresh
+    sequences of period `half`."""
     torch.manual_seed(seed)
     g = torch.Generator().manual_seed(seed)
     model = AttnOnly(vocab=vocab, max_len=2 * half)
     opt = torch.optim.AdamW(model.parameters(), lr=3e-3, weight_decay=0.0)
     for _ in range(steps):
-        seq = repeated_batch(64, half, vocab, g)
-        logits = model(seq[:, :-1])
-        loss = F.cross_entropy(logits[:, half:].reshape(-1, vocab), seq[:, half + 1 :].reshape(-1))
+        h = half if min_half == half else int(torch.randint(min_half, half + 1, (1,), generator=g))
+        loss = copy_loss(model, repeated_batch(64, h, vocab, g), h)
         opt.zero_grad()
         loss.backward()
         opt.step()
-    return model, loss.item()
+    with torch.no_grad():
+        final = copy_loss(model, repeated_batch(256, half, vocab, g), half)
+    return model, final.item()
 
 
 def patching_effect(model: AttnOnly, clean: Tensor, corrupt: Tensor, layer: int, answer: int, pos: int = -1) -> float:
