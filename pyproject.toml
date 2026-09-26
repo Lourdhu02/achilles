@@ -17,7 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Scale-up runs: real datasets, the GPT-2 tokenizer and Hugging Face models (same as requirements-data.txt).
-data = ["tiktoken>=0.7", "datasets>=2.19", "huggingface_hub>=0.23", "transformers>=4.45"]
+data = ["tiktoken>=0.7", "datasets>=2.19", "huggingface_hub>=0.23", "transformers>=5.0"]
 # Docs site (same as requirements-docs.txt): python tools/build_docs.py
 docs = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5"]
 

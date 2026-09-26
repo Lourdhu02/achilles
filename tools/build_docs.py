@@ -36,6 +36,11 @@ ALERT = re.compile(r"^> \[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*\n((?:>.*
 KIND = {"NOTE": "note", "TIP": "tip", "IMPORTANT": "info", "WARNING": "warning", "CAUTION": "danger"}
 LINK = re.compile(r"(\]\()([^)\s]+)(\))")
 OPEN_TAG = re.compile(r"<(details|div|table|tr|td)((?:\s[^>]*)?)>")
+EXTRA_CSS = """/* Home page: the banner carries the title, so hide the H1 MkDocs adds from front matter. */
+.md-content__inner > h1:has(+ div img[src$="banner.svg"]) { display: none; }
+.md-typeset table:not([class]) img { vertical-align: middle; }
+"""
+HOME_FRONT_MATTER = "---\ntitle: Achilles\n---\n\n"
 MATHJAX_CONFIG = """window.MathJax = {
   tex: { inlineMath: [["\\\\(", "\\\\)"]], displayMath: [["\\\\[", "\\\\]"]], processEscapes: true, processEnvironments: true },
   options: { ignoreHtmlClass: ".*|", processHtmlClass: "arithmatex" }
@@ -96,10 +101,15 @@ def stage() -> None:
     for rel in staged:
         dest = STAGE / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(adapt((ROOT / rel).read_text(encoding="utf-8"), rel, staged), encoding="utf-8")
+        text = adapt((ROOT / rel).read_text(encoding="utf-8"), rel, staged)
+        if rel == Path("README.md"):
+            text = HOME_FRONT_MATTER + text
+        dest.write_text(text, encoding="utf-8")
     shutil.copytree(ROOT / "assets", STAGE / "assets")
     (STAGE / "javascripts").mkdir()
     (STAGE / "javascripts" / "mathjax.js").write_text(MATHJAX_CONFIG, encoding="utf-8")
+    (STAGE / "stylesheets").mkdir()
+    (STAGE / "stylesheets" / "extra.css").write_text(EXTRA_CSS, encoding="utf-8")
     print(f"staged {len(staged)} pages into {STAGE.relative_to(ROOT)}/")
 
 

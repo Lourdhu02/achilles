@@ -4,4 +4,4 @@
 tiktoken>=0.7
 datasets>=2.19
 huggingface_hub>=0.23
-transformers>=4.45
+transformers>=5.0

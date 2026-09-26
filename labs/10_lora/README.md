@@ -77,7 +77,7 @@ lo = load("labs/10_lora/x.py", "exercise")        # any path in the lab dir
 
 name = "Qwen/Qwen2.5-0.5B-Instruct"
 tok = AutoTokenizer.from_pretrained(name)
-model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.bfloat16)
+model = AutoModelForCausalLM.from_pretrained(name, dtype=torch.bfloat16)   # older transformers versions: torch_dtype=
 targets = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 lo.apply_lora(model, targets, r=16, alpha=32)     # adapters are fp32, on CPU
 model.to("cuda")

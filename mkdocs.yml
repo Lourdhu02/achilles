@@ -21,6 +21,7 @@ validation:
 theme:
   name: material
   favicon: assets/icons/brain-circuit.svg
+  logo: assets/icons/brain-circuit-white.svg
   icon:
     repo: fontawesome/brands/github
   font:
@@ -78,6 +79,9 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_css:
+  - stylesheets/extra.css
 
 extra_javascript:
   - javascripts/mathjax.js
