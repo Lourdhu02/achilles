@@ -156,7 +156,7 @@ Ranked by how directly each one predicts success in Meta's AI orgs and how achie
 4. **Publications** in main venues or strong workshops (matters most for FAIR and Research Scientist roles).
 5. **Production ML impact at your current job**, quantified (latency, cost, revenue or quality metrics). This is what the behavioral and design rounds reward at E4/E5.
 6. **Referrals** from Meta engineers who know your work, often a result of 1–3.
-7. **Internships and residencies**: Meta's research internships mainly target PhD students. I could not verify a current AI residency program for non-PhD engineers as of September 2026; check metacareers before planning around one.
+7. **Internships and residencies**: Meta's research internships mainly target PhD students. No current AI residency program for non-PhD engineers could be verified as of September 2026; check metacareers before planning around one.
 
 ## 90-day plan
 
