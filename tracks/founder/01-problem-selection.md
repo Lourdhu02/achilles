@@ -3,7 +3,7 @@
 Pick a problem that someone already pays to solve, that happens often, and that gets easier for you (not for your competitors) as models improve. Then prove it with past behavior and money, not with opinions.
 This file gives the criteria, a scoring rubric with a worked example, a full discovery interview script, and the signals that count.
 
-**Contents:** [What a good problem looks like](#what-a-good-ai-company-problem-looks-like) · [Anti-patterns](#anti-patterns) · [Score your ideas](#score-your-ideas) · [Interview script](#customer-discovery-interview-script) · [Signal ladder](#the-signal-ladder) · [Synthesis](#synthesizing-15-20-interviews) · [Concierge MVP](#concierge-mvp) · [Failure modes](#failure-modes) · [Worksheet](#worksheet)
+**Contents:** [What a good problem looks like](#what-a-good-ai-company-problem-looks-like) · [Anti-patterns](#anti-patterns) · [Score your ideas](#score-your-ideas) · [Interview script](#customer-discovery-interview-script) · [Signal ladder](#the-signal-ladder) · [Synthesis](#synthesizing-1520-interviews) · [Concierge MVP](#concierge-mvp) · [Failure modes](#failure-modes) · [Worksheet](#worksheet)
 
 ## What a good AI-company problem looks like
 

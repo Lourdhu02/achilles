@@ -109,7 +109,7 @@ Worked count for Qwen2.5-0.5B (24 layers, hidden 896, MLP 4864, 2 KV heads of di
 
 QLoRA ([2305.14314](https://arxiv.org/abs/2305.14314)) keeps the frozen base in **NF4** (4-bit NormalFloat, whose 16 levels are quantiles of a normal distribution, so they match the shape of pretrained weights), dequantizes each block to bf16 on the fly for the matmul, and trains bf16 LoRA adapters on top. Two more tricks: **double quantization** (quantize the per-block scales too) and **paged optimizers** (optimizer state that can spill to CPU memory on spikes). Gradients flow *through* the dequantized base into the adapters; the base itself never updates. You build NF4 in [lab 13](../labs/13_quantization/README.md).
 
-Memory for the frozen base at 4 bits, block size 64 with one fp32 scale per block: $4 + 32/64 = 4.5$ bits per parameter, about 4.3 GB for an 7.6 B model; double quantization brings the scale overhead to roughly 0.13 bits per parameter. That is why a 7–8 B model is the ceiling on an 8 GB card, with short sequences.
+Memory for the frozen base at 4 bits, block size 64 with one fp32 scale per block: $4 + 32/64 = 4.5$ bits per parameter, about 4.3 GB for a 7.6 B model; double quantization brings the scale overhead to roughly 0.13 bits per parameter. That is why a 7–8 B model is the ceiling on an 8 GB card, with short sequences.
 
 > [!TIP]
 > Attach LoRA **before** moving the model to the GPU and choosing a dtype, or create the adapter tensors on the base layer's device and dtype. Keep adapter weights and optimizer state in fp32 and run the forward in bf16 autocast; tiny bf16 adapter updates can round to zero.
@@ -429,12 +429,12 @@ The vocabulary trap: with a 152k vocabulary, the logits of a 0.5 B model can out
 
 - **"DPO doesn't need a reward model, so it doesn't optimize a reward."** It optimizes exactly the KL-regularized reward objective, with the reward reparameterized through the policy. It removes the explicit RM and the sampling, not the objective.
 - **"PPO clipping stops the policy from changing too much."** It removes the incentive to change further in the improving direction; it does not bound the change, and multiple epochs can still push ratios well past $1 \pm \varepsilon$. Monitor clip fraction and KL.
-- **"A baseline biases the gradient."** Only if it depends on the sampled action. A per-prompt group mean does not (for the other samples; GRPO's including the sample itself adds a small $1/G$ scaling, which RLOO's leave-one-out avoids).
+- **"A baseline biases the gradient."** Only if it depends on the sampled action. The mean of the *other* samples for the prompt does not (RLOO). GRPO's group mean includes the sample itself, which only rescales the expected gradient by $(1 - 1/G)$; its std normalization is what changes the weighting across prompts.
 - **"GRPO has no KL penalty problem because it uses k3."** k3 is an unbiased *value* estimate, but differentiating it through sampled tokens gives the gradient of the reverse-direction KL; and many current recipes set $\beta = 0$ anyway.
 - **"LoRA with rank 8 is 8/4096 of the parameters."** It is $r(d_\text{in}+d_\text{out})$ per matrix; count across all targeted layers.
 - **"SFT loss went down, so SFT worked."** Template and masking bugs lower the loss too. Evaluate generations.
 - **"Reward went up, so RL worked."** Check held-out accuracy with a stricter grader, length split by correctness, and read samples.
-- **"Temperature 0 makes GRPO deterministic."** GRPO needs diverse samples; at temperature 0 every group is identical and every advantage is zero.
+- **"Sample GRPO rollouts greedily for a cleaner signal."** At temperature 0 every sample in a group is identical, so every advantage is zero and nothing trains. Group-relative RL needs diverse samples.
 
 ## CPU vs GPU notes
 
