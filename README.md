@@ -50,23 +50,23 @@ Achilles trains the opposite skill. You implement every core mechanism yourself,
 
 ## What's inside
 
-| | Part | What you get |
-|:-:|---|---|
-| <img src="assets/icons/flask-conical.svg" width="20" height="20" alt=""/> | **[Labs](labs/README.md)** | 17 test-driven labs: a handout, a stub you implement, a test suite and a reference solution for each |
-| <img src="assets/icons/graduation-cap.svg" width="20" height="20" alt=""/> | **[Curriculum](curriculum/README.md)** | 11 modules from the math to applied systems: mechanisms, derivations, napkin math, traps and papers |
-| <img src="assets/icons/library-big.svg" width="20" height="20" alt=""/> | **[Library](library/README.md)** | 90 visual guides, papers and course notes across 19 hard topics, the sections worth your time in each, and a PDF fetcher |
-| <img src="assets/icons/building-2.svg" width="20" height="20" alt=""/> | **[Companies](companies/README.md)** | How to get into Anthropic, OpenAI, Google DeepMind, Meta and NVIDIA: teams, interview loops, reading lists and portfolio projects |
-| <img src="assets/icons/landmark.svg" width="20" height="20" alt=""/> | **[Research-engineer track](tracks/research-engineer/README.md)** | Interview loops, a question bank with answers, LLM system design, coding drills and a portfolio plan |
-| <img src="assets/icons/rocket.svg" width="20" height="20" alt=""/> | **[Founder track](tracks/founder/README.md)** | Problem selection, eval-driven products, unit economics, moats, go-to-market, fundraising and team |
-| <img src="assets/icons/briefcase-business.svg" width="20" height="20" alt=""/> | **[Career](career/README.md)** | Résumé, stories, outreach, market intel, negotiation and visas |
-| <img src="assets/icons/map.svg" width="20" height="20" alt=""/> | **[Roadmap](ROADMAP.md)** | A 12-month plan with exit criteria for each stage and two decision gates |
+| Part | What you get |
+|---|---|
+| <img src="assets/icons/flask-conical.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Labs](labs/README.md)** | 17 test-driven labs: a handout, a stub you implement, a test suite and a reference solution for each |
+| <img src="assets/icons/graduation-cap.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Curriculum](curriculum/README.md)** | 11 modules from the math to applied systems: mechanisms, derivations, napkin math, traps and papers |
+| <img src="assets/icons/library-big.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Library](library/README.md)** | 90 visual guides, papers and course notes across 19 hard topics, the sections worth your time in each, and a PDF fetcher |
+| <img src="assets/icons/building-2.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Companies](companies/README.md)** | How to get into Anthropic, OpenAI, Google DeepMind, Meta and NVIDIA: teams, interview loops, reading lists and portfolio projects |
+| <img src="assets/icons/landmark.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Research-engineer track](tracks/research-engineer/README.md)** | Interview loops, a question bank with answers, LLM system design, coding drills and a portfolio plan |
+| <img src="assets/icons/rocket.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Founder track](tracks/founder/README.md)** | Problem selection, eval-driven products, unit economics, moats, go-to-market, fundraising and team |
+| <img src="assets/icons/briefcase-business.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Career](career/README.md)** | Résumé, stories, outreach, market intel, negotiation and visas |
+| <img src="assets/icons/map.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Roadmap](ROADMAP.md)** | A 12-month plan with exit criteria for each stage and two decision gates |
 
 ## Start in five minutes
 
 ```bash
 git clone https://github.com/Lourdhu02/achilles.git && cd achilles
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
-pip install torch --index-url https://download.pytorch.org/whl/cpu   # NVIDIA: .../whl/cu128 · Apple Silicon: pip install torch
+pip install torch --index-url https://download.pytorch.org/whl/cpu   # NVIDIA GPU: .../whl/cu128
 pip install -r requirements.txt
 python -m pytest --impl=solution -q    # all 216 reference tests pass: your setup works
 pytest labs/01_autograd                # 37 failing tests: your first job
@@ -74,16 +74,16 @@ python tools/progress.py               # your scoreboard across all 17 labs
 ```
 
 > [!TIP]
-> **Nothing to install:** open the [Colab quickstart](https://colab.research.google.com/github/Lourdhu02/achilles/blob/main/notebooks/colab_quickstart.ipynb) (free T4 GPU) or a [Codespace](https://codespaces.new/Lourdhu02/achilles) (CPU, preconfigured). Per-platform instructions, including the RTX 50-series on Windows, are in [SETUP.md](SETUP.md).
+> **Nothing to install:** open the [Colab quickstart](https://colab.research.google.com/github/Lourdhu02/achilles/blob/main/notebooks/colab_quickstart.ipynb) (free T4 GPU) or a [Codespace](https://codespaces.new/Lourdhu02/achilles) (CPU, preconfigured). On a Mac, install torch with a plain `pip install torch`. Per-platform instructions, including the RTX 50-series on Windows, are in [SETUP.md](SETUP.md).
 
 ## Run it on what you have
 
-| | You have | What you can do | Setup |
-|:-:|---|---|---|
-| <img src="assets/icons/laptop.svg" width="20" height="20" alt=""/> | Any laptop, no GPU | Every lab's tests, the napkin math, the Triton kernels in their CPU interpreter (Linux), a small pretraining run | [CPU wheels](SETUP.md#cpu-only-any-os) |
-| <img src="assets/icons/microchip.svg" width="20" height="20" alt=""/> | NVIDIA GPU with 8 GB or more (RTX 5060 class) | Everything above, plus pretraining on TinyStories, Triton on the GPU, LoRA and DPO on a 0.5B model, GRPO, quantization and speculative-decoding benchmarks | [CUDA wheels](SETUP.md#nvidia-gpu-cuda) |
-| <img src="assets/icons/cpu.svg" width="20" height="20" alt=""/> | Apple Silicon Mac | Every test except the Triton ones; training on the Apple GPU (MPS) | [Apple Silicon](SETUP.md#apple-silicon-mps) |
-| <img src="assets/icons/cloud.svg" width="20" height="20" alt=""/> | Only a browser | Colab or Kaggle with a free T4 for the scale-up runs; Codespaces for a ready CPU environment | [Cloud notebooks](SETUP.md#4-cloud-notebooks-and-codespaces) |
+| You have | What you can do | Setup |
+|---|---|---|
+| <img src="assets/icons/laptop.svg" width="20" height="20" alt="" align="top"/>&nbsp; Any laptop, no GPU | Every lab's tests, the napkin math, the Triton kernels in their CPU interpreter (Linux), a small pretraining run | [CPU wheels](SETUP.md#cpu-only-any-os) |
+| <img src="assets/icons/microchip.svg" width="20" height="20" alt="" align="top"/>&nbsp; NVIDIA GPU with 8 GB or more (RTX 5060 class) | Everything above, plus pretraining on TinyStories, Triton on the GPU, LoRA and DPO on a 0.5B model, GRPO, quantization and speculative-decoding benchmarks | [CUDA wheels](SETUP.md#nvidia-gpu-cuda) |
+| <img src="assets/icons/cpu.svg" width="20" height="20" alt="" align="top"/>&nbsp; Apple Silicon Mac | Every test except the Triton ones; training on the Apple GPU (MPS) | [Apple Silicon](SETUP.md#apple-silicon-mps) |
+| <img src="assets/icons/cloud.svg" width="20" height="20" alt="" align="top"/>&nbsp; Only a browser | Colab or Kaggle with a free T4 for the scale-up runs; Codespaces for a ready CPU environment | [Cloud notebooks](SETUP.md#4-cloud-notebooks-and-codespaces) |
 
 `python tools/measure_gpu.py` measures your hardware's roofline and prints the `train.py --preset` that fits it. The [tier table](SETUP.md#what-you-can-do-on-each-tier) lists the minimum hardware for every experiment.
 
@@ -174,14 +174,14 @@ python tools/fetch_library.py --topic flashattention     # download PDFs to libr
 
 Each guide covers the teams where core-AI engineers work, what the interview loop tests, the papers to read, the portfolio projects that would impress that team, and a plan to get there. Volatile facts are dated, and each folder has a brief for refreshing them every quarter.
 
-| | Organization | The guide covers | Also |
-|:-:|---|---|---|
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [Anthropic](companies/anthropic/README.md) | Interpretability, alignment, RL, pretraining, inference; the values interview | [Reading list](companies/anthropic/reading-list.md) · [Projects](companies/anthropic/projects.md) |
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [OpenAI](companies/openai/README.md) | Research, post-training and reasoning, safety systems, scaling and inference | [Reading list](companies/openai/reading-list.md) · [Projects](companies/openai/projects.md) |
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [Google DeepMind](companies/google/README.md) | Gemini, research engineering, JAX and TPUs, hiring committees and team matching | [Reading list](companies/google/reading-list.md) · [Projects](companies/google/projects.md) |
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [Meta](companies/meta/README.md) | Superintelligence Labs, FAIR, Llama, PyTorch; the E-level loop | [Reading list](companies/meta/reading-list.md) · [Projects](companies/meta/projects.md) |
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [NVIDIA](companies/nvidia/README.md) | CUDA and kernels, TensorRT-LLM, deep-learning software, research; performance interviews | [Reading list](companies/nvidia/reading-list.md) · [Projects](companies/nvidia/projects.md) |
-| <img src="assets/icons/building-2.svg" width="18" height="18" alt=""/> | [More labs](companies/more-labs.md) | Microsoft, Apple, xAI, Mistral, DeepSeek, Qwen, Hugging Face, Cohere, Ai2, India-based labs, startups | |
+| Organization | The guide covers | Also |
+|---|---|---|
+| [Anthropic](companies/anthropic/README.md) | Interpretability, alignment, RL, pretraining, inference; the values interview | [Reading list](companies/anthropic/reading-list.md) · [Projects](companies/anthropic/projects.md) |
+| [OpenAI](companies/openai/README.md) | Research, post-training and reasoning, safety systems, scaling and inference | [Reading list](companies/openai/reading-list.md) · [Projects](companies/openai/projects.md) |
+| [Google DeepMind](companies/google/README.md) | Gemini, research engineering, JAX and TPUs, hiring committees and team matching | [Reading list](companies/google/reading-list.md) · [Projects](companies/google/projects.md) |
+| [Meta](companies/meta/README.md) | Superintelligence Labs, FAIR, Llama, PyTorch; the E-level loop | [Reading list](companies/meta/reading-list.md) · [Projects](companies/meta/projects.md) |
+| [NVIDIA](companies/nvidia/README.md) | CUDA and kernels, TensorRT-LLM, deep-learning software, research; performance interviews | [Reading list](companies/nvidia/reading-list.md) · [Projects](companies/nvidia/projects.md) |
+| [More labs](companies/more-labs.md) | Microsoft, Apple, xAI, Mistral, DeepSeek, Qwen, Hugging Face, Cohere, Ai2, India-based labs, startups | |
 
 ## Two tracks
 

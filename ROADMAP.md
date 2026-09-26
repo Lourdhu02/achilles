@@ -25,7 +25,7 @@ Milestone-based: **move on when the exit criteria are met, not when the calendar
 Two weeks before each gate, write your thresholds into the journal and date them, using the decision sheet in the [founder track](tracks/founder/README.md#decision-gate-put-it-in-roadmapmd). For example: "founder if 2 paid pilots or 5 LOIs with a price; research engineer if 3 onsites or 1 offer". The numbers are yours to choose; what matters is that you choose them before you see the evidence. At the gate, compare the evidence with the thresholds and move your hours towards the stronger side.
 
 ## Research-engineer applications (from May)
-Résumé v2 with a "Selected technical work" section → mocks every 2 weeks → waves: practice targets → core targets → frontier labs. Use [interview-loops](tracks/research-engineer/interview-loops.md), the [question bank](tracks/research-engineer/question-bank.md), and the [company guides](companies/README.md) for your two targets.
+Mocks start earlier: one every two weeks from March (month 6), per the [mock protocol](tracks/research-engineer/interview-loops.md#mock-interview-protocol). From May: résumé v2 with a "Selected technical work" section → application waves: practice targets → core targets → frontier labs. Use [interview-loops](tracks/research-engineer/interview-loops.md), the [question bank](tracks/research-engineer/question-bank.md), and the [company guides](companies/README.md) for your two targets.
 
 ## If you fall behind
 Cut breadth, never depth: skip stretch goals and spec-lab extras before skipping a core lab or a write-up. Two weeks behind: extend the stage. Six weeks behind: drop stage 7 to reading-only and keep 4, 5 and 6.
