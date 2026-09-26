@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup problems (CUDA, MPS, Windows, Colab)
+    url: https://github.com/Lourdhu02/achilles/blob/main/SETUP.md#troubleshooting
+    about: Most install problems are covered in the troubleshooting table. Please check it first.

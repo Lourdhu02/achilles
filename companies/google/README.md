@@ -17,7 +17,7 @@ Facts about teams, processes, offices and visas are marked "as of September 2026
 - [From India](#from-india)
 - [Sources](#sources)
 
-Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [agent-brief.md](agent-brief.md) (a quarterly re-research prompt).
+Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [refresh-brief.md](refresh-brief.md) (a quarterly re-research prompt).
 
 ---
 
@@ -124,9 +124,9 @@ Map every round to a file. Do the work in this order: labs first (they feed ever
 
 | Round | Prepare with | Target |
 |---|---|---|
-| DSA coding | [dsa-patterns.md](../../tracks/research-engineer/dsa-patterns.md), [coding-interviews.md § DSA](../../tracks/research-engineer/coding-interviews.md#dsa-for-big-tech-and-some-labs) | ~150 problems understood, mediums in ≤ 25 min |
+| DSA coding | [dsa-patterns.md](../../tracks/research-engineer/dsa-patterns.md), [coding-interviews.md § DSA](../../tracks/research-engineer/coding-interviews.md#dsa) | ~150 problems understood, mediums in ≤ 25 min |
 | GDM quiz | [module 01 math](../../curriculum/01-math.md), [module 03](../../curriculum/03-deep-learning.md), [question-bank.md](../../tracks/research-engineer/question-bank.md) | answer 30 rapid questions in 30 min with ≥ 80% correct |
-| ML coding | [coding-interviews.md drills](../../tracks/research-engineer/coding-interviews.md#ml-coding-drills-from-memory-timed-no-references); rewrite each drill in **JAX** as well as PyTorch | attention, RoPE, sampling, AdamW, DPO loss from memory |
+| ML coding | [coding-interviews.md drills](../../tracks/research-engineer/coding-interviews.md#ml-coding-drills); rewrite each drill in **JAX** as well as PyTorch | attention, RoPE, sampling, AdamW, DPO loss from memory |
 | ML knowledge / deep dive | [question-bank.md](../../tracks/research-engineer/question-bank.md), your journal write-ups | three "why"s deep on every résumé line |
 | Napkin math / systems | [lab 03](../../labs/03_napkin_math/README.md) redone with TPU v5e numbers (below), [module 02](../../curriculum/02-compute-and-hardware.md) | each estimate in < 2 min |
 | ML system design | [ml-system-design.md](../../tracks/research-engineer/ml-system-design.md) | serving on TPUs, an RL pipeline, an eval platform |

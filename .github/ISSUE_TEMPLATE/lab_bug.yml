@@ -1,0 +1,49 @@
+name: Lab or tool bug
+description: A test, reference solution, stub or tool misbehaves.
+title: "[lab] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: lab
+    attributes:
+      label: Lab or tool
+      options:
+        - 01 autograd
+        - 02 training core
+        - 03 napkin math
+        - 04 tokenizer
+        - 05 transformer / train.py
+        - 06 attention kernels
+        - 07 KV cache and sampling
+        - 08 scaling laws
+        - 09 parallelism
+        - 10 LoRA
+        - 11 DPO
+        - 12 GRPO
+        - 13 quantization
+        - 14 speculative decoding
+        - 15 eval statistics
+        - 16 interpretability
+        - 17 retrieval
+        - tools/ (progress, measure_gpu, make_exercises, fetch_library, check_links)
+        - notebook, dev container or CI
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: >-
+        The command you ran and the full output. If a test accepts a wrong implementation
+        or rejects a correct one, say which and why.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, torch version, and device (CPU, CUDA GPU model, or MPS).
+      placeholder: Windows 11, Python 3.12, torch 2.11.0+cu128, RTX 5060 Laptop
+    validations:
+      required: true

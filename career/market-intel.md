@@ -3,7 +3,7 @@
 Where core-AI engineers work, which guide in this repo covers each organization, and how to research a specific team before you apply. Company-level detail (teams, hiring processes, reading lists, projects) lives in the [company guides](../companies/README.md); this page is the map and the method.
 
 > [!WARNING]
-> **Volatile. Last reviewed September 2026.** Teams, locations, interview formats and compensation change often. Re-verify quarterly on careers pages, engineering blogs, Levels.fyi and in conversations with employees. Each company folder has an `agent-brief.md` for its quarterly refresh.
+> **Volatile. Last reviewed September 2026.** Teams, locations, interview formats and compensation change often. Re-verify quarterly on careers pages, engineering blogs, Levels.fyi and in conversations with employees. Each company folder has a `refresh-brief.md` for its quarterly refresh.
 
 ## Target map
 

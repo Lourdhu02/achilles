@@ -89,7 +89,7 @@ pip install -r requirements.txt       # numpy, regex, pytest (torch is already s
 Optional extras:
 ```bash
 pip install triton                    # Linux CPU only: runs the lab 06 Triton tests in the interpreter
-pip install -r requirements-data.txt  # tiktoken, datasets, huggingface_hub for the scale-up runs
+pip install -r requirements-data.txt  # tiktoken, datasets, huggingface_hub, transformers for the scale-up runs
 ```
 CUDA builds of torch on Linux already include Triton. On macOS there is no Triton; those tests skip.
 

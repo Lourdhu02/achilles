@@ -1,0 +1,185 @@
+# Docs site for Achilles. Build with: python tools/build_docs.py (see that file).
+site_name: Achilles
+site_description: Core AI from first principles. Build it, measure it, explain it.
+site_url: https://lourdhu02.github.io/achilles/
+repo_url: https://github.com/Lourdhu02/achilles
+repo_name: Lourdhu02/achilles
+edit_uri: edit/main/
+copyright: MIT License. Built from the Achilles repository.
+docs_dir: site_src
+site_dir: site
+use_directory_urls: false
+hooks:
+  - tools/docs_hooks.py
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: info
+    unrecognized_links: info
+
+theme:
+  name: material
+  favicon: assets/icons/brain-circuit.svg
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - footnotes
+  - tables
+  - def_list
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+not_in_nav: |
+  /companies/*/refresh-brief.md
+  /journal/templates/*.md
+  /career/resume/guide.md
+
+nav:
+  - Home:
+      - README.md
+      - Setup: SETUP.md
+      - Roadmap: ROADMAP.md
+      - Contributing: CONTRIBUTING.md
+      - Code of conduct: CODE_OF_CONDUCT.md
+  - Curriculum:
+      - curriculum/README.md
+      - 00 How to learn: curriculum/00-learning-os.md
+      - 01 Math: curriculum/01-math.md
+      - 02 Compute and hardware: curriculum/02-compute-and-hardware.md
+      - 03 Deep learning: curriculum/03-deep-learning.md
+      - 04 Transformers: curriculum/04-transformers.md
+      - 05 Pretraining: curriculum/05-pretraining.md
+      - 06 Post-training: curriculum/06-post-training.md
+      - 07 Inference: curriculum/07-inference.md
+      - 08 Evaluation and research: curriculum/08-evaluation-and-research.md
+      - 09 Interpretability and safety: curriculum/09-interpretability-and-safety.md
+      - 10 Applied LLM systems: curriculum/10-applied-llm-systems.md
+      - Papers: curriculum/papers.md
+      - Resources: curriculum/resources.md
+  - Labs:
+      - labs/README.md
+      - 01 Autograd: labs/01_autograd/README.md
+      - 02 Training core: labs/02_training_core/README.md
+      - 03 Napkin math: labs/03_napkin_math/README.md
+      - 04 Tokenizer: labs/04_tokenizer/README.md
+      - 05 Transformer: labs/05_transformer/README.md
+      - 06 Attention kernels: labs/06_attention_kernels/README.md
+      - 07 KV cache and sampling: labs/07_kv_cache_sampling/README.md
+      - 08 Scaling laws: labs/08_scaling_laws/README.md
+      - 09 Parallelism: labs/09_parallelism/README.md
+      - 10 LoRA: labs/10_lora/README.md
+      - 11 DPO: labs/11_dpo/README.md
+      - 12 GRPO: labs/12_grpo/README.md
+      - 13 Quantization: labs/13_quantization/README.md
+      - 14 Speculative decoding: labs/14_speculative_decoding/README.md
+      - 15 Eval statistics: labs/15_eval_stats/README.md
+      - 16 Interpretability: labs/16_interpretability/README.md
+      - 17 Retrieval: labs/17_retrieval/README.md
+  - Library: library/README.md
+  - Companies:
+      - companies/README.md
+      - Anthropic:
+          - companies/anthropic/README.md
+          - Reading list: companies/anthropic/reading-list.md
+          - Projects: companies/anthropic/projects.md
+      - OpenAI:
+          - companies/openai/README.md
+          - Reading list: companies/openai/reading-list.md
+          - Projects: companies/openai/projects.md
+      - Google DeepMind:
+          - companies/google/README.md
+          - Reading list: companies/google/reading-list.md
+          - Projects: companies/google/projects.md
+      - Meta:
+          - companies/meta/README.md
+          - Reading list: companies/meta/reading-list.md
+          - Projects: companies/meta/projects.md
+      - NVIDIA:
+          - companies/nvidia/README.md
+          - Reading list: companies/nvidia/reading-list.md
+          - Projects: companies/nvidia/projects.md
+      - More labs: companies/more-labs.md
+  - Tracks:
+      - Research engineer:
+          - tracks/research-engineer/README.md
+          - Interview loops: tracks/research-engineer/interview-loops.md
+          - Question bank: tracks/research-engineer/question-bank.md
+          - ML system design: tracks/research-engineer/ml-system-design.md
+          - Coding interviews: tracks/research-engineer/coding-interviews.md
+          - DSA patterns: tracks/research-engineer/dsa-patterns.md
+          - Portfolio: tracks/research-engineer/portfolio.md
+      - Founder:
+          - tracks/founder/README.md
+          - 01 Problem selection: tracks/founder/01-problem-selection.md
+          - 02 AI product engineering: tracks/founder/02-ai-product-engineering.md
+          - 03 Unit economics: tracks/founder/03-unit-economics.md
+          - 04 Moats and flywheels: tracks/founder/04-moats-and-flywheels.md
+          - 05 Go-to-market: tracks/founder/05-go-to-market.md
+          - 06 Fundraising and structure: tracks/founder/06-fundraising-and-structure.md
+          - 07 Team and operating: tracks/founder/07-team-and-operating.md
+  - Career:
+      - career/README.md
+      - Profile: career/profile.md
+      - Stories: career/stories.md
+      - Applications: career/applications.md
+      - Outreach: career/outreach.md
+      - Market intel: career/market-intel.md
+      - Public presence: career/public-presence.md
+      - Offers and negotiation: career/offers-and-negotiation.md
+      - Visa and relocation: career/visa-and-relocation.md
+      - Sustainability: career/sustainability.md
+  - Journal: journal/README.md

@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
         if exercise.exists() and not args.force:
             print(f"keep {exercise.relative_to(ROOT)} (exists; use --force to regenerate)")
             continue
-        exercise.write_text(strip_solution(solution.read_text(), name))
+        exercise.write_text(strip_solution(solution.read_text(encoding="utf-8"), name), encoding="utf-8")
         print(f"wrote {exercise.relative_to(ROOT)}")
     return 0
 

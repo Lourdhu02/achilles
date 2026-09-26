@@ -1,0 +1,9 @@
+# Core dependencies for every lab. Install torch FIRST, from the index for your hardware (SETUP.md):
+#   CPU only (Linux, Windows): pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   NVIDIA GPU:                pip install torch --index-url https://download.pytorch.org/whl/cu128
+#   macOS (Apple Silicon):     pip install torch
+# then: pip install -r requirements.txt
+torch>=2.7
+numpy>=1.26
+regex>=2024.4
+pytest>=8.0

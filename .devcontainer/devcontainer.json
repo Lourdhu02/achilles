@@ -1,0 +1,17 @@
+{
+  "name": "Achilles (CPU)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt triton && python -m pytest --impl=solution -q",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
+      "settings": {
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["labs"]
+      }
+    },
+    "codespaces": {
+      "openFiles": ["labs/01_autograd/README.md"]
+    }
+  }
+}

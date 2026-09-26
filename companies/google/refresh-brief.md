@@ -94,7 +94,7 @@ You are refreshing the Google DeepMind / Google AI careers guide in companies/go
 (https://github.com/Lourdhu02/achilles). Today is <DATE>.
 
 Goal: every volatile fact is correct and dated "as of <Month Year>".
-Use companies/google/agent-brief.md: check each row of the baseline table, answer the
+Use companies/google/refresh-brief.md: check each row of the baseline table, answer the
 open questions, and follow the rules (primary sources first; label candidate reports;
 never invent numbers, URLs, names or dates; keep the listed headings unchanged; no emoji).
 

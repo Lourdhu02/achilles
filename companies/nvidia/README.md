@@ -4,7 +4,7 @@ NVIDIA hires core-AI engineers into the software that makes its GPUs useful for 
 This guide covers where those teams sit, what they test, how to prepare with this repo, and a 90-day plan for an ML engineer in India.
 
 > [!IMPORTANT]
-> Team names, org charts, office lists and hiring steps change often. Everything marked "as of September 2026" should be re-verified on NVIDIA's careers site and the linked repos before you act. Refresh this page each quarter with [agent-brief.md](agent-brief.md).
+> Team names, org charts, office lists and hiring steps change often. Everything marked "as of September 2026" should be re-verified on NVIDIA's careers site and the linked repos before you act. Refresh this page each quarter with [refresh-brief.md](refresh-brief.md).
 
 ## Contents
 
@@ -19,7 +19,7 @@ This guide covers where those teams sit, what they test, how to prepare with thi
 - [From India](#from-india)
 - [Sources](#sources)
 
-Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [agent-brief.md](agent-brief.md)
+Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [refresh-brief.md](refresh-brief.md)
 
 ## At a glance
 

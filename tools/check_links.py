@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 FENCE = re.compile(r"```.*?```", flags=re.S)
 EXTERNAL = ("http://", "https://", "mailto:")
+SKIP_DIRS = {"site", "site_src", "data", "runs", "node_modules", "venv"}  # build output, local data
 
 
 def slugify(heading: str) -> str:
@@ -42,7 +43,7 @@ def main() -> int:
     broken = []
     for md in sorted(ROOT.rglob("*.md")):
         rel = md.relative_to(ROOT)
-        if any(part.startswith(".") for part in rel.parts):
+        if any(part.startswith(".") or part in SKIP_DIRS for part in rel.parts[:-1]):
             continue
         for target in LINK.findall(FENCE.sub("", md.read_text(encoding="utf-8"))):
             if target.startswith(EXTERNAL):

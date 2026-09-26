@@ -1,7 +1,8 @@
-# Curriculum — first principles to frontier
+# Curriculum: first principles to frontier
 
-Eleven modules. Each follows the same anatomy: **why it matters → mechanisms with derivations → napkin math → traps → lab → check yourself → papers.**
-Read a module, then do its lab. Understanding shows up in what you build and measure, not in what you have read.
+Eleven modules, from the math to shipping LLM systems. Read a module, then do its lab: understanding shows up in what you build and measure, not in what you have read.
+
+Every module has the same anatomy: **why it matters → mechanisms with derivations → worked numbers → interview traps → CPU vs GPU notes → check yourself → visual guides → read next.**
 
 ```
 00 learning OS ─▶ 01 math ─▶ 02 compute & hardware ─▶ 03 deep learning ─▶ 04 transformers
@@ -15,21 +16,41 @@ Read a module, then do its lab. Understanding shows up in what you build and mea
                      09 interpretability & safety              tracks/founder ◀┘
 ```
 
-| # | module | labs | mastery target |
+| # | Module | Labs | Mastery target |
 |---|---|---|---|
 | 00 | [How to learn at this level](00-learning-os.md) | — | a weekly loop that produces artifacts |
-| 01 | [Math](01-math.md) | 01 | derive any layer's backward pass; PPO/DPO from their objectives |
-| 02 | [Compute & hardware](02-compute-and-hardware.md) | 03 | predict runtime/memory within 2× before measuring |
+| 01 | [Math](01-math.md) | 01 | derive any layer's backward pass; PPO and DPO from their objectives |
+| 02 | [Compute & hardware](02-compute-and-hardware.md) | 03 | predict runtime and memory within 2× before measuring |
 | 03 | [Deep learning](03-deep-learning.md) | 01, 02 | debug a diverging run from its curves |
 | 04 | [Transformers](04-transformers.md) | 04, 05 | implement a modern LLM from a blank file |
 | 05 | [Pretraining](05-pretraining.md) | 08, 09 | plan a 7B run end to end: data, compute, parallelism |
-| 06 | [Post-training](06-post-training.md) | 10–12 | implement SFT/DPO/GRPO and name their failure modes |
+| 06 | [Post-training](06-post-training.md) | 10–12 | implement SFT, DPO and GRPO and name their failure modes |
 | 07 | [Inference](07-inference.md) | 06, 07, 13, 14 | size and optimize a serving system |
 | 08 | [Evaluation & research](08-evaluation-and-research.md) | 15 | run an ablation that survives review |
 | 09 | [Interpretability & safety](09-interpretability-and-safety.md) | 16 | find a circuit; argue a safety position |
 | 10 | [Applied LLM systems](10-applied-llm-systems.md) | 17 | ship an eval-driven RAG or agent product |
 
-**Mastery levels** (rate yourself monthly in the journal): 0 heard of it · 1 can explain · 2 can derive · 3 implemented and tested it · 4 predicted the numbers before measuring · 5 extended it or found where it breaks.
+## Mastery levels
+
+Rate yourself monthly in the [journal](../journal/README.md):
+
+| Level | Meaning |
+|:-:|---|
+| 0 | heard of it |
+| 1 | can explain it |
+| 2 | can derive it |
+| 3 | implemented and tested it |
+| 4 | predicted the numbers before measuring |
+| 5 | extended it, or found where it breaks |
+
 Core-AI interviews probe levels 3–4. Research roles probe level 5.
 
-Also: [papers.md](papers.md) (reading list by module) · [resources.md](resources.md) (courses, books, communities).
+## Going further
+
+- [papers.md](papers.md): the reading list by module, with what to take from each paper.
+- [resources.md](resources.md): courses, books and communities, curated to fewer and better.
+- [The library](../library/README.md): the best visual explainer and the definitive paper for 19 hard topics, and which sections to read.
+- [Company guides](../companies/README.md): which modules each frontier lab's interviews lean on.
+
+> [!TIP]
+> Every module ends with *CPU vs GPU notes*. Nothing in the curriculum requires a GPU to understand; the GPU only changes how large your experiments can be.

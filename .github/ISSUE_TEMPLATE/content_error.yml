@@ -1,0 +1,27 @@
+name: Wrong fact, number or link
+description: A derivation, number, claim or link in the docs is wrong or out of date.
+title: "[content] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Where
+      description: File and section, or a link to the line.
+      placeholder: curriculum/07-inference.md, section 4
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong
+      description: Quote the text, then say what it should be.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: A source (paper, docs, official page) or a calculation that shows the correct value.
+    validations:
+      required: true
