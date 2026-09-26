@@ -118,7 +118,7 @@ So gradient checks belong in float64: in float32 you cannot tell a subtle bug fr
 - **MLE = minimizing cross-entropy = minimizing forward KL to the data.** $\mathbb{E}_{x\sim p}[-\log q_\theta(x)] = H(p) + \mathrm{KL}(p\|q_\theta)$ and $H(p)$ does not depend on $\theta$. That is all pretraining is. Loss in nats per token; divide by $\ln 2$ for bits.
 - **KL is asymmetric.** Forward $\mathrm{KL}(p\|q)$ is mode-covering ($q$ is punished wherever $p > 0$ and $q \approx 0$); reverse $\mathrm{KL}(q\|p)$ is mode-seeking. Worked: $p = (0.5, 0.5)$, $q = (0.9, 0.1)$ gives $\mathrm{KL}(p\|q) = 0.511$ nats but $\mathrm{KL}(q\|p) = 0.368$. RLHF's KL penalty is reverse KL from the policy to the reference; SFT and pretraining are forward KL; on-policy distillation uses reverse KL.
 - **Log-derivative trick.** $\nabla_\theta\mathbb{E}_{x\sim p_\theta}[f(x)] = \sum_x f(x)\nabla_\theta p_\theta(x) = \sum_x f(x)p_\theta(x)\nabla_\theta\log p_\theta(x) = \mathbb{E}[f(x)\nabla_\theta\log p_\theta(x)]$. It needs samples and $\log p$, not a differentiable $f$: the basis of REINFORCE, PPO and GRPO.
-- **Baselines are free.** $\mathbb{E}[\nabla\log p_\theta] = \sum_x\nabla p_\theta(x) = \nabla\sum_x p_\theta(x) = \nabla 1 = 0$, so subtracting any $b$ that does not depend on the sampled $x$ leaves the gradient unbiased and can cut its variance enormously. GRPO's group-mean reward is such a baseline (it depends on the other samples, which introduces a small bias that vanishes as the group grows).
+- **Baselines are free.** $\mathbb{E}[\nabla\log p_\theta] = \sum_x\nabla p_\theta(x) = \nabla\sum_x p_\theta(x) = \nabla 1 = 0$, so subtracting any $b$ that does not depend on the sampled $x$ leaves the gradient unbiased and can cut its variance enormously. A leave-one-out mean of the other samples' rewards (RLOO) is exactly such a baseline. GRPO's group mean also includes the sample's own reward, which scales the expected gradient by $(1 - 1/G)$ for group size $G$ without changing its direction; dividing by the group's standard deviation is what introduces a genuine bias (Liu et al., *Understanding R1-Zero-Like Training*, [arXiv:2503.20783](https://arxiv.org/abs/2503.20783)).
 - **Importance sampling:** $\mathbb{E}_p[f] = \mathbb{E}_q[f\,p/q]$. PPO's ratio $\pi_\text{new}/\pi_\text{old}$ and speculative decoding's acceptance rule $\min(1, p/q)$ are both importance-sampling ideas. Variance explodes when $q$ puts little mass where $p$ is large, which is why PPO clips the ratio.
 - **Bradley–Terry:** $P(a\succ b) = \sigma(r_a - r_b)$. Reward models, DPO and arena leaderboards all use it.
 - **KL estimators** from samples $x\sim q$, with $\rho = p(x)/q(x)$: $k_1 = -\log\rho$ (unbiased for $\mathrm{KL}(q\|p)$, high variance, can be negative); $k_3 = \rho - 1 - \log\rho$ (unbiased because $\mathbb{E}_q[\rho] = 1$, always $\ge 0$, lower variance; used in GRPO).
@@ -130,7 +130,7 @@ So gradient checks belong in float64: in float32 you cannot tell a subtle bug fr
 **Worked numbers, $\kappa = 100$:** plain GD contracts by 0.980 per step, about 50 steps per factor of $e$; momentum contracts by 0.818, about 5 steps per factor of $e$. That $\sqrt{\kappa}$ speed-up is why every practical optimizer has momentum.
 
 - **Preconditioning** changes the effective $\kappa$. Adam approximates a diagonal preconditioner; Shampoo and SOAP use Kronecker-factored ones; Muon orthogonalizes the update so all singular directions of a weight matrix move equally.
-- **Edge of stability.** In practice, full-batch GD on neural networks drives the sharpness (top Hessian eigenvalue) up until it hovers near $2/\eta$ and the loss keeps decreasing non-monotonically (Cohen et al., 2021, [arXiv:2103.00065](https://arxiv.org/abs/2103.00065)). The quadratic picture predicts the threshold; networks adapt to it.
+- **Edge of stability.** In practice, full-batch GD on neural networks drives the sharpness (top Hessian eigenvalue) up until it hovers near $2/\eta$ and the loss keeps decreasing non-monotonically (Cohen et al., *Gradient Descent on Neural Networks Typically Occurs at the Edge of Stability*, ICLR 2021). The quadratic picture predicts the threshold; networks adapt to it.
 - **Warmup** exists because early curvature is high and Adam's second-moment estimates are unreliable ([03 §5](03-deep-learning.md#5-schedules-and-batch-size)).
 - **Noise and batch size.** SGD noise scales roughly with $\eta/B$. Past the *critical batch size* (McCandlish et al., 2018, [arXiv:1812.06162](https://arxiv.org/abs/1812.06162)), larger batches give almost no reduction in steps and only waste compute.
 
@@ -149,7 +149,7 @@ Full treatment: [08 §2](08-evaluation-and-research.md#2-statistics-error-bars-o
 
 ## Interview traps
 
-- **"Backprop computes the Jacobian."** It computes VJPs. For a 4096×4096 matmul the Jacobian with respect to the weights alone would have $4096^2$ columns per output element; nobody forms it.
+- **"Backprop computes the Jacobian."** It computes VJPs. For a product of two 4096×4096 matrices, the Jacobian of the output with respect to one input has $4096^4 \approx 2.8\cdot10^{14}$ entries (over 1 PB in fp32); nobody forms it.
 - **Transposes by guesswork.** Say "the gradient has the shape of the variable" and derive with the trace trick; do not pattern-match on square matrices.
 - **Forgetting the mean over the batch** in the cross-entropy gradient (the $1/N$), or dividing twice.
 - **Softmax Jacobian as `y(1−y)`.** That is only the diagonal; the off-diagonal terms $-y_iy_j$ are what make rows sum to zero.
@@ -198,7 +198,7 @@ $\mathbb{E}_{x\sim p_\theta}[b\,\nabla\log p_\theta(x)] = b\sum_x\nabla p_\theta
 
 <details><summary>7. Why is the RLHF KL penalty estimated per token from samples instead of computed exactly?</summary>
 
-The exact KL between two sequence distributions sums over all possible sequences, which is exponential in length. Per token, the exact KL over the vocabulary is possible but costs a full-vocabulary pass for both models at every position; with samples already drawn from the policy, the log-ratio (k1) or k3 on the sampled tokens is an unbiased estimate at almost no extra cost.
+The quantity being penalized is the sequence-level KL, a sum over exponentially many sequences, so it has to be estimated from sampled sequences. By the chain rule it equals the expected sum of per-token KLs along the policy's own samples. Within a sampled sequence you could compute each per-token KL exactly over the vocabulary from logits both models already produce (some implementations do), but that holds two V-sized distributions per position in memory; the sampled-token estimators k1 and k3 are cheaper and still unbiased for the sequence KL.
 </details>
 
 <details><summary>8. Gradient descent on a quadratic with L = 10, μ = 0.1. Largest stable step, best step, and roughly how many steps to shrink the error by 1,000×?</summary>

@@ -32,7 +32,7 @@ Pick two: one open-source contribution (project 1 or 4) and one research-style r
 
 **Scope.** Two parts. (a) Quantize a small model (Llama 3.2 1B or a Qwen model of similar size) with torchao's `quantize_` API using several configs (int8 weight-only, int8 dynamic activation + int8 weight, int4 weight-only) and compare against your own INT8/INT4 code from lab 13. (b) Use what you learned to land a PR in `pytorch/ao`: start with an issue labelled `good first issue`, a docs gap you hit, a missing test, or a benchmark script. If a config fails on your GPU's architecture (the RTX 5060 is Blackwell, sm_120), a minimal reproduction in an issue is itself a useful contribution.
 
-**Predict first.** Weight memory for each config: a 1.24B model is about 2.5 GB in BF16, 1.24 GB in int8 and about 0.62 GB plus scales in int4. Decode at batch size 1 is memory-bound, so predict tokens/s from your measured bandwidth ([lab 03](../../labs/03_napkin_math/README.md), `tools/measure_gpu.py`).
+**Predict first.** Weight memory for each config: a 1.24B model is about 2.5 GB in BF16, 1.24 GB in int8 and about 0.62 GB plus scales in int4. `quantize_` targets linear layers by default, so check what happens to the tied 128K-vocabulary embedding (about 263M parameters): it may stay in BF16, a common reason predictions miss. Decode at batch size 1 is memory-bound, so predict tokens/s from your measured bandwidth ([lab 03](../../labs/03_napkin_math/README.md), `tools/measure_gpu.py`).
 
 **Labs.** [13](../../labs/13_quantization/README.md), [03](../../labs/03_napkin_math/README.md).
 
@@ -157,5 +157,5 @@ Pick two: one open-source contribution (project 1 or 4) and one research-style r
 ## How to present any of these to Meta
 
 - **Put the link to the merged PR or the reproduction command at the top** of your résumé line and write-up.
-- **Quantify in the résumé bullet**: "Cut KV-cache memory 3.8x at 128K context with 3:1 local/global attention; loss within 0.01 nats (3 seeds)".
+- **Quantify in the résumé bullet**, with your own measured numbers, in this shape: "Cut KV-cache memory Nx at 128K context with 3:1 local/global attention; validation loss within X nats of all-global (3 seeds)".
 - **Prepare the 20-minute version** for the project deep dive: the mechanism, the prediction, the surprise, the next experiment. See [portfolio.md](../../tracks/research-engineer/portfolio.md).
