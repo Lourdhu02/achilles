@@ -506,7 +506,7 @@ Test subversion (special-cased inputs, modified tests, early successful exit); a
 
 ## Read next
 
-- **Papers, in this order:** InstructGPT → PPO → DPO → DeepSeekMath (GRPO) → DeepSeek-R1 → DAPO and Dr. GRPO → Gao et al. on overoptimization. Full list in [papers.md](papers.md#post-training-06).
+- **Papers, in this order:** InstructGPT → PPO → DPO → DeepSeekMath (GRPO) → DeepSeek-R1 → DAPO and Dr. GRPO → Gao et al. on overoptimization. Full list in [papers.md](papers.md#06-post-training).
 - **Build:** [lab 10](../labs/10_lora/README.md) → [lab 11](../labs/11_dpo/README.md) → [lab 12](../labs/12_grpo/README.md), then the §8 recipe.
 - **Next module:** [07 Inference](07-inference.md): rollouts are an inference problem, and everything there makes RL cheaper.
 - **Evaluate what you trained:** [08 Evaluation and research](08-evaluation-and-research.md).

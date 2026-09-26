@@ -4,7 +4,7 @@ A practical guide to core-AI engineering roles in Meta's AI organizations: Meta 
 It covers where the work happens, what the interview loop tests, which signals count, and a 90-day plan for an ML engineer in India with about two years of experience.
 
 > [!IMPORTANT]
-> Meta reorganized its AI work at least four times between April 2025 and March 2026. Team names, leaders, open-weights policy, interview formats and India roles below are dated **as of September 2026** and many come from press reports, which are labelled. Re-verify on [metacareers.com](https://www.metacareers.com/) and Meta's own blogs before acting, and refresh this page each quarter with [agent-brief.md](agent-brief.md).
+> Meta reorganized its AI work at least four times between April 2025 and March 2026. Team names, leaders, open-weights policy, interview formats and India roles below are dated **as of September 2026** and many come from press reports, which are labelled. Re-verify on [metacareers.com](https://www.metacareers.com/) and Meta's own blogs before acting, and refresh this page each quarter with [refresh-brief.md](refresh-brief.md).
 
 ## Contents
 
@@ -19,7 +19,7 @@ It covers where the work happens, what the interview loop tests, which signals c
 - [From India](#from-india)
 - [Sources](#sources)
 
-Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [agent-brief.md](agent-brief.md)
+Companion files: [reading-list.md](reading-list.md) · [projects.md](projects.md) · [refresh-brief.md](refresh-brief.md)
 
 ## At a glance
 

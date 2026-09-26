@@ -4,9 +4,9 @@ A guide to joining Anthropic as a core AI engineer: a research engineer or scien
 It covers where these people work, what Anthropic says it values, how its hiring works (its own guidance first, candidate reports second), and a 90-day plan for a 2-year ML engineer in India built on this repo's labs.
 
 > [!IMPORTANT]
-> Team names, open roles, offices, headcount and hiring steps change often. Every volatile fact below is marked **as of September 2026** and linked to its source. Re-check them before you apply; [agent-brief.md](agent-brief.md) is a quarterly checklist for doing that.
+> Team names, open roles, offices, headcount and hiring steps change often. Every volatile fact below is marked **as of September 2026** and linked to its source. Re-check them before you apply; [refresh-brief.md](refresh-brief.md) is a quarterly checklist for doing that.
 
-Companion files: [reading-list.md](reading-list.md) (what to read, in order) · [projects.md](projects.md) (portfolio projects that fit an 8 GB GPU) · [agent-brief.md](agent-brief.md) (refresh the facts).
+Companion files: [reading-list.md](reading-list.md) (what to read, in order) · [projects.md](projects.md) (portfolio projects that fit an 8 GB GPU) · [refresh-brief.md](refresh-brief.md) (refresh the facts).
 
 ## Contents
 - [At a glance](#at-a-glance)
@@ -118,7 +118,7 @@ Map each round to material you already have. The general versions of these round
 | Round | What to drill | Where |
 |---|---|---|
 | Online assessment / practical coding | Multi-part builds that grow in scope (a class you extend three times), timed, in a plain editor, no AI | [coding-interviews.md](../../tracks/research-engineer/coding-interviews.md#practical-engineering-drills); rewrite labs [04](../../labs/04_tokenizer/README.md) and [07](../../labs/07_kv_cache_sampling/README.md) from memory |
-| ML coding | Attention, sampling, a training loop, DPO and GRPO losses, an SAE, in 15–30 minutes each | [coding-interviews.md](../../tracks/research-engineer/coding-interviews.md#ml-coding-drills-from-memory-timed-no-references); labs [05](../../labs/05_transformer/README.md), [11](../../labs/11_dpo/README.md), [12](../../labs/12_grpo/README.md), [16](../../labs/16_interpretability/README.md) |
+| ML coding | Attention, sampling, a training loop, DPO and GRPO losses, an SAE, in 15–30 minutes each | [coding-interviews.md](../../tracks/research-engineer/coding-interviews.md#ml-coding-drills); labs [05](../../labs/05_transformer/README.md), [11](../../labs/11_dpo/README.md), [12](../../labs/12_grpo/README.md), [16](../../labs/16_interpretability/README.md) |
 | Debugging | A broken training run, a silent eval bug | [Module 03 §7](../../curriculum/03-deep-learning.md#7-debugging-a-training-run-the-playbook) |
 | Systems and napkin math | "How many GPUs to serve this?", "Why is decode memory-bound?" | [Lab 03](../../labs/03_napkin_math/README.md), [module 02](../../curriculum/02-compute-and-hardware.md) |
 | ML system design | An RL training pipeline, an eval platform, a jailbreak-classifier service, an inference fleet | [ml-system-design.md](../../tracks/research-engineer/ml-system-design.md) |

@@ -3,11 +3,11 @@
 A working guide to getting hired as a core AI engineer at OpenAI: research engineering on reasoning and post-training, pretraining and scaling, safety, inference, and the applied teams that ship Codex, ChatGPT and the API. It separates what OpenAI says in its own words from what others report, maps every interview round to a lab in this repo, and ends with a 90-day plan for a 2-year ML engineer in India.
 
 > [!IMPORTANT]
-> Everything about teams, offices, headcount, programs and process here is **as of September 2026** and changes fast. OpenAI reorganized its safety teams twice in under two years. Re-verify on [openai.com/careers](https://openai.com/careers/) and the [interview guide](https://openai.com/interview-guide/) before acting, or run [agent-brief.md](agent-brief.md).
+> Everything about teams, offices, headcount, programs and process here is **as of September 2026** and changes fast. OpenAI reorganized its safety teams twice in under two years. Re-verify on [openai.com/careers](https://openai.com/careers/) and the [interview guide](https://openai.com/interview-guide/) before acting, or run [refresh-brief.md](refresh-brief.md).
 
 **Contents:** [At a glance](#at-a-glance) · [Where core-AI people work](#where-core-ai-people-work) · [What they value](#what-they-value) · [The hiring process](#the-hiring-process) · [How to prepare with this repo](#how-to-prepare-with-this-repo) · [Signals that get you noticed](#signals-that-get-you-noticed-ranked) · [90-day plan](#90-day-plan-2-yoe-ml-engineer-in-india) · [Tips and common mistakes](#tips-and-common-mistakes) · [From India](#from-india) · [Sources](#sources)
 
-Also in this folder: [reading-list.md](reading-list.md) (27 papers, 5 marked "read first") · [projects.md](projects.md) (9 portfolio projects sized for 8 GB or CPU) · [agent-brief.md](agent-brief.md) (quarterly refresh).
+Also in this folder: [reading-list.md](reading-list.md) (27 papers, 5 marked "read first") · [projects.md](projects.md) (9 portfolio projects sized for 8 GB or CPU) · [refresh-brief.md](refresh-brief.md) (quarterly refresh).
 
 ---
 

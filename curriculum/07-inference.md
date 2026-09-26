@@ -453,7 +453,7 @@ Output lengths are heavy-tailed. KV use exceeds the plan, the scheduler preempts
 
 ## Read next
 
-- **Papers, in this order:** Pope et al. 2022 ([2211.05102](https://arxiv.org/abs/2211.05102)) → vLLM → Sarathi-Serve → DistServe → Leviathan et al. → FlashAttention 1 and 2 → GPTQ → AWQ → SmoothQuant. Full list in [papers.md](papers.md#inference-07).
+- **Papers, in this order:** Pope et al. 2022 ([2211.05102](https://arxiv.org/abs/2211.05102)) → vLLM → Sarathi-Serve → DistServe → Leviathan et al. → FlashAttention 1 and 2 → GPTQ → AWQ → SmoothQuant. Full list in [papers.md](papers.md#07-inference).
 - **Build:** [lab 07](../labs/07_kv_cache_sampling/README.md) → [lab 06](../labs/06_attention_kernels/README.md) → [lab 13](../labs/13_quantization/README.md) → [lab 14](../labs/14_speculative_decoding/README.md).
 - **Previous module:** [06 Post-training](06-post-training.md): RL rollouts are an inference workload.
 - **Design practice:** [ML system design](../tracks/research-engineer/ml-system-design.md) for serving-system interview questions.

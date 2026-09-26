@@ -1,7 +1,7 @@
 PY ?= python
 LAB ?= 01_autograd
 
-.PHONY: help lab progress solutions exercises links gpu
+.PHONY: help lab progress solutions exercises links gpu docs docs-serve
 
 help:
 	@echo "make lab LAB=01_autograd   test YOUR implementation of one lab"
@@ -10,6 +10,8 @@ help:
 	@echo "make exercises             create missing exercise stubs from solutions"
 	@echo "make links                 check relative links in all markdown files"
 	@echo "make gpu                   measure your GPU's roofline (matmul FLOP/s, bandwidth)"
+	@echo "make docs                  build the docs site into site/ (pip install -r requirements-docs.txt)"
+	@echo "make docs-serve            live preview of the docs site at http://127.0.0.1:8000"
 
 lab:
 	$(PY) -m pytest labs/$(LAB) -x
@@ -28,3 +30,9 @@ links:
 
 gpu:
 	$(PY) tools/measure_gpu.py
+
+docs:
+	$(PY) tools/build_docs.py
+
+docs-serve:
+	$(PY) tools/build_docs.py --serve

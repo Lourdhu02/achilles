@@ -114,7 +114,7 @@ Search queries that work well:
 Task: refresh the Meta AI career guide in companies/meta/ (README.md, reading-list.md,
 projects.md) for a core-AI engineering audience (ML engineers, many outside the US).
 
-1. Read companies/meta/agent-brief.md, especially the "Baseline to re-verify" table.
+1. Read companies/meta/refresh-brief.md, especially the "Baseline to re-verify" table.
 2. For each baseline row, find the current answer. Prefer primary sources: metacareers.com,
    about.fb.com/news, ai.meta.com/blog, Meta's Hugging Face model cards, and the GitHub READMEs
    of pytorch/torchtitan, pytorch/ao, pytorch/pytorch and meta-pytorch repositories.
@@ -125,7 +125,7 @@ projects.md) for a core-AI engineering audience (ML engineers, many outside the 
    every library and checkpoint named in projects.md still exists and is maintained.
 5. Do not include compensation figures, leaked interview questions or private names.
 6. Run python3 tools/check_links.py and fix broken links in companies/meta/.
-7. Append a row to the refresh log in agent-brief.md: date, changes, sources.
+7. Append a row to the refresh log in refresh-brief.md: date, changes, sources.
 Report: what changed, what you could not verify, and what still needs a human check.
 ```
 

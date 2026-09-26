@@ -28,3 +28,4 @@ wandb/
 library/pdfs/
 site/
 .claude/
+site_src/

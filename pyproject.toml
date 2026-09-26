@@ -1,9 +1,12 @@
 [project]
-name = "core-ai-curriculum"
-version = "2.0.0"
-description = "First-principles curriculum for core AI engineering: from-scratch labs, research and founder tracks."
+name = "achilles"
+version = "3.0.0"
+description = "Core AI from first principles: 17 test-driven labs from autograd to GRPO, a curriculum, and research-engineer and founder tracks."
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Lourdu Raju" }]
+keywords = ["llm", "transformers", "pytorch", "triton", "flash-attention", "rlhf", "dpo", "grpo", "quantization", "interpretability"]
 dependencies = [
     "numpy>=1.26",
     "regex>=2024.4",
@@ -13,8 +16,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Real-data scale-up runs (pretraining on TinyStories / FineWeb-Edu samples).
-data = ["tiktoken>=0.7", "datasets>=2.19"]
+# Scale-up runs: real datasets, the GPT-2 tokenizer and Hugging Face models (same as requirements-data.txt).
+data = ["tiktoken>=0.7", "datasets>=2.19", "huggingface_hub>=0.23", "transformers>=4.45"]
+# Docs site (same as requirements-docs.txt): python tools/build_docs.py
+docs = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5"]
+
+[project.urls]
+Homepage = "https://github.com/Lourdhu02/achilles"
+Documentation = "https://lourdhu02.github.io/achilles/"
+Issues = "https://github.com/Lourdhu02/achilles/issues"
 
 [tool.uv]
 package = false

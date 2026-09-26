@@ -1,0 +1,7 @@
+# Scale-up runs: real datasets, the GPT-2 tokenizer and Hugging Face models
+# (labs 05, 08, 10-14, 16, 17). Install requirements.txt first.
+-r requirements.txt
+tiktoken>=0.7
+datasets>=2.19
+huggingface_hub>=0.23
+transformers>=4.45

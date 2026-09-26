@@ -1,6 +1,6 @@
-# The 18 DSA Patterns — Master List
+# The 18 DSA patterns
 
-Each pattern has: trigger signals, template, ~10-15 essential problems. Master these and you can solve 80%+ of FAANG ML Eng coding interview questions.
+Each pattern has trigger signals, a template and 10–15 essential problems. Big Tech coding rounds (and some lab screens) test whether you can recognize the pattern in a new problem within a minute and then code it cleanly under time pressure; this list trains the first skill and the [12-week plan](#a-12-week-plan-for-people-with-full-time-jobs) trains the second.
 
 ---
 
@@ -557,14 +557,14 @@ class UnionFind:
 
 ## How to use this list
 
-### Per-pattern study (during Months 1-3):
+### Per-pattern study (weeks 1–9 of the plan)
 
 1. Read the pattern description + template
 2. Solve 3-5 problems in order of difficulty
 3. After each problem, articulate WHY this pattern applied
 4. Move to the next pattern only when you can recognize problems in <60 seconds
 
-### Cross-pattern mixing (Month 3-4 onward):
+### Cross-pattern mixing (weeks 10–12, then maintenance)
 
 1. Use LeetCode's random function within a difficulty
 2. Or use Blind 75 / NeetCode 150 mixed lists
@@ -572,16 +572,39 @@ class UnionFind:
 
 ---
 
+## A 12-week plan for people with full-time jobs
+
+About 4 hours a week: two weekday evenings of an hour each (two problems per evening) and one weekend block of 1.5–2 hours (four problems plus a review of everything you missed). That is roughly 8 problems a week and about 100 in total, which is enough to recognize every pattern when you see it.
+
+| Week | Patterns | Problems | Goal by the end of the week |
+|:-:|---|:-:|---|
+| 1 | Two pointers, sliding window | 8 | Name the pattern from the problem statement alone |
+| 2 | Binary search, modified binary search | 8 | Binary search on the answer space without off-by-one errors |
+| 3 | Cyclic sort, in-place linked-list reversal | 8 | Pointer manipulation drawn on paper first, then coded |
+| 4 | Tree BFS, tree DFS | 8 | Recursive and iterative versions of each |
+| 5 | Graph BFS/DFS/topological sort, union find | 8 | Build the graph from raw input quickly |
+| 6 | Backtracking; subsets, combinations and top-K | 8 | State the search tree and its pruning before coding |
+| 7 | Two heaps, k-way merge | 8 | Know `heapq` by heart, including tuples as keys |
+| 8 | Greedy, tries | 8 | Argue why the greedy choice is safe |
+| 9 | Dynamic programming, 1D and 2D | 10 | Write the recurrence and base cases before any code |
+| 10 | Mixed, timed: two mediums in 45 minutes | 8 | Finish both, tested, inside the time |
+| 11 | Mixed, weighted towards your weakest patterns from the log | 8 | No pattern with a first-try pass rate under 50% |
+| 12 | Two full mock interviews plus company-tagged sets | 6 | Talk through your approach while you code |
+
+Keep a one-line log per problem: pattern, minutes taken, passed first try or not, and what blocked you. The log decides week 11.
+
+> [!TIP]
+> After week 12, maintain with three or four problems a week, timed. Pattern recognition decays within about a month without practice, and a final-round loop can arrive at short notice.
+
 ## Time investment
 
 | Phase | Activity | Total problems |
 |---|---|---|
-| Pattern learning (Month 1-3) | 1 pattern/week, 10-15 problems each | 200-250 |
-| Mixed practice (Month 3-4) | Random, timed | 50-80 |
-| Maintenance (Month 5+) | 1/day, company-tagged | 60-100 |
-| **Total by Month 11** | | **~350-400 problems** |
+| Pattern learning (weeks 1–9) | Two patterns a week, 4–5 problems each | about 75 |
+| Mixed, timed practice (weeks 10–12) | Two mediums in 45 minutes, mocks | about 25 |
+| Maintenance (after week 12) | Three or four a week, timed, company-tagged | 50–150 over the following year |
 
-This is enough to cover all patterns deeply and pass FAANG coding interviews.
+For roles that weigh DSA heavily (most Big Tech loops), extend weeks 1–9 to 10–15 problems per pattern: about 250 problems in all.
 
 ---
 

@@ -3,24 +3,60 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   labs:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    name: labs (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.10" }
+          - { os: ubuntu-latest, python: "3.12" }
+          - { os: windows-latest, python: "3.12" }
+          - { os: macos-latest, python: "3.12" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install CPU PyTorch and test deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy regex pytest triton
-      - name: Reference solutions pass every lab (Triton runs in interpreter mode)
-        run: python -m pytest --impl=solution
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install CPU PyTorch (Linux, Windows)
+        if: runner.os != 'macOS'
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install PyTorch (macOS)
+        if: runner.os == 'macOS'
+        run: python -m pip install torch
+      - name: Install test dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install Triton (Linux only; the kernels run in its CPU interpreter)
+        if: runner.os == 'Linux'
+        run: python -m pip install triton
+      - name: Reference solutions pass every lab
+        run: python -m pytest --impl=solution -q
       - name: Exercise stubs import cleanly
         run: python -m pytest labs --impl=exercise --collect-only -q
-      - name: Markdown links resolve
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Markdown links and anchors resolve
         run: python tools/check_links.py
+      - name: Docs site builds without warnings
+        run: |
+          python -m pip install -r requirements-docs.txt
+          python tools/build_docs.py --strict
+      - name: Library manifest, notebook and dev container are valid JSON
+        run: python -c "import json; [json.load(open(p, encoding='utf-8')) for p in ('library/manifest.json', 'notebooks/colab_quickstart.ipynb', '.devcontainer/devcontainer.json')]"

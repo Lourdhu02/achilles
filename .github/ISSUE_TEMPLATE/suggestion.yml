@@ -1,0 +1,17 @@
+name: Suggest a lab, topic or resource
+description: Propose a new lab, a missing topic, or a better explainer for the library.
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What should be added or changed, and who it helps.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: For a new lab, what would the tests check?
+      description: The properties a correct implementation must satisfy, and how they run on a CPU in seconds.
