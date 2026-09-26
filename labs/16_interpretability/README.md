@@ -35,7 +35,7 @@ The induction head's keys are built from what the previous-token head wrote: tha
 | Induction, period 7 | 0.04 | 0.03 | 0.04 | 0.06 |
 | Previous-token, period 10 | 0.08 | 0.04 | 0.08 | 0.10 |
 
-Layer 0 scores as high as layer 1, and no head attends to the previous token. With the period always 10 and learned positions, "attend 9 positions back" is a purely positional rule that solves the task. It even beats real induction there: with 16 tokens, about 97% of first halves repeat some token, which makes induction ambiguous. Evaluate at period 7 and the second-half loss goes from 0.00 to 16.3 nats, far worse than guessing.
+Layer 0 scores as high as layer 1, and no head is a previous-token head (all score 0.10 or less). With the period always 10 and learned positions, "attend 9 positions back" is a purely positional rule that solves the task. It even beats real induction there: with 16 tokens, about 97% of first halves repeat some token, which makes induction ambiguous. Evaluate at period 7 and the second-half loss goes from 0.00 to 16.3 nats, far worse than guessing.
 
 **What the lab's model learns.** With the period drawn from 5–10 for each batch (the default), no single offset works, and the textbook circuit appears:
 
