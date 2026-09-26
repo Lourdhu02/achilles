@@ -725,6 +725,8 @@ class TokenBucket:
 
     def allow(self, cost=1.0):
         """Returns (allowed, retry_after_seconds)."""
+        if cost > self.cap:
+            raise ValueError("cost exceeds the burst size, so it can never be allowed")
         with self.lock:
             now = self.clock()
             self.tokens = min(self.cap, self.tokens + (now - self.last) * self.rate)   # refill lazily
@@ -735,7 +737,7 @@ class TokenBucket:
             return False, (cost - self.tokens) / self.rate
 ```
 
-**Watch for:** refilling with a background thread (unnecessary; compute lazily); integer division in the refill; a cost larger than the burst can never succeed (reject it explicitly). **Extensions:** per-key buckets in a dict with LRU eviction of idle keys; a distributed limiter (an atomic script in a shared store); for LLM APIs, limit tokens per minute where the cost is unknown until the response finishes: reserve an estimate, then reconcile.
+**Watch for:** refilling with a background thread (unnecessary; compute lazily); integer division in the refill; a cost larger than the burst can never succeed, so reject it explicitly instead of returning a retry time that never arrives. **Extensions:** per-key buckets in a dict with LRU eviction of idle keys; a distributed limiter (an atomic script in a shared store); for LLM APIs, limit tokens per minute where the cost is unknown until the response finishes: reserve an estimate, then reconcile.
 
 </details>
 
