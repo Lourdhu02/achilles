@@ -5,8 +5,10 @@ gradient clipping, and gradient accumulation that is actually correct, all from 
 **Time:** 8–10 h · **Reads first:** [deep learning §2–6](../../curriculum/03-deep-learning.md#2-initialization-keeping-signals-alive)
 **Run:** `pytest labs/02_training_core`
 
-The tests compare against PyTorch. Your AdamW must match `torch.optim.AdamW` to 1e-10 in float64,
-which means matching the order of operations, not just the idea.
+The tests compare against PyTorch. Your AdamW must match `torch.optim.AdamW` to 1e-10 in float64 over 25 steps,
+which means matching the exact update, not just the idea: ε added to $\sqrt{\hat v}$ (not inside the square root),
+and weight decay applied as `p *= 1 - lr*wd` *before* the Adam step (applying it after changes each step by $\eta^2\lambda u$,
+about 1e-4 here, which fails the test).
 
 ---
 
@@ -16,11 +18,11 @@ For `y = W x` with independent zero-mean entries, `Var(yᵢ) = n_in · Var(w) ·
 ReLU zeroes half the mass, which halves the second moment. To keep activations O(1) through
 depth, you need `Var(w) = 2 / n_in` (Kaiming). Anything else compounds geometrically:
 
-| init | per-layer gain on the std (width 256) | after 30 layers |
-|---|---|---|
-| N(0, 1) | √(256/2) ≈ 11.3 | ~10³¹ (explodes) |
-| N(0, 0.01²) | 0.01·√128 ≈ 0.11 | ~10⁻²⁹ (vanishes) |
-| Kaiming N(0, 2/256) | 1.0 | O(1) |
+| init | per-layer gain on the std (width 256) | predicted after 30 layers | measured (reference solution) |
+|---|---|---|---|
+| N(0, 1) | √(256/2) ≈ 11.3 | ~10³¹ (explodes) | 2.5·10³¹ |
+| N(0, 0.01²) | 0.01·√128 ≈ 0.11 | ~10⁻²⁹ (vanishes) | 2.5·10⁻²⁹ |
+| Kaiming N(0, 2/256) | 1.0 | O(1) | 0.62 |
 
 `test_init_scale_decides_signal_propagation` shows exactly this. Transformers add one more rule.
 The residual stream is a *sum* of 2L branch outputs, so GPT-2 scales each branch's output
@@ -47,7 +49,7 @@ m̂ = m/(1−β₁ᵗ)                v̂ = v/(1−β₂ᵗ)          # bias cor
 θ ← θ(1 − ηλ) − η·m̂/(√v̂ + ε)                        # decay is DECOUPLED from the gradient
 ```
 
-- **Bias correction** is needed because m and v start at 0. Without it, early steps are tiny. With it, the first step is exactly `η·sign(g)` whatever the gradient's scale (see `test_first_adam_step_has_magnitude_lr`). Adam is a *sign-like* optimizer with per-parameter trust.
+- **Bias correction** is needed because m and v start at 0. Unrolling gives $E[m_t] = (1-β_1^t)E[g]$ for stationary gradients, and likewise for v. Without correction, the step is off by $(1-β_1^t)/\sqrt{1-β_2^t}$: with β = (0.9, 0.999) that is 3.2× too **large** at step 1 and 6.5× at step 10 (v starts further below its target than m); with β = (0.9, 0.95) it is 0.45× at step 1. With correction, the first step is exactly `η·sign(g)` whatever the gradient's scale (see `test_first_adam_step_has_magnitude_lr`). Adam is a *sign-like* optimizer with per-parameter trust. Full derivation: [curriculum 03 §4](../../curriculum/03-deep-learning.md#4-optimizers).
 - **Why decoupled:** in Adam with L2 regularization, the decay gradient `λθ` gets divided by `√v̂`, so parameters with large gradients are barely regularized. AdamW applies `θ(1−ηλ)` directly, which gives uniform shrinkage.
 - **LLM defaults:** β₂ = 0.95 (not 0.999) so v adapts quickly after gradient spikes; λ = 0.1; ε = 1e-8. Memory is two fp32 states, **8 bytes/param**, which is half the "16 bytes/param" figure in [lab 03](../03_napkin_math/README.md).
 
@@ -60,7 +62,7 @@ SVD), which is cheap on tensor cores. Rules of use:
 
 - Use it only for 2-D hidden weights. Embeddings, the LM head, norms and biases stay on AdamW.
 - It keeps one state (momentum), so **4 bytes/param** of optimizer state instead of 8.
-- It takes fixed-size steps, like signSGD. In `test_muon_reduces_loss`, lr = 0.1 converges smoothly, while lr = 0.2–0.3 *oscillates* near the optimum. **Sign-like optimizers need learning-rate decay.**
+- It takes fixed-size steps, like signSGD. On `test_muon_reduces_loss`'s problem (50 steps, starting loss 1.10), lr = 0.1 decreases monotonically to 0.12; lr = 0.2 reaches 0.015 around step 40 and then climbs back to 0.08; lr = 0.3 bounces between 0.02 and 0.16. **Sign-like optimizers need learning-rate decay.**
 
 Reference: Keller Jordan's Muon write-up (2024) and Moonshot's *Muon is Scalable for LLM Training* (2025).
 
@@ -87,13 +89,54 @@ scaling**. Try both in a REPL: `torch.tensor(1.0, dtype=torch.bfloat16) + 1e-3`.
 
 ## What to implement
 
-1. `kaiming_normal_`, `xavier_uniform_` → init tests
-2. `LayerNorm.forward`, `RMSNorm.forward`
-3. `cross_entropy` (ignore_index, label smoothing, three reductions; the gradient must match too)
-4. `AdamW.step` → bit-exact trajectory test
-5. `newton_schulz`, `Muon.step`
-6. `lr_cosine`, `lr_wsd`
-7. `clip_grad_norm_`, `accumulate_gradients`
+`activation_stds` and the optimizers' state set-up are given. In `exercise.py`:
+
+| step | implement | tests |
+|---|---|---|
+| 1 | `kaiming_normal_`, `xavier_uniform_` | `test_kaiming_and_xavier_statistics`, `test_init_scale_decides_signal_propagation` |
+| 2 | `LayerNorm.forward`, `RMSNorm.forward` | `test_layernorm_matches_torch`, `test_rmsnorm_matches_reference_and_is_scale_invariant` |
+| 3 | `cross_entropy` (ignore_index, label smoothing, reductions `mean`/`sum`/`none`) | `test_cross_entropy_matches_torch` (6 cases; the gradient must match too), `test_cross_entropy_is_stable_for_huge_logits` |
+| 4 | `AdamW.step` | `test_adamw_matches_torch_exactly`, `test_weight_decay_is_decoupled`, `test_first_adam_step_has_magnitude_lr` |
+| 5 | `newton_schulz`, `Muon.step` | `test_newton_schulz_cubic_converges_to_polar_factor` (3 shapes), `test_newton_schulz_quintic_is_approximately_orthogonal`, `test_muon_reduces_loss` |
+| 6 | `lr_cosine`, `lr_wsd` | `test_cosine_schedule_shape`, `test_wsd_schedule_shape` |
+| 7 | `clip_grad_norm_`, `accumulate_gradients` | `test_clip_grad_norm_matches_torch`, `test_clip_is_noop_below_threshold`, `test_accumulation_equals_full_batch_with_uneven_masks` |
+
+24 tests in total, all on CPU in a few seconds. Contracts worth reading from the tests before you start:
+- **Schedules** use `(step + 1) / warmup_steps` during warmup, so step 0 already has a non-zero LR (`lr_cosine(0) == 0.1` with 10 warmup steps) and the peak is reached at step `warmup_steps − 1`. After `total_steps` both return `min_lr`. WSD starts decaying at `total_steps − int(decay_frac · total_steps)`.
+- **`cross_entropy(..., reduction="none")`** returns one loss per flattened position (shape `(N·T,)`), matching `F.cross_entropy` on reshaped inputs.
+- **`clip_grad_norm_`** returns the norm *before* clipping and scales by `max_norm / (total_norm + 1e-6)` only when that is below 1, exactly like PyTorch.
+- **`newton_schulz`** must work in the input's dtype (the tests use float64). Keller Jordan's reference casts to bf16 for speed; do not, or the cubic test cannot reach its 1e-6 tolerance.
+
+## Tips
+
+> [!TIP]
+> Build AdamW one line at a time against PyTorch: run one step of both on the same tensor and diff `p`, then `m` and `v` against `torch.optim.AdamW`'s `state[p]["exp_avg"]` and `["exp_avg_sq"]`. The first line that differs is the bug.
+
+> [!TIP]
+> Test `newton_schulz` with the cubic coefficients first: it has a known exact answer ($UV^\top$ from `torch.linalg.svd`). Only then switch to Muon's quintic coefficients, which trade exactness for speed (singular values land roughly in [0.6, 1.2] after 5 steps).
+
+> [!TIP]
+> For accumulation, build the failing case yourself before fixing it: two micro-batches, one with 1 valid token and one with 4. The mean of per-micro-batch means weights the single token 4× too much relative to the full-batch loss.
+
+## Common bugs
+
+| symptom | likely cause |
+|---|---|
+| `test_layernorm_matches_torch` off by ~1–3% | `x.var()` defaults to the unbiased (N−1) estimator; LayerNorm uses the biased one (`unbiased=False`) |
+| cross-entropy crashes or gathers garbage when targets contain −100 | gathering with the raw target; replace ignored targets with a valid index (e.g. 0) before `gather`, then mask |
+| cross-entropy `mean` differs from PyTorch only when some targets are ignored | dividing by the total number of positions instead of the number of valid ones |
+| label-smoothed loss slightly off | smoothing term must be `−mean_c log p_c` over classes, masked like the NLL term, mixed as `(1−ε)·nll + ε·smooth` |
+| `test_cross_entropy_is_stable_for_huge_logits` gives inf/NaN | `log(softmax(x))` instead of `x − logsumexp(x)` |
+| AdamW trajectory off by ~1e-4 | weight decay applied after the Adam update, or ε inside the square root, or bias correction with `t` starting at 0 |
+| AdamW off only when `weight_decay > 0` | L2 added to the gradient (Adam + L2) instead of decoupled decay |
+| cubic Newton–Schulz diverges | input not scaled so its spectral norm is ≤ 1 (divide by the Frobenius norm, which is an upper bound) |
+| Muon fine for wide matrices, wrong for tall ones | Gram matrix built on the long side, or the tall-matrix transpose not undone at the end |
+| `test_wsd_schedule_shape` fails at step 90 only | decay measured from `warmup_steps` instead of `decay_start` |
+| accumulated gradients 4× too large or small on one micro-batch | averaging per-micro-batch means; divide each micro-batch's *summed* loss by the total valid-token count across all micro-batches |
+
+## CPU and GPU notes
+
+All tests run on CPU in float64 or float32, where comparisons with PyTorch are tight. On a GPU, the same AdamW in bf16/TF32 would only match PyTorch to ~1e-3 relative, and fused or `foreach` optimizer implementations order floating-point operations differently; compare against a float64 CPU reference when you port anything to the GPU. The optimizer-memory numbers here (8 bytes/param for AdamW, 4 for Muon) are what you will see in `torch.cuda.max_memory_allocated()` on your RTX 5060 when you train [lab 05](../05_transformer/README.md)'s GPT.
 
 ## Check yourself
 
@@ -114,6 +157,8 @@ scaling**. Try both in a REPL: `torch.tensor(1.0, dtype=torch.bfloat16) + 1e-3`.
 
 ## Stretch
 
+- Add fp16 training with dynamic loss scaling to a small model: scale the loss, unscale before clipping, skip steps with inf/NaN gradients, halve on overflow, double after 2,000 good steps. Compare with bf16 autocast.
+- Plot the ratio of the uncorrected to the corrected Adam step over the first 2,000 steps for β₂ = 0.999 and 0.95, and check it against $(1-β_1^t)/\sqrt{1-β_2^t}$.
 - Implement Lion (`sign(β₁m + (1−β₁)g)`) and Adafactor (factored second moments). Compare their optimizer-state memory with AdamW's.
 - Train [lab 05](../05_transformer/README.md)'s GPT with AdamW, then with Muon on the hidden matrices plus AdamW elsewhere. Compare loss at equal steps and equal wall-clock time.
 - μP: train widths 64/128/256/512 with a fixed LR and plot the loss. Then apply μP scaling and show the optimal LR stops moving (Tensor Programs V).

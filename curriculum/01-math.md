@@ -102,7 +102,7 @@ a length-$d$ dot product of two things already in memory. That scalar per row ($
 
 Derive each row once on paper, then check it with finite differences in [lab 01](../labs/01_autograd/README.md).
 
-### 2.6 Gradient checking, and choosing ε
+### 2.6 Gradient checking and choosing the step size
 
 Central differences $\frac{f(x+\epsilon) - f(x-\epsilon)}{2\epsilon}$ have truncation error $O(\epsilon^2)$ and rounding error about $u/\epsilon$, where $u$ is the unit roundoff. The total is minimized near $\epsilon \approx u^{1/3}$.
 
