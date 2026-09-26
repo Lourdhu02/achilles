@@ -69,12 +69,12 @@ layer 2  induction head at i:     query "current token = A" matches key "previou
 ```
 
 - It is **K-composition**: the key at position j is built from information moved there by the previous-token head.
-- It works for **any** tokens, including ones never seen together in training, so it is a genuine in-context algorithm rather than memorized bigrams. That is why lab 16 trains on *random* repeated sequences: nothing else can lower the loss on the second half.
+- It works for **any** tokens, including ones never seen together in training, so it is a genuine in-context algorithm rather than memorized bigrams. That is why lab 16 trains on *random* repeated sequences with a *varying* period: with random tokens nothing but copying can lower the second-half loss, and with a varying period no fixed positional offset can do the copying.
 - The **induction score** measures it directly: on a sequence repeated with period T, the head at position i should attend to $i - T + 1$ (the token after the previous occurrence of the current token). Chance is about $1/i$.
 - Olsson et al. (2022) found that induction heads form in a sudden **phase change** early in training, visible as a bump in the training loss, at the same time as a jump in in-context learning (loss on late tokens in the context falls relative to early tokens). They argue induction heads (and fuzzier variants that copy by meaning, not exact token) account for much of in-context learning.
 
 > [!TIP]
-> In lab 16, plot each head's attention pattern on a repeated sequence. The previous-token head shows a sub-diagonal stripe; the induction head shows a stripe offset by T − 1. Then ablate the layer-1 previous-token head and watch the induction score and the second-half loss collapse: that is the causal test of K-composition.
+> In lab 16, plot each head's attention pattern on a repeated sequence. The previous-token head shows a sub-diagonal stripe; the induction head shows a stripe offset by T − 1. Then zero-ablate the previous-token head and measure how far the induction scores fall and the second-half loss rises: that is the causal test of K-composition. In a model that small the drop is partial, because other paths carry part of the signal. Also train the lab's fixed-period variant: it passes the induction-head test with a positional shortcut and no circuit at all, a reminder to test a claimed mechanism on inputs a shortcut cannot solve.
 
 ### 1.4 Superposition
 

@@ -10,7 +10,7 @@ Every lab runs on a laptop CPU. The scale-up runs are sized for one 8 GB GPU or 
 [![CI](https://img.shields.io/github/actions/workflow/status/Lourdhu02/achilles/ci.yml?branch=main&style=flat-square&label=CI&labelColor=161b22)](https://github.com/Lourdhu02/achilles/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-lourdhu02.github.io%2Fachilles-7c5cff?style=flat-square&labelColor=161b22)](https://lourdhu02.github.io/achilles/)
 ![Labs](https://img.shields.io/badge/labs-17-7c5cff?style=flat-square&labelColor=161b22)
-![Tests](https://img.shields.io/badge/reference_tests-216_passing-7c5cff?style=flat-square&labelColor=161b22)
+![Tests](https://img.shields.io/badge/reference_tests-219_passing-7c5cff?style=flat-square&labelColor=161b22)
 ![Runs on](https://img.shields.io/badge/runs_on-CPU%20%C2%B7%20CUDA%20%C2%B7%20Apple%20Silicon-7c5cff?style=flat-square&labelColor=161b22)
 <br/>
 ![Python](https://img.shields.io/badge/python-3.10%2B-7c5cff?style=flat-square&labelColor=161b22&logo=python&logoColor=white)
@@ -31,7 +31,7 @@ Every lab runs on a laptop CPU. The scale-up runs are sized for one 8 GB GPU or 
 
 <table>
 <tr>
-<td align="center" width="20%"><img src="assets/icons/flask-conical.svg" width="28" height="28" alt=""/><br/><b>Test-driven</b><br/><sub>216 reference tests, run in CI on Linux, Windows and macOS</sub></td>
+<td align="center" width="20%"><img src="assets/icons/flask-conical.svg" width="28" height="28" alt=""/><br/><b>Test-driven</b><br/><sub>219 reference tests, run in CI on Linux, Windows and macOS</sub></td>
 <td align="center" width="20%"><img src="assets/icons/terminal.svg" width="28" height="28" alt=""/><br/><b>From scratch</b><br/><sub>you write the math; libraries only for plumbing</sub></td>
 <td align="center" width="20%"><img src="assets/icons/gauge.svg" width="28" height="28" alt=""/><br/><b>Measured</b><br/><sub>predict FLOPs, memory and tokens/s, then check</sub></td>
 <td align="center" width="20%"><img src="assets/icons/laptop.svg" width="28" height="28" alt=""/><br/><b>Runs anywhere</b><br/><sub>CPU, NVIDIA, Apple Silicon, Colab, Codespaces</sub></td>
@@ -68,7 +68,7 @@ git clone https://github.com/Lourdhu02/achilles.git && cd achilles
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
 pip install torch --index-url https://download.pytorch.org/whl/cpu   # NVIDIA GPU: .../whl/cu128
 pip install -r requirements.txt
-python -m pytest --impl=solution -q    # all 216 reference tests pass: your setup works
+python -m pytest --impl=solution -q    # all 219 reference tests pass: your setup works
 pytest labs/01_autograd                # 37 failing tests: your first job
 python tools/progress.py               # your scoreboard across all 17 labs
 ```
@@ -112,7 +112,7 @@ The tests compare your code against PyTorch or a closed form, check invariants (
 | | Lab | You build | Tests |
 |:-:|---|---|:-:|
 | <img src="assets/icons/network.svg" width="18" height="18" alt=""/> | [01 · Autograd](labs/01_autograd/README.md) | Reverse-mode autodiff in NumPy; train an MLP with it | 37 |
-| <img src="assets/icons/sliders-horizontal.svg" width="18" height="18" alt=""/> | [02 · Training core](labs/02_training_core/README.md) | AdamW (bit-exact against PyTorch), Muon, WSD schedules, correct gradient accumulation | 24 |
+| <img src="assets/icons/sliders-horizontal.svg" width="18" height="18" alt=""/> | [02 · Training core](labs/02_training_core/README.md) | AdamW matching PyTorch over 25 steps to 1e-10, Muon, WSD schedules, correct gradient accumulation | 24 |
 | <img src="assets/icons/calculator.svg" width="18" height="18" alt=""/> | [03 · Napkin math](labs/03_napkin_math/README.md) | Parameters, FLOPs, KV cache, roofline, MFU, $/token; exact counts for GPT-2 and Llama 3 | 18 |
 | <img src="assets/icons/type.svg" width="18" height="18" alt=""/> | [04 · Tokenizer](labs/04_tokenizer/README.md) | Byte-level BPE with GPT-4 and o200k pre-tokenization, and why they treat Telugu differently | 33 |
 | <img src="assets/icons/brain-circuit.svg" width="18" height="18" alt=""/> | [05 · Transformer](labs/05_transformer/README.md) | A Llama-style GPT (RoPE, GQA, SwiGLU, QK-norm) plus a pretraining script for CPU, CUDA or MPS | 17 |
@@ -126,7 +126,7 @@ The tests compare your code against PyTorch or a closed form, check invariants (
 | <img src="assets/icons/binary.svg" width="18" height="18" alt=""/> | [13 · Quantization](labs/13_quantization/README.md) | INT8 and INT4, NF4, SmoothQuant, GPTQ | 8 |
 | <img src="assets/icons/fast-forward.svg" width="18" height="18" alt=""/> | [14 · Speculative decoding](labs/14_speculative_decoding/README.md) | Exact rejection sampling, statistically verified to be lossless | 3 |
 | <img src="assets/icons/chart-column.svg" width="18" height="18" alt=""/> | [15 · Eval statistics](labs/15_eval_stats/README.md) | Confidence intervals, paired tests, clustered standard errors, pass@k, power, Bradley–Terry | 6 |
-| <img src="assets/icons/microscope.svg" width="18" height="18" alt=""/> | [16 · Interpretability](labs/16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 5 |
+| <img src="assets/icons/microscope.svg" width="18" height="18" alt=""/> | [16 · Interpretability](labs/16_interpretability/README.md) | Induction heads (and the positional shortcut that fakes them), activation patching, sparse autoencoders | 8 |
 | <img src="assets/icons/search.svg" width="18" height="18" alt=""/> | [17 · Retrieval](labs/17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF vector index | 5 |
 
 All reference solutions pass in CI on Linux, Windows and macOS, with the Triton kernels running in Triton's CPU interpreter on Linux.

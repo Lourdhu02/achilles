@@ -5,7 +5,7 @@ Seventeen test-driven labs that rebuild the modern LLM stack. Each lab has a han
 | # | Lab | You build | Tests | Time (tests) | Scale-up run |
 |---|---|---|:-:|---|---|
 | 01 | [Autograd from scratch](01_autograd/README.md) | Reverse-mode autodiff in NumPy; an MLP trained with it | 37 | 8–12 h | — |
-| 02 | [The training toolkit](02_training_core/README.md) | AdamW (bit-exact against PyTorch), Muon, WSD schedules, clipping and accumulation | 24 | 8–10 h | — |
+| 02 | [The training toolkit](02_training_core/README.md) | AdamW matching PyTorch to 1e-10, Muon, WSD schedules, clipping and accumulation | 24 | 8–10 h | — |
 | 03 | [Napkin math](03_napkin_math/README.md) | Parameter, FLOP, KV-cache, roofline and MFU calculators | 18 | 5–7 h | `tools/measure_gpu.py` |
 | 04 | [Byte-level BPE tokenizer](04_tokenizer/README.md) | Training and encoding with GPT-4 and o200k pre-tokenization | 33 | 6–8 h | Telugu tokenizer study |
 | 05 | [A modern GPT](05_transformer/README.md) | RoPE, GQA, SwiGLU, QK-norm; a pretraining script | 17 | 10–14 h | **S1:** pretrain on TinyStories (`train.py`) |
@@ -19,8 +19,8 @@ Seventeen test-driven labs that rebuild the modern LLM stack. Each lab has a han
 | 13 | [Quantization](13_quantization/README.md) | INT8, INT4 packing, NF4, SmoothQuant, GPTQ | 8 | 3–4 h | quality vs tokens/s |
 | 14 | [Speculative decoding](14_speculative_decoding/README.md) | Exact rejection sampling, verified lossless | 3 | 2–3 h | 0.5B draft → 1.5B target |
 | 15 | [Evaluation statistics](15_eval_stats/README.md) | CIs, paired tests, clustered SEs, pass@k, power, Bradley–Terry | 6 | 2–3 h | a leaderboard with error bars |
-| 16 | [Mechanistic interpretability](16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 5 | 3–4 h | an SAE on your S1 model |
-| 17 | [Retrieval for RAG](17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF index | 5 | 3–4 h | evaluate your own RAG |
+| 16 | [Mechanistic interpretability](16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 8 | 3–4 h | an SAE on your S1 model |
+| 17 | [Retrieval for RAG](17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF index | 5 | 2–3 h | evaluate your own RAG |
 
 Times are for a first honest attempt at the tests; the scale-up runs add a few hours to an overnight run each. [SETUP.md](../SETUP.md#what-you-can-do-on-each-tier) lists the minimum hardware for every scale-up.
 
