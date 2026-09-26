@@ -187,7 +187,7 @@ For classic MHA with a $4d$ GELU MLP this collapses to the well-known $12d^2$ pe
 
 **FLOPs per token.** A matmul with $P$ weights costs $2P$ FLOPs per token forward and $4P$ backward (gradients with respect to inputs and weights), so training costs $\approx 6P$ per token over the matmul parameters. Attention scores add $6\,L\,T\,d$ per token for training at context $T$ (Kaplan et al.'s accounting, without the causal halving). The embedding lookup is not a matmul, so strictly count only the LM head, not the input embedding.
 
-| context $T$ | $6PT$-free part: $6P$ (Llama-3-8B) | attention: $6LTd$ | attention share |
+| context $T$ | matmuls: $6N$ with $N$ = 8.03B (Llama-3-8B) | attention: $6LTd$ | attention share |
 |---|---|---|---|
 | 4,096 | 48 GFLOP | 3.2 GFLOP | ~6% |
 | 131,072 | 48 GFLOP | 103 GFLOP | ~68% |
@@ -295,7 +295,7 @@ $2\cdot32\cdot8\cdot128\cdot2 = 128$ KiB per token, times 8,192 tokens = 1 GiB p
 
 <details><summary>3. Why GQA rather than MQA?</summary>
 
-MQA shrinks the cache by $H$ but costs quality and training stability; GQA with 8 groups keeps most of MHA's quality while shrinking the cache 4x (for 32 heads). It also shards cleanly under tensor parallelism when $H_{kv}$ is a multiple of the TP degree, whereas MQA's single KV head has to be replicated on every rank.
+MQA shrinks the cache by $H$ but costs quality and training stability; GQA with 8 groups keeps most of MHA's quality while shrinking the cache 4x (for 32 heads). It also shards cleanly under tensor parallelism up to a TP degree of $H_{kv}$ (each rank owns whole KV groups), whereas MQA's single KV head has to be replicated on every rank.
 </details>
 
 <details><summary>4. Show that RoPE's score depends only on m − n.</summary>

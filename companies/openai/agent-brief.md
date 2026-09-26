@@ -19,7 +19,7 @@ The facts below were checked in **September 2026**. Rows marked *secondary* rest
 | Residency | Six-month, full-time, paid, San Francisco; 2026 cohort applications closed | README, signals | https://openai.com/residency/ |
 | Open challenges | Parameter Golf ran 18 Mar – 30 Apr 2026 (16 MB artifact, 10 min on 8×H100, FineWeb bpb) | README, signals; projects #7 | https://github.com/openai/parameter-golf, https://openai.com/news/ |
 | Open-weight models | gpt-oss-120b and gpt-oss-20b (Aug 2025, Apache 2.0) | README; reading list #28; projects #9 | https://github.com/openai/gpt-oss, https://huggingface.co/openai |
-| India offices | New Delhi (announced Aug 2025); Mumbai and Bengaluru planned for late 2026 (*secondary*: Feb 2026 reports) | README, at a glance and from India | https://openai.com/global-affairs/ and https://openai.com/news/ (search "India") |
+| India offices | New Delhi (announced Aug 2025); Mumbai and Bengaluru planned for late 2026 (*secondary*: Feb 2026 reports) | README, at a glance and from India | https://openai.com/news/ (search "India") |
 | India roles | Applied AI Engineer (Delhi, Mumbai), Solutions Engineer (Delhi, Mumbai, Bangalore); no research roles seen | README, from India | https://openai.com/careers/search/ (filter by location) |
 | Remote and visa policy | Core roles SF-based; sponsorship not stated publicly per role | README, from India | Each job listing; recruiter |
 | Values on careers page | Last reviewed list emphasized AGI focus, intensity, scale, shipping | README, what they value | https://openai.com/careers/ |
