@@ -1,7 +1,7 @@
 # Lab 17 — Retrieval for RAG
 
-**Build:** BM25 from scratch, cosine top-k, reciprocal rank fusion, maximal marginal relevance, the standard ranking metrics (recall@k, MRR, nDCG@k), token-window chunking, and the search step of an IVF index. Then embed a real corpus on your GPU and measure BM25, dense and hybrid retrieval on your own questions.
-**Time:** 2–3 h for the tests, 4–6 h for the scale-up · **Reads first:** [applied systems §1](../../curriculum/10-applied-llm-systems.md#1-rag-that-actually-works)
+**Build:** BM25 from scratch, cosine top-k, reciprocal rank fusion, maximal marginal relevance, the standard ranking metrics (recall@k, MRR, nDCG@k), token-window chunking, and the search step of an IVF index. Then embed a real corpus on your GPU and measure BM25, dense and hybrid retrieval on your own questions.<br>
+**Time:** 2–3 h for the tests, 4–6 h for the scale-up · **Reads first:** [applied systems §1](../../curriculum/10-applied-llm-systems.md#1-rag-that-actually-works)<br>
 **Run:** `pytest labs/17_retrieval` (your code) · `pytest labs/17_retrieval --impl=solution` (reference). The five tests run on CPU in under a second.
 
 Most production LLM systems retrieve before they generate, and most bad RAG answers trace back to retrieval: the passage that held the answer never reached the context. Retrieval is also a place where a method three decades old (BM25) is still a strong baseline, and interviewers probe exactly that: why run BM25 next to embeddings, how RRF works, how you would evaluate the system, how much memory the index needs. This lab builds each piece small enough to check by hand.

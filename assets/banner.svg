@@ -24,7 +24,7 @@
       <circle cx="1170" cy="270" r="5"/><circle cx="1200" cy="90" r="5"/><circle cx="960" cy="300" r="5"/><circle cx="940" cy="170" r="6"/>
     </g>
   </g>
-  <text x="72" y="96" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" letter-spacing="4" fill="#20c4ff">OPEN CURRICULUM · 17 TESTED LABS · CPU OR GPU</text>
+  <text x="72" y="96" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" letter-spacing="4" fill="#20c4ff">OPEN CURRICULUM · 18 TESTED LABS · CPU OR GPU</text>
   <text x="68" y="182" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="92" font-weight="700" letter-spacing="-1" fill="#ffffff">Achilles</text>
   <rect x="72" y="204" width="300" height="5" rx="2.5" fill="url(#accent)"/>
   <text x="72" y="252" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="25" fill="#c9d1e6">Core AI from first principles. Build it, measure it, explain it.</text>

@@ -15,6 +15,7 @@ Routes for an engineer in India to work at AI teams abroad, the evidence each ro
 | UK | **Skilled Worker visa** | employer sponsorship; no lottery | several frontier labs have London offices |
 | UK | **Global Talent visa** | self-petitioned with an endorsement | check the current endorsement route and criteria |
 | EU | **EU Blue Card** and national skilled-worker schemes (Germany, Netherlands, France) | a qualifying job offer and salary threshold | Paris hosts several AI labs |
+| Canada | **Global Talent Stream** work permit, or **Express Entry** permanent residence | an offer from an eligible employer (Global Talent Stream); points for age, education, language and experience (Express Entry) | Toronto and Montreal host AI labs and institutes (Cohere, Mila, the Vector Institute); check current processing times and criteria |
 | anywhere | **Remote from India** for a global company | the company's policy on hiring in India, often through an employer-of-record | growing, but often limited to specific countries; confirm it in the offer |
 
 ## Questions to ask recruiters early

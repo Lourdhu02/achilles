@@ -2,7 +2,7 @@
 
 **Build:** a Llama-style decoder: RMSNorm, RoPE, grouped-query attention, SwiGLU, optional QK-norm,
 pre-norm residual blocks, tied embeddings, depth-scaled init. Then pretrain it on your GPU.
-**Time:** 10–14 h + the scale-up run · **Reads first:** [transformers](../../curriculum/04-transformers.md)
+**Time:** 10–14 h + the scale-up run · **Reads first:** [transformers](../../curriculum/04-transformers.md)<br>
 **Run:** `pytest labs/05_transformer` (your code) · `pytest labs/05_transformer --impl=solution` (reference) · then `python labs/05_transformer/train.py --help`
 
 ---

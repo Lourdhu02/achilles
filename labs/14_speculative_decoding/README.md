@@ -1,7 +1,7 @@
 # Lab 14 — Speculative decoding
 
-**Build:** one round of speculative sampling with exact rejection sampling, the acceptance rate α = Σ min(p, q), and the formulas for tokens per target pass and end-to-end speedup, each checked against simulation. Then a real draft–target pair on your 8 GB GPU.
-**Time:** 2–3 h for the tests, 4–6 h for the scale-up · **Reads first:** [inference §3](../../curriculum/07-inference.md#3-speculative-decoding-done-correctly)
+**Build:** one round of speculative sampling with exact rejection sampling, the acceptance rate α = Σ min(p, q), and the formulas for tokens per target pass and end-to-end speedup, each checked against simulation. Then a real draft–target pair on your 8 GB GPU.<br>
+**Time:** 2–3 h for the tests, 4–6 h for the scale-up · **Reads first:** [inference §3](../../curriculum/07-inference.md#3-speculative-decoding-done-correctly)<br>
 **Run:** `pytest labs/14_speculative_decoding` (your code) · `pytest labs/14_speculative_decoding --impl=solution` (reference). The three tests run on CPU in a few seconds.
 
 Every major serving engine ships speculative decoding, and it is the cleanest example of a systems speedup that provably changes nothing about the output distribution. Interviewers ask for the acceptance rule, the proof that it is exact, the expected speedup, and when it stops paying. This lab has you prove the first, simulate the second and derive the rest.

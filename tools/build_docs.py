@@ -40,7 +40,7 @@ EXTRA_CSS = """/* Home page: the banner carries the title, so hide the H1 MkDocs
 .md-content__inner > h1:has(+ div img[src$="banner.svg"]) { display: none; }
 .md-typeset table:not([class]) img { vertical-align: middle; }
 """
-HOME_FRONT_MATTER = "---\ntitle: Achilles\n---\n\n"
+HOME_FRONT_MATTER = "---\ntitle: Core AI from first principles\n---\n\n"
 MATHJAX_CONFIG = """window.MathJax = {
   tex: { inlineMath: [["\\\\(", "\\\\)"]], displayMath: [["\\\\[", "\\\\]"]], processEscapes: true, processEnvironments: true },
   options: { ignoreHtmlClass: ".*|", processHtmlClass: "arithmatex" }

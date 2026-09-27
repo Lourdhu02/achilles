@@ -1,7 +1,7 @@
 # Lab 13 — Quantization
 
-**Build:** symmetric INT8 and INT4 quantization at per-tensor, per-channel and group-wise granularity, INT4 packing, the NF4 codebook from normal quantiles, SmoothQuant's outlier migration, and GPTQ's error-feedback solver for one layer. Then quantize real models on your 8 GB GPU and check the bandwidth prediction.
-**Time:** 3–4 h for the tests, 3–6 h for the scale-up · **Reads first:** [inference §4](../../curriculum/07-inference.md#4-quantization)
+**Build:** symmetric INT8 and INT4 quantization at per-tensor, per-channel and group-wise granularity, INT4 packing, the NF4 codebook from normal quantiles, SmoothQuant's outlier migration, and GPTQ's error-feedback solver for one layer. Then quantize real models on your 8 GB GPU and check the bandwidth prediction.<br>
+**Time:** 3–4 h for the tests, 3–6 h for the scale-up · **Reads first:** [inference §4](../../curriculum/07-inference.md#4-quantization)<br>
 **Run:** `pytest labs/13_quantization` (your code) · `pytest labs/13_quantization --impl=solution` (reference). The eight tests run on CPU in a few seconds.
 
 Nearly every deployed LLM runs quantized. Weight bytes set decode speed and decide which model fits which card: on an 8 GB laptop GPU a 7B model exists only at 4 bits. Interviewers ask what an outlier does to a scale, why weight-only quantization speeds up decode but not prefill, how NF4 and GPTQ work, and what E4M3 means. This lab turns each answer into something you have computed.

@@ -10,7 +10,7 @@ Milestone-based: **move on when the exit criteria are met, not when the calendar
 | 0 Setup | week 1 | 10 | SETUP; `measure_gpu.py`; self-rate modules 0–5; read [00](curriculum/00-learning-os.md) | GPU numbers in the journal; baseline ratings |
 | 1 Foundations | Oct–Nov | 150 | [01](curriculum/01-math.md)–[03](curriculum/03-deep-learning.md); labs 01–03 | labs pass; derive the softmax-CE and LayerNorm backward on paper; napkin drills ≥ 80% |
 | 2 Transformers | Nov–Dec | 150 | [04](curriculum/04-transformers.md); labs 04–07; **S1** pretraining run | your GPT trains on TinyStories; Triton kernel correct on GPU; **blog post 1** |
-| 3 Scale | Jan 2027 | 100 | [05](curriculum/05-pretraining.md); labs 08–09; **S2** scaling sweep | your own fitted scaling law; a 7B run planned on paper and defended |
+| 3 Scale | Jan 2027 | 100 | [05](curriculum/05-pretraining.md); labs 08–09 and 18 (MoE); **S2** scaling sweep | your own fitted scaling law; a 7B run planned on paper and defended; dense vs MoE at matched active parameters |
 | 4 Post-training | Feb–Mar | 175 | [06](curriculum/06-post-training.md); labs 10–12; **S4/S5** | GRPO improves a verifiable task (with CIs); **write-up 2**; first OSS PR |
 | 5 Inference | Mar–Apr | 125 | [07](curriculum/07-inference.md); labs 13–14; serving benchmark | measured tokens/s within 30% of your prediction; **write-up 3** |
 | **Gate A** | end Mar | — | research engineer vs founder evidence ([founder README](tracks/founder/README.md#decision-gate-put-it-in-roadmapmd)) | decide the emphasis for the next 3 months against thresholds written down in advance |

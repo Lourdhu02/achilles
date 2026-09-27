@@ -133,6 +133,7 @@ nav:
       - 15 Eval statistics: labs/15_eval_stats/README.md
       - 16 Interpretability: labs/16_interpretability/README.md
       - 17 Retrieval: labs/17_retrieval/README.md
+      - 18 Mixture of experts: labs/18_moe/README.md
   - Library: library/README.md
   - Companies:
       - companies/README.md
@@ -186,4 +187,6 @@ nav:
       - Offers and negotiation: career/offers-and-negotiation.md
       - Visa and relocation: career/visa-and-relocation.md
       - Sustainability: career/sustainability.md
-  - Journal: journal/README.md
+  - Journal:
+      - journal/README.md
+      - "Worked example: an induction shortcut": journal/examples/2026-09-26-induction-shortcut.md

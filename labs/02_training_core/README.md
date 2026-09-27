@@ -2,7 +2,7 @@
 
 **Build:** initialization, LayerNorm/RMSNorm, masked cross-entropy, AdamW, Muon, cosine and WSD schedules,
 gradient clipping, and gradient accumulation that is actually correct, all from tensor ops.
-**Time:** 8–10 h · **Reads first:** [deep learning §2–6](../../curriculum/03-deep-learning.md#2-initialization-keeping-signals-alive)
+**Time:** 8–10 h · **Reads first:** [deep learning §2–6](../../curriculum/03-deep-learning.md#2-initialization-keeping-signals-alive)<br>
 **Run:** `pytest labs/02_training_core`
 
 The tests compare against PyTorch. Your AdamW must match `torch.optim.AdamW` to 1e-10 in float64 over 25 steps,

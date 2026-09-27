@@ -1,7 +1,7 @@
 # Lab 12 — Policy gradients to GRPO
 
-**Build:** the exact and Monte Carlo (REINFORCE) policy gradients for a softmax bandit, with a baseline; group-relative advantages (GRPO and Dr. GRPO); the clipped GRPO objective with a k3 KL penalty and two aggregation modes (GRPO's sequence mean, DAPO's token mean); then RL on a toy verifiable task that learns from reward ~0.13 to > 0.7 on CPU. Scale-up: GRPO with LoRA on Qwen2.5-0.5B-Instruct on 8 GB.
-**Time:** 4–5 h for the tests, 8–12 h for the scale-up · **Reads first:** [post-training §3 and §5](../../curriculum/06-post-training.md#5-rl-with-verifiable-rewards-grpo-and-friends)
+**Build:** the exact and Monte Carlo (REINFORCE) policy gradients for a softmax bandit, with a baseline; group-relative advantages (GRPO and Dr. GRPO); the clipped GRPO objective with a k3 KL penalty and two aggregation modes (GRPO's sequence mean, DAPO's token mean); then RL on a toy verifiable task that learns from reward ~0.13 to > 0.7 on CPU. Scale-up: GRPO with LoRA on Qwen2.5-0.5B-Instruct on 8 GB.<br>
+**Time:** 4–5 h for the tests, 8–12 h for the scale-up · **Reads first:** [post-training §3 and §5](../../curriculum/06-post-training.md#5-rl-with-verifiable-rewards-grpo-and-friends)<br>
 **Run:** `pytest labs/12_grpo` (your code) · `pytest labs/12_grpo --impl=solution` (reference). All five tests run on CPU; the counting task takes a few seconds.
 
 RL for reasoning (RLVR) is where post-training moved in 2025, and GRPO and its fixes are the standard interview topic. This lab builds the objective from the policy-gradient theorem up, so every term in the GRPO loss is something you derived and tested.

@@ -234,6 +234,9 @@ with $\alpha = 10^{-2}$ in the paper. $f_i$ (the dispatch fraction) is not diffe
 
 **The trade:** MoE buys more capacity per training FLOP. You pay in memory (all experts must be resident: 671B parameters are ~671 GB in FP8, more than one 8×80 GB node holds once you add the KV cache), in communication, and in serving complexity: at small batch sizes each expert sees few tokens, so decoding is memory-bound on expert weights.
 
+> [!TIP]
+> [Lab 18](../labs/18_moe/README.md) builds this layer: top-k routing, the auxiliary and z-losses, capacity with GShard priority, and a test against a per-token reference. Its scale-up turns your lab 05 model into an MoE and compares it with the dense baseline at matched active parameters.
+
 ## 7. Stability tricks you will see in configs
 
 | trick | what it does | failure it prevents |
