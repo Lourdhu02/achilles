@@ -1,7 +1,7 @@
 [project]
 name = "achilles"
 version = "3.0.0"
-description = "Core AI from first principles: 17 test-driven labs from autograd to GRPO, a curriculum, and research-engineer and founder tracks."
+description = "Core AI from first principles: 18 test-driven labs from autograd to GRPO and mixture of experts, a curriculum, and research-engineer and founder tracks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

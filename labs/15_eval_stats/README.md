@@ -1,7 +1,7 @@
 # Lab 15 — Evaluation statistics
 
-**Build:** normal and bootstrap confidence intervals, two paired tests (sign-flip permutation and exact McNemar), cluster-robust standard errors, the unbiased pass@k estimator, a power calculation, Holm–Bonferroni, Cohen's kappa for judge agreement, and a Bradley–Terry fit for arena votes. Then put error bars on the eval results of labs 10–12.
-**Time:** 2–3 h for the tests, 3–6 h for the scale-up · **Reads first:** [evaluation §2](../../curriculum/08-evaluation-and-research.md#2-statistics-error-bars-or-it-didnt-happen)
+**Build:** normal and bootstrap confidence intervals, two paired tests (sign-flip permutation and exact McNemar), cluster-robust standard errors, the unbiased pass@k estimator, a power calculation, Holm–Bonferroni, Cohen's kappa for judge agreement, and a Bradley–Terry fit for arena votes. Then put error bars on the eval results of labs 10–12.<br>
+**Time:** 2–3 h for the tests, 3–6 h for the scale-up · **Reads first:** [evaluation §2](../../curriculum/08-evaluation-and-research.md#2-statistics-error-bars-or-it-didnt-happen)<br>
 **Run:** `pytest labs/15_eval_stats` (your code) · `pytest labs/15_eval_stats --impl=solution` (reference). The six tests run on CPU in a few seconds.
 
 Most decisions in model development (ship the fine-tune, keep the ablation, claim the gain) come down to a difference of a few points on a few hundred items, and many such differences are noise. Research-engineer interviews test this directly: "is 62.1 vs 60.8 significant?", "how many items would you need?", "how do you estimate pass@k?". This lab turns each answer into a function you have tested, and the scale-up makes you use them on your own results.

@@ -1,9 +1,7 @@
 # Lab 06 — Attention kernels: online softmax → FlashAttention → Triton
 
-**Build:** (A) the FlashAttention forward and backward algorithms in PyTorch, tile by tile;
-(B) a fused softmax and a FlashAttention forward kernel in Triton that runs on your RTX 5060.
-**Time:** 12–16 h · **Reads first:** [compute & hardware](../../curriculum/02-compute-and-hardware.md),
-[inference §5](../../curriculum/07-inference.md#5-kernels-why-flashattention-wins)
+**Build:** (A) the FlashAttention forward and backward algorithms in PyTorch, tile by tile; (B) a fused softmax and a FlashAttention forward kernel in Triton that runs on your RTX 5060.<br>
+**Time:** 12–16 h · **Reads first:** [compute & hardware](../../curriculum/02-compute-and-hardware.md), [inference §5](../../curriculum/07-inference.md#5-kernels-why-flashattention-wins)<br>
 **Run:** `pytest labs/06_attention_kernels` (your code) · `pytest labs/06_attention_kernels --impl=solution` (reference). Triton tests use the CPU interpreter when there is no GPU.
 
 This is the lab that turns "I know FlashAttention exists" into "I can derive it, implement it,

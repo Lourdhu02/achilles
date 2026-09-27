@@ -1,7 +1,7 @@
 # Lab 10 — LoRA
 
-**Build:** a LoRA adapter around a frozen `nn.Linear`, adapter merging, a function that retrofits LoRA into any model by layer name, and a direct numerical test of the low-rank hypothesis. Then LoRA SFT of a real 0.5 B model on your 8 GB GPU with your own adapter code.
-**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [post-training §1–2](../../curriculum/06-post-training.md#2-parameter-efficient-fine-tuning)
+**Build:** a LoRA adapter around a frozen `nn.Linear`, adapter merging, a function that retrofits LoRA into any model by layer name, and a direct numerical test of the low-rank hypothesis. Then LoRA SFT of a real 0.5 B model on your 8 GB GPU with your own adapter code.<br>
+**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [post-training §1–2](../../curriculum/06-post-training.md#2-parameter-efficient-fine-tuning)<br>
 **Run:** `pytest labs/10_lora` (your code) · `pytest labs/10_lora --impl=solution` (reference). The four tests run on CPU in a few seconds.
 
 LoRA is the default way to fine-tune on a budget and the way most products serve thousands of customer-specific models on one base. Interviewers ask for its initialization, its parameter count, its merge, and when it is the wrong tool; this lab makes each of those something you have checked.

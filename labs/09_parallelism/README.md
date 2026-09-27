@@ -1,7 +1,7 @@
 # Lab 09 — Parallelism, simulated
 
-**Build:** a step-by-step ring all-reduce, Megatron column- and row-parallel layers, the ZeRO memory model, the pipeline-bubble formula and data-parallel gradient averaging, all in NumPy. Then real DDP across two processes on your laptop CPU.
-**Time:** 2–3 h for the tests, 2–4 h for the experiments · **Reads first:** [pretraining §5](../../curriculum/05-pretraining.md#5-distributed-training)
+**Build:** a step-by-step ring all-reduce, Megatron column- and row-parallel layers, the ZeRO memory model, the pipeline-bubble formula and data-parallel gradient averaging, all in NumPy. Then real DDP across two processes on your laptop CPU.<br>
+**Time:** 2–3 h for the tests, 2–4 h for the experiments · **Reads first:** [pretraining §5](../../curriculum/05-pretraining.md#5-distributed-training)<br>
 **Run:** `pytest labs/09_parallelism` (your code) · `pytest labs/09_parallelism --impl=solution` (reference). The tests are NumPy only and finish in about a second.
 
 Every frontier model is trained on more GPUs than fit in one server, so large-scale jobs and research-engineer interviews both assume you can size a run on paper: which collective moves how many bytes, what each GPU holds in memory, and how much time idle pipeline stages waste. None of this needs a cluster. The arithmetic is exact, and this lab makes you derive it by building each piece.

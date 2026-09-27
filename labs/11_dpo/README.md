@@ -1,7 +1,7 @@
 # Lab 11 — DPO
 
-**Build:** response-only sequence log-probabilities, the DPO loss with implicit rewards and label smoothing, IPO and SimPO, and a numerical proof that DPO converges to the closed-form optimum of the KL-regularized RLHF objective. Then DPO on your lab 10 model with 500 preference pairs.
-**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [post-training §3–4](../../curriculum/06-post-training.md#4-dpo-and-its-family)
+**Build:** response-only sequence log-probabilities, the DPO loss with implicit rewards and label smoothing, IPO and SimPO, and a numerical proof that DPO converges to the closed-form optimum of the KL-regularized RLHF objective. Then DPO on your lab 10 model with 500 preference pairs.<br>
+**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [post-training §3–4](../../curriculum/06-post-training.md#4-dpo-and-its-family)<br>
 **Run:** `pytest labs/11_dpo` (your code) · `pytest labs/11_dpo --impl=solution` (reference). All five tests run on CPU in seconds.
 
 DPO is the most-asked alignment derivation in research-engineer interviews, and `sequence_logprobs` is where most real alignment code has its bugs. After this lab you can derive the loss, implement it without an off-by-one, and show numerically that it optimizes what the derivation says.

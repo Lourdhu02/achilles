@@ -1,5 +1,5 @@
 # Experiment: {title}
-**Date:** · **Git hash:** · **Hardware:** RTX 5060 8 GB · **Config:** (paste or link)
+**Date:** · **Git hash:** · **Hardware:** (GPU, or CPU) · **Config:** (paste or link) · **Lab or paper:** (link)
 
 ## Question and hypothesis
 What I want to know. **Prediction, written before running:** (a number, with a reason)
@@ -21,3 +21,8 @@ Confounders, too-small n, untuned baseline, a single scale.
 
 ## Next
 The one experiment this result suggests.
+
+## Reproduce
+The exact command or snippet, with seeds, that regenerates every number above.
+
+Example of a finished entry: [examples/2026-09-26-induction-shortcut.md](../examples/2026-09-26-induction-shortcut.md).

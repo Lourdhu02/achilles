@@ -1,6 +1,6 @@
 # Labs
 
-Seventeen test-driven labs that rebuild the modern LLM stack. Each lab has a handout (`README.md`), a stub you implement (`exercise.py`), a test suite, and a reference solution (`solution.py`) to read after an honest attempt. Every test suite runs on a laptop CPU. The scale-up runs are optional, and sized for one 8 GB GPU or a free Colab or Kaggle T4.
+Eighteen test-driven labs that rebuild the modern LLM stack. Each lab has a handout (`README.md`), a stub you implement (`exercise.py`), a test suite, and a reference solution (`solution.py`) to read after an honest attempt. Every test suite runs on a laptop CPU. The scale-up runs are optional, and sized for one 8 GB GPU or a free Colab or Kaggle T4.
 
 | # | Lab | You build | Tests | Time (tests) | Scale-up run |
 |---|---|---|:-:|---|---|
@@ -21,6 +21,7 @@ Seventeen test-driven labs that rebuild the modern LLM stack. Each lab has a han
 | 15 | [Evaluation statistics](15_eval_stats/README.md) | CIs, paired tests, clustered SEs, pass@k, power, Bradley–Terry | 6 | 2–3 h | a leaderboard with error bars |
 | 16 | [Mechanistic interpretability](16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 8 | 3–4 h | an SAE on your S1 model |
 | 17 | [Retrieval for RAG](17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF index | 5 | 2–3 h | evaluate your own RAG |
+| 18 | [Mixture of experts](18_moe/README.md) | Top-k routing, load balancing, capacity and dropping, total vs active params | 10 | 3–4 h | an MoE version of your S1 model |
 
 Times are for a first honest attempt at the tests; the scale-up runs add a few hours to an overnight run each. [SETUP.md](../SETUP.md#what-you-can-do-on-each-tier) lists the minimum hardware for every scale-up.
 
@@ -45,4 +46,4 @@ python tools/make_exercises.py --force 08_scaling_laws   # regenerate a stub (de
 `LABS_IMPL=solution` works too, for example in an IDE's test runner. In `solution.py`, code between `# BEGIN SOLUTION` and `# END SOLUTION` is stripped into `exercise.py`, and `# HINT:` lines survive. Existing exercise files are never overwritten without `--force`, because they hold your work.
 
 > [!TIP]
-> Commit your `exercise.py` work to your own fork as you go. Then `git diff` shows exactly what you changed, your progress is backed up, and a public fork with all 17 labs passing is a portfolio piece in itself.
+> Commit your `exercise.py` work to your own fork as you go. Then `git diff` shows exactly what you changed, your progress is backed up, and a public fork with all 18 labs passing is a portfolio piece in itself.

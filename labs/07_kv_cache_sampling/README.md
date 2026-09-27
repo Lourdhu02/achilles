@@ -1,7 +1,7 @@
 # Lab 07 — KV cache and sampling
 
-**Build:** a preallocated KV cache, a cache-aware causal mask, chunked prefill, cached generation, and temperature / top-k / top-p / min-p sampling, on a small Llama-style decoder (RoPE, GQA, RMSNorm) that mirrors lab 05.
-**Time:** 6–8 h · **Reads first:** [inference §1–2](../../curriculum/07-inference.md#1-two-phases-two-bottlenecks)
+**Build:** a preallocated KV cache, a cache-aware causal mask, chunked prefill, cached generation, and temperature / top-k / top-p / min-p sampling, on a small Llama-style decoder (RoPE, GQA, RMSNorm) that mirrors lab 05.<br>
+**Time:** 6–8 h · **Reads first:** [inference §1–2](../../curriculum/07-inference.md#1-two-phases-two-bottlenecks)<br>
 **Run:** `pytest labs/07_kv_cache_sampling` (your code) · `pytest labs/07_kv_cache_sampling --impl=solution` (reference). All 13 tests run on CPU in seconds.
 
 Every serving engine is built on the two things in this lab: a KV cache whose indexing is exactly right, and a sampler whose filters compose correctly. Both fail silently when they are wrong: the model still produces fluent text, just not the text it should.

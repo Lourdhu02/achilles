@@ -1,7 +1,7 @@
 # Lab 16 — Mechanistic interpretability
 
-**Build:** an induction-head detector for a two-layer attention-only transformer trained on repeated random tokens, an activation-patching function, and a sparse autoencoder (SAE) that recovers 32 ground-truth features packed into 16 dimensions. Then train an SAE on the residual stream of your own lab 05 model.
-**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [interpretability](../../curriculum/09-interpretability-and-safety.md)
+**Build:** an induction-head detector for a two-layer attention-only transformer trained on repeated random tokens, an activation-patching function, and a sparse autoencoder (SAE) that recovers 32 ground-truth features packed into 16 dimensions. Then train an SAE on the residual stream of your own lab 05 model.<br>
+**Time:** 3–4 h for the tests, 4–8 h for the scale-up · **Reads first:** [interpretability](../../curriculum/09-interpretability-and-safety.md)<br>
 **Run:** `pytest labs/16_interpretability` (your code) · `pytest labs/16_interpretability --impl=solution` (reference). The eight tests train two small models on CPU in about 15 seconds.
 
 Interpretability asks what computation a trained network actually performs. Anthropic, Google DeepMind and OpenAI all publish research on it, and its tools double as everyday debugging instruments: attention patterns show what a head reads, patching shows where information lives, SAEs split activations into parts you can name. Interviews ask you to explain an induction head, to say what a patching result does and does not prove, and to train and judge an SAE. This lab builds each tool small enough to check against ground truth, and it shows a trap worth knowing: a test that passes while the model learns something other than what the test name says.

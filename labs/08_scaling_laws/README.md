@@ -2,7 +2,7 @@
 
 **Build:** a power-law fitter, the Chinchilla loss surface, the closed-form compute-optimal allocation,
 and inference-aware model sizing. Then run your own IsoFLOP study on your GPU and fit your own exponent.
-**Time:** 3–4 h for the tests + an overnight scale-up run · **Reads first:** [pretraining §3](../../curriculum/05-pretraining.md#3-scaling-laws)
+**Time:** 3–4 h for the tests + an overnight scale-up run · **Reads first:** [pretraining §3](../../curriculum/05-pretraining.md#3-scaling-laws)<br>
 **Run:** `pytest labs/08_scaling_laws` (your code) · `pytest labs/08_scaling_laws --impl=solution` (reference) · CPU only, seconds
 
 ---

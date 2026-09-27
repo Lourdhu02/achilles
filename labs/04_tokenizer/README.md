@@ -2,7 +2,7 @@
 
 **Build:** GPT-style byte-level BPE: regex pre-tokenization, merge training, rank-ordered encoding,
 special tokens, lossless decoding. Then use it to measure something the big labs got wrong for years.
-**Time:** 6–8 h · **Reads first:** [transformers §1](../../curriculum/04-transformers.md#1-tokens-in-logits-out)
+**Time:** 6–8 h · **Reads first:** [transformers §1](../../curriculum/04-transformers.md#1-tokens-in-logits-out)<br>
 **Run:** `pytest labs/04_tokenizer` (your code) · `pytest labs/04_tokenizer --impl=solution` (reference) · CPU only, seconds
 
 ## Why engineers who "just use the API" get this wrong

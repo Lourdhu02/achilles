@@ -22,7 +22,7 @@ Every module has the same anatomy: **why it matters → mechanisms with derivati
 | 01 | [Math](01-math.md) | 01 | derive any layer's backward pass; PPO and DPO from their objectives |
 | 02 | [Compute & hardware](02-compute-and-hardware.md) | 03 | predict runtime and memory within 2× before measuring |
 | 03 | [Deep learning](03-deep-learning.md) | 01, 02 | debug a diverging run from its curves |
-| 04 | [Transformers](04-transformers.md) | 04, 05 | implement a modern LLM from a blank file |
+| 04 | [Transformers](04-transformers.md) | 04, 05, 18 | implement a modern LLM from a blank file |
 | 05 | [Pretraining](05-pretraining.md) | 08, 09 | plan a 7B run end to end: data, compute, parallelism |
 | 06 | [Post-training](06-post-training.md) | 10–12 | implement SFT, DPO and GRPO and name their failure modes |
 | 07 | [Inference](07-inference.md) | 06, 07, 13, 14 | size and optimize a serving system |

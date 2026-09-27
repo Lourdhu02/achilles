@@ -1,7 +1,7 @@
 # Lab 01 — Autograd from scratch
 
-**Build:** a NumPy `Tensor` with reverse-mode automatic differentiation, then train an MLP with it.
-**Time:** 8–12 h · **Reads first:** [math §2](../../curriculum/01-math.md#2-matrix-calculus-the-only-calculus-you-need), [deep learning §1](../../curriculum/03-deep-learning.md#1-autodiff-what-backward-actually-does)
+**Build:** a NumPy `Tensor` with reverse-mode automatic differentiation, then train an MLP with it.<br>
+**Time:** 8–12 h · **Reads first:** [math §2](../../curriculum/01-math.md#2-matrix-calculus-the-only-calculus-you-need), [deep learning §1](../../curriculum/03-deep-learning.md#1-autodiff-what-backward-actually-does)<br>
 **Run:** `pytest labs/01_autograd` (your code) · `pytest labs/01_autograd --impl=solution` (reference)
 
 After this lab you should be able to derive, on a whiteboard, the backward pass of any layer you meet,

@@ -4,13 +4,13 @@
 
 <h3>Rebuild the modern LLM stack from scratch, one tested lab at a time.</h3>
 
-<p>Autograd → tokenizer → GPT → FlashAttention in Triton → KV cache → LoRA · DPO · GRPO → quantization → speculative decoding → evals → interpretability → retrieval.<br/>
+<p>Autograd → tokenizer → GPT → FlashAttention in Triton → KV cache → LoRA · DPO · GRPO → quantization → speculative decoding → evals → interpretability → retrieval → mixture of experts.<br/>
 Every lab runs on a laptop CPU. The scale-up runs are sized for one 8 GB GPU or a free Colab T4.</p>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Lourdhu02/achilles/ci.yml?branch=main&style=flat-square&label=CI&labelColor=161b22)](https://github.com/Lourdhu02/achilles/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-lourdhu02.github.io%2Fachilles-7c5cff?style=flat-square&labelColor=161b22)](https://lourdhu02.github.io/achilles/)
-![Labs](https://img.shields.io/badge/labs-17-7c5cff?style=flat-square&labelColor=161b22)
-![Tests](https://img.shields.io/badge/reference_tests-219_passing-7c5cff?style=flat-square&labelColor=161b22)
+![Labs](https://img.shields.io/badge/labs-18-7c5cff?style=flat-square&labelColor=161b22)
+![Tests](https://img.shields.io/badge/reference_tests-229_passing-7c5cff?style=flat-square&labelColor=161b22)
 ![Runs on](https://img.shields.io/badge/runs_on-CPU%20%C2%B7%20CUDA%20%C2%B7%20Apple%20Silicon-7c5cff?style=flat-square&labelColor=161b22)
 <br/>
 ![Python](https://img.shields.io/badge/python-3.10%2B-7c5cff?style=flat-square&labelColor=161b22&logo=python&logoColor=white)
@@ -31,7 +31,7 @@ Every lab runs on a laptop CPU. The scale-up runs are sized for one 8 GB GPU or 
 
 <table>
 <tr>
-<td align="center" width="20%"><img src="assets/icons/flask-conical.svg" width="28" height="28" alt=""/><br/><b>Test-driven</b><br/><sub>219 reference tests, run in CI on Linux, Windows and macOS</sub></td>
+<td align="center" width="20%"><img src="assets/icons/flask-conical.svg" width="28" height="28" alt=""/><br/><b>Test-driven</b><br/><sub>229 reference tests, run in CI on Linux, Windows and macOS</sub></td>
 <td align="center" width="20%"><img src="assets/icons/terminal.svg" width="28" height="28" alt=""/><br/><b>From scratch</b><br/><sub>you write the math; libraries only for plumbing</sub></td>
 <td align="center" width="20%"><img src="assets/icons/gauge.svg" width="28" height="28" alt=""/><br/><b>Measured</b><br/><sub>predict FLOPs, memory and tokens/s, then check</sub></td>
 <td align="center" width="20%"><img src="assets/icons/laptop.svg" width="28" height="28" alt=""/><br/><b>Runs anywhere</b><br/><sub>CPU, NVIDIA, Apple Silicon, Colab, Codespaces</sub></td>
@@ -52,7 +52,7 @@ Achilles trains the opposite skill. You implement every core mechanism yourself,
 
 | Part | What you get |
 |---|---|
-| <img src="assets/icons/flask-conical.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Labs](labs/README.md)** | 17 test-driven labs: a handout, a stub you implement, a test suite and a reference solution for each |
+| <img src="assets/icons/flask-conical.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Labs](labs/README.md)** | 18 test-driven labs: a handout, a stub you implement, a test suite and a reference solution for each |
 | <img src="assets/icons/graduation-cap.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Curriculum](curriculum/README.md)** | 11 modules from the math to applied systems: mechanisms, derivations, napkin math, traps and papers |
 | <img src="assets/icons/library-big.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Library](library/README.md)** | 90 visual guides, papers and course notes across 19 hard topics, the sections worth your time in each, and a PDF fetcher |
 | <img src="assets/icons/building-2.svg" width="20" height="20" alt="" align="top"/>&nbsp; **[Companies](companies/README.md)** | How to get into Anthropic, OpenAI, Google DeepMind, Meta and NVIDIA: teams, interview loops, reading lists and portfolio projects |
@@ -68,9 +68,9 @@ git clone https://github.com/Lourdhu02/achilles.git && cd achilles
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
 pip install torch --index-url https://download.pytorch.org/whl/cpu   # NVIDIA GPU: .../whl/cu128
 pip install -r requirements.txt
-python -m pytest --impl=solution -q    # all 219 reference tests pass: your setup works
+python -m pytest --impl=solution -q    # all 229 reference tests pass: your setup works
 pytest labs/01_autograd                # 37 failing tests: your first job
-python tools/progress.py               # your scoreboard across all 17 labs
+python tools/progress.py               # your scoreboard across all 18 labs
 ```
 
 > [!TIP]
@@ -128,6 +128,7 @@ The tests compare your code against PyTorch or a closed form, check invariants (
 | <img src="assets/icons/chart-column.svg" width="18" height="18" alt=""/> | [15 · Eval statistics](labs/15_eval_stats/README.md) | Confidence intervals, paired tests, clustered standard errors, pass@k, power, Bradley–Terry | 6 |
 | <img src="assets/icons/microscope.svg" width="18" height="18" alt=""/> | [16 · Interpretability](labs/16_interpretability/README.md) | Induction heads (and the positional shortcut that fakes them), activation patching, sparse autoencoders | 8 |
 | <img src="assets/icons/search.svg" width="18" height="18" alt=""/> | [17 · Retrieval](labs/17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF vector index | 5 |
+| <img src="assets/icons/network.svg" width="18" height="18" alt=""/> | [18 · Mixture of experts](labs/18_moe/README.md) | Top-k routing, load balancing, capacity and token dropping, total vs active parameters | 10 |
 
 All reference solutions pass in CI on Linux, Windows and macOS, with the Triton kernels running in Triton's CPU interpreter on Linux.
 
@@ -153,7 +154,7 @@ flowchart LR
 | [01 Math](curriculum/01-math.md) | Linear algebra, matrix calculus, probability and information, optimization, statistics | 01 |
 | [02 Compute](curriculum/02-compute-and-hardware.md) | The GPU in one picture, the roofline (attention included), number formats, FLOP, memory and communication accounting | 03 |
 | [03 Deep learning](curriculum/03-deep-learning.md) | Autodiff, initialization, normalization, optimizers, schedules, mixed precision, a debugging playbook | 01, 02 |
-| [04 Transformers](curriculum/04-transformers.md) | Attention, positional encodings, the block, parameter and FLOP accounting, MoE, beyond vanilla attention | 04, 05 |
+| [04 Transformers](curriculum/04-transformers.md) | Attention, positional encodings, the block, parameter and FLOP accounting, MoE, beyond vanilla attention | 04, 05, 18 |
 | [05 Pretraining](curriculum/05-pretraining.md) | Data, scaling laws, the standard recipe, distributed training, stability, long context, planning a 7B run | 08, 09 |
 | [06 Post-training](curriculum/06-post-training.md) | SFT, LoRA, reward models and PPO, the DPO derivation, GRPO, test-time compute, distillation | 10–12 |
 | [07 Inference](curriculum/07-inference.md) | Prefill and decode, serving mechanics, speculative decoding, quantization, kernels, capacity planning | 06, 07, 13, 14 |
@@ -212,7 +213,7 @@ The core teams and what each one tests · [interview loops](tracks/research-engi
 
 ```
 curriculum/   11 modules: mechanisms, derivations, napkin math, traps, papers
-labs/         17 labs: handout · exercise.py · solution.py · tests
+labs/         18 labs: handout · exercise.py · solution.py · tests
 library/      90 visual guides and papers by topic, manifest.json
 companies/    Anthropic, OpenAI, Google DeepMind, Meta, NVIDIA and more labs
 tracks/       research-engineer/ and founder/
