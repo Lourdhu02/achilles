@@ -10,7 +10,7 @@ Where every number on the résumé comes from, so each one survives "how did you
 | ECHOME assessment: half the items, r = 0.97 with full-test scores | [`echome_cat_sim.py`](echome_cat_sim.py): 500 simulated respondents × 8 traits, seed 0; CAT r = 0.91 and full test r = 0.935 against true scores |
 | Paper: 23 pages, 51 references | [no-final-save](https://github.com/Lourdhu02/no-final-save) README |
 | Achilles: 18 labs, 229 reference tests | this repository's README and CI |
-| BrainOvision: +15% forecast accuracy | your own claim; know the metric (e.g. WMAE or MAPE) and the baseline before an interview |
+| BrainOvision: Walmart sales forecasting, +15% accuracy over baseline | your own claim. Before an interview, be able to say: the forecast target and horizon, the error metric (Walmart's Kaggle sales data is usually scored with holiday-weighted MAE, WMAE), the baseline it beat (e.g. a seasonal-naive or last-year forecast), and whether 15% is a relative error reduction. If you can't, say "about 15% lower error than our baseline" and explain the method instead |
 
 > [!NOTE]
 > The ECHOME README says the assessment is "70% shorter at SE < 0.32". With the current 10-item-per-trait bank, the stopping rule
