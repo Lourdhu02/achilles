@@ -73,29 +73,28 @@
 %----------- HEADING -----------
 \begin{center}
     \textbf{\Huge \scshape Lourdu Raju} \\ \vspace{3pt}
-    \small \textit{Machine Learning Engineer --- GenAI \textbar{} Computer Vision \textbar{} Production ML} \\ \vspace{4pt}
+    \small \textit{Machine Learning Engineer --- Production Computer Vision \textbar{} GPU Inference \textbar{} Applied GenAI} \\ \vspace{4pt}
     \small Bengaluru, India $|$ +91 99595 94460 $|$
     \href{mailto:b.lourdhuraju1234@gmail.com}{\underline{b.lourdhuraju1234@gmail.com}} \\ \vspace{1pt}
     \small \href{https://linkedin.com/in/lourdhu}{\underline{linkedin.com/in/lourdhu}} $|$
     \href{https://github.com/Lourdhu02}{\underline{github.com/Lourdhu02}} $|$
-    \href{https://kaggle.com/blourdhuraju}{\underline{kaggle.com/blourdhuraju}}
+    \href{https://kaggle.com/blourdhuraju}{\underline{kaggle.com/blourdhuraju}} $|$
+    \href{https://spacedrift.in}{\underline{spacedrift.in}}
 \end{center}
 
 %----------- SUMMARY -----------
 \section{Professional Summary}
-Machine Learning Engineer with 2 years of experience building production GenAI, NLP, and Computer Vision systems at scale. Specialized in agentic AI (LangGraph, RAG, LoRA fine-tuning), low-latency model serving (vLLM, ONNX, TensorRT), and full-stack ML deployment (FastAPI, Docker, Kubernetes, AWS SageMaker). Strong CS foundations --- data structures \& algorithms, ML system design, and distributed systems. Kaggle Expert currently architecting Transformer-based OCR pipelines at production scale.
+ML engineer (about 2 years) who owns a utility-scale OCR system end to end, from training to TensorRT/Triton serving; lifted live accuracy \textbf{79\% $\rightarrow$ 91\%} over \textbf{40M} readings. Founder of SpaceDrift, a 5-person ML studio.
 
 %----------- SKILLS -----------
 \section{Technical Skills}
 \begin{itemize}[leftmargin=0.15in, label={}]
   \small{\item{
     \textbf{Languages}: Python, SQL, C++, Bash \\
-    \textbf{ML / Deep Learning}: PyTorch, TensorFlow, Hugging Face Transformers, scikit-learn, NumPy, Pandas, OpenCV, XGBoost \\
-    \textbf{GenAI \& LLM}: LangChain, LangGraph, LlamaIndex, Ollama, vLLM; OpenAI / Anthropic / Groq APIs; LoRA fine-tuning, prompt engineering, function calling, agentic systems \\
-    \textbf{RAG \& Vector Search}: Hybrid retrieval, dense embeddings, reranking, semantic search; ChromaDB, Qdrant, Pinecone, FAISS; sentence-transformers \\
-    \textbf{Computer Vision \& NLP}: ViT, YOLO, CLIP; OCR (CRNN, SVRT, SVTR, PaddleOCR); BERT, RoBERTa, T5; spaCy, NLTK \\
-    \textbf{MLOps, Cloud \& Databases}: ONNX, TensorRT, INT8 quantization; FastAPI, REST / gRPC; Docker, Kubernetes; MLflow, Weights \& Biases, DVC, Git, GitHub Actions, CI / CD; AWS (EC2, Lambda, S3, SageMaker), GCP (Vertex AI); PostgreSQL, MongoDB, Redis \\
-    \textbf{CS Foundations \& Math}: Data Structures \& Algorithms, ML system design, OOP, operating systems, computer networks, DBMS; linear algebra, probability, statistics
+    \textbf{Modeling}: PyTorch, Hugging Face, YOLO (OBB), SVTRv2, MobileViTv2, OpenCV, scikit-learn, NumPy \\
+    \textbf{Inference}: TensorRT (FP16), Triton Inference Server, ONNX Runtime, \texttt{torch.compile}, load testing \\
+    \textbf{MLOps \& Cloud}: DVC, GitHub Actions, pytest, Docker, Kubernetes; AWS (EC2, Lambda, S3, DynamoDB) \\
+    \textbf{GenAI}: LangGraph, Ollama, RAG (Qdrant, ChromaDB, cross-encoder reranking), FastAPI, React
   }}
 \end{itemize}
 
@@ -107,26 +106,26 @@ Machine Learning Engineer with 2 years of experience building production GenAI, 
     {Sujanix Private Limited}{Jan 2026 -- Present}
     {Machine Learning Engineer}{Bengaluru, India}
     \resumeItemListStart
-      \resumeItem{Architected Transformer-based OCR pipelines using \textbf{SVRT} (a Swin-V2-based regression transformer) for government utility automation; improved exact-match accuracy from \textbf{82.74\% to 97.04\%}.}
-      \resumeItem{Designed a custom \textbf{FocalCTCLoss} combining focal loss with CTC decoding to handle severe character-class imbalance; stabilized training and reduced run-to-run variance.}
-      \resumeItem{Deployed via INT8 ONNX on AWS Lambda + FastAPI behind a Docker-based serving stack; reduced inference cost \textbf{30\%} at \textbf{99.9\%} uptime; owned the full lifecycle from labeling spec to production monitoring.}
+      \resumeItem{Own a five-model meter-reading pipeline (MobileViTv2, YOLO26n-OBB, \textbf{SVTRv2} + CTC) at up to \textbf{330K req/day}; raised live accuracy \textbf{79\% $\rightarrow$ 91\%} over 40M production readings.}
+      \resumeItem{Built the GPU path on Triton with 9 TensorRT FP16 engines on one L4: p50 latency \textbf{1,415 $\rightarrow$ 156 ms (9$\times$)}, \textbf{181 img/s} sustained at p95 340 ms with zero errors over 67,719 requests (12.6$\times$ peak load).}
+      \resumeItem{Ported the classifier from ONNX Runtime to TensorRT after patching an unsupported UINT8 \texttt{Transpose}: compute \textbf{309.5 $\rightarrow$ 3.3 ms (94$\times$)}, throughput 19 $\rightarrow$ 321 img/s.}
+      \resumeItem{Retrained SVTRv2 on production crops (\textbf{87.7\% $\rightarrow$ 90.1\%} exact match on a fixed 3,965-image set) and made training \textbf{3.8$\times$ faster} with fused SDPA and static \texttt{torch.compile}.}
+      \resumeItem{Root-caused a release regression to a CTC decoding bug (64.2\% $\rightarrow$ 84.0\% restored); added DVC-pinned releases, ONNX parity checks, benchmark-gated promotion and a canary router with serverless fallback.}
     \resumeItemListEnd
 
   \resumeSubheading
-    {SpaceDrift}{Aug 2024 -- Dec 2025}
-    {Founder \textbar{} MSME-registered sole proprietorship}{Bengaluru, India}
+    {SpaceDrift (spacedrift.in)}{Aug 2024 -- Present}
+    {Founder \textbar{} MSME-registered ML \& AI studio}{Bengaluru, India}
     \resumeItemListStart
-      \resumeItem{Founded and operated an MSME-registered sole proprietorship delivering engineering project builds, professional data annotation services, and research support to PhD scholars on problem framing, dataset curation, and experimental pipelines.}
-      \resumeItem{Spanned NLP, Computer Vision, and RAG domains as a self-funded operator; shipped \textbf{ECHOME} (agentic AI) and \textbf{FinSentinelAI} (privacy-first RAG) as flagship demonstrations.}
-      \resumeItem{Engaged 3 paid contractors on a per-project basis when workload exceeded solo capacity; owned customer scoping, pricing, delivery, and stakeholder communication independently.}
+      \resumeItem{Founded and lead a \textbf{5-person} studio that has delivered \textbf{10+} fixed-scope, fixed-price engagements in research ops for PhD scholars and document AI / OCR.}
+      \resumeItem{Own scoping, pricing and delivery; ship reproducible, seed-controlled experiment pipelines, baseline replications and extraction pipelines with code, data and environment handed over.}
     \resumeItemListEnd
 
   \resumeSubheading
     {BrainOvision Solutions}{Feb 2024 -- Apr 2024}
     {Data Science Intern}{Hyderabad, India}
     \resumeItemListStart
-      \resumeItem{Improved forecasting accuracy by \textbf{15\%} using ensemble gradient boosting with structured feature engineering; presented results to senior stakeholders.}
-      \resumeItem{Conducted EDA on multi-million-row datasets and surfaced 3 prioritized business actions adopted by the analytics team.}
+      \resumeItem{Improved forecasting accuracy \textbf{15\%} with ensemble gradient boosting on multi-million-row data.}
     \resumeItemListEnd
 
 \resumeSubHeadingListEnd
@@ -136,42 +135,25 @@ Machine Learning Engineer with 2 years of experience building production GenAI, 
 \resumeSubHeadingListStart
 
   \resumeProjectHeading
-    {\textbf{ECHOME --- Cognitive Mirror Engine} $|$ \emph{LangGraph, CAT/IRT, Fisher Information, XTTSv2}}
+    {\textbf{ECHOME --- Local-First Agent Memory} $|$ \emph{LangGraph, Qdrant, Ollama, IRT}}
     {\href{https://github.com/Lourdhu02/echome}{\underline{github.com/Lourdhu02/echome}}}
     \resumeItemListStart
-      \resumeItem{Autonomous agentic AI system on LangGraph with a three-tier memory architecture (Episodic, Semantic, Procedural) for long-horizon reasoning.}
-      \resumeItem{Integrated CAT / IRT psychometric models with Fisher Information maximization for adaptive assessment; reduced assessment time \textbf{70\%} (30 min to 9 min).}
-      \resumeItem{Privacy-first local deployment with XTTSv2 zero-shot voice cloning.}
+      \resumeItem{LangGraph agent with three-tier memory (episodic in Qdrant, LLM-consolidated semantic, procedural); adaptive IRT assessment with Fisher-information item selection cuts test length \textbf{70\%} at SE $<$ 0.32.}
     \resumeItemListEnd
 
   \resumeProjectHeading
-    {\textbf{FinSentinelAI --- Privacy-First Enterprise RAG} $|$ \emph{Ollama, ChromaDB, VLMs, JWT multi-tenant}}
+    {\textbf{FinSentinelAI --- Private Document RAG} $|$ \emph{FastAPI, Ollama, ChromaDB}}
     {\href{https://github.com/Lourdhu02/fin-sentinal.ai}{\underline{github.com/Lourdhu02/fin-sentinal.ai}}}
     \resumeItemListStart
-      \resumeItem{Production-grade RAG platform with local LLMs (Ollama), ChromaDB, hybrid retrieval, faithfulness verification, and JWT-based multi-tenant session isolation.}
-      \resumeItem{Multi-modal extraction from PDFs and bank statements using local Vision-Language Models for full data sovereignty.}
-      \resumeItem{Built for regulated finance customers with strict on-premise / data-residency constraints.}
-    \resumeItemListEnd
-
-  \resumeProjectHeading
-    {\textbf{Transformers-OCR --- Industrial OCR} $|$ \emph{SVTR, FocalCTCLoss, FRM, ONNX INT8}}
-    {\href{https://github.com/Lourdhu02/transformers-ocr}{\underline{github.com/Lourdhu02/transformers-ocr}}}
-    \resumeItemListStart
-      \resumeItem{High-accuracy OCR achieving \textbf{97\% exact-match} on numeric meter datasets via an SVTR backbone, custom Feature Rearrangement Modules, and FocalCTCLoss.}
-      \resumeItem{ONNX INT8 quantization for edge deployment with custom Semantic Guidance Modules for robustness in motion-blur and low-contrast environments.}
+      \resumeItem{Fully local RAG over invoices and bank statements with cross-encoder reranking, JWT-isolated workspaces and VLM-based ingestion; no document leaves the machine.}
     \resumeItemListEnd
 
 \resumeSubHeadingListEnd
 
 %----------- ACHIEVEMENTS -----------
 \section{Achievements \& Certifications}
-\begin{itemize}[leftmargin=0.15in, label={\textbullet}]
-  \small{
-    \item Kaggle Expert (Notebooks tier) --- active contributor on deep learning competitions.
-    \item Machine Learning Specialization --- DeepLearning.AI / Stanford.
-    \item NPTEL --- Data Science using Python (IIT Madras).
-    \item Microsoft Power BI Data Analyst Professional Certification.
-  }
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \small{\item{Kaggle Notebooks Expert $|$ ML Specialization (DeepLearning.AI, Stanford) $|$ NPTEL Data Science (IIT Madras)}}
 \end{itemize}
 
 %----------- EDUCATION -----------

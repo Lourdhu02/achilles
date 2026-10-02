@@ -7,7 +7,7 @@ A short, honest self-assessment against the north star, reviewed every quarter i
 ## Assets
 
 - About 2 years of shipped production ML: Transformer OCR for government utility automation at Sujanix (accuracy gains, INT8 ONNX deployment on AWS Lambda); privacy-first RAG (FinSentinelAI); an agent with memory (ECHOME).
-- Founder and operator experience: SpaceDrift, a sole proprietorship run for 16 months (Aug 2024 – Dec 2025), with scoping, pricing, delivery and paid contractors. Rare, and useful for both tracks.
+- Founder and operator experience: SpaceDrift (spacedrift.in), an MSME-registered ML studio founded in Aug 2024 and still active alongside the Sujanix role. A 5-person team has delivered 10+ fixed-scope engagements in research ops and document AI. Rare, and useful for both tracks.
 - Breadth across CV, NLP, LLMs and deployment; Kaggle Expert; an RTX 5060 for real experiments.
 
 > [!IMPORTANT]
