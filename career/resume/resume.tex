@@ -168,11 +168,11 @@ Machine Learning Engineer (about 2 years) who owns a utility-scale OCR system en
     \resumeItemListEnd
 
   \resumeProjectHeading
-    {\textbf{FinSentinelAI --- Private Document RAG} $|$ \emph{FastAPI, Ollama, ChromaDB}}
+    {\textbf{FinSentinelAI --- Private Document RAG} $|$ \emph{FastAPI, Ollama, ChromaDB, BM25}}
     {\href{https://github.com/Lourdhu02/fin-sentinal.ai}{\underline{github.com/Lourdhu02/fin-sentinal.ai}}}
     \resumeItemListStart
-      \resumeItem{Fully local RAG over invoices, receipts and bank statements: sentence-transformer embeddings in ChromaDB, cross-encoder reranking and a local LLM via Ollama, so no document leaves the machine.}
-      \resumeItem{Per-user isolation through JWT auth and database-level metadata filtering; multimodal ingestion of PDFs, CSV, JSON and images using local vision-language models.}
+      \resumeItem{Fully local RAG over invoices, bank statements, GST returns and salary slips: hybrid BM25 + dense retrieval fused with reciprocal-rank fusion, cross-encoder reranking and a local LLM via Ollama; JWT-isolated workspaces.}
+      \resumeItem{Built a 60-question benchmark over 1,000 financial PDFs that showed dense-only search found the right document for just \textbf{15\%} of exact-ID lookups; the added BM25 stage retrieves it first for \textbf{100\%}.}
     \resumeItemListEnd
 
 \resumeSubHeadingListEnd

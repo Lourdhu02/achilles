@@ -8,6 +8,7 @@ Where every number on the résumé comes from, so each one survives "how did you
 | spacedrift: INR 12 lakh gross revenue, 36 clients, 6 repeat, team of 5 | your own records (FY24–25 to FY26–27) |
 | ECHOME memory: 11 of 12 facts recalled in the top 5, up to 52 turns later, ~1 ms retrieval | `python -m tests.eval.run_eval` in the echome repo (12 scenarios; hashing-embedding fallback, run 2026-10-02) |
 | ECHOME assessment: half the items, r = 0.97 with full-test scores | [`echome_cat_sim.py`](echome_cat_sim.py): 500 simulated respondents × 8 traits, seed 0; CAT r = 0.91 and full test r = 0.935 against true scores |
+| FinSentinelAI: dense-only 15% recall@5, BM25 100% recall@1 (60 exact-lookup questions, 1,000 PDFs) | [fin-sentinal.ai `eval/`](https://github.com/Lourdhu02/fin-sentinal.ai/tree/claude/magical-allen-wc99cc/eval): CI run 36988217123 (dense, real models) and a local BM25 run; hybrid+rerank result pending |
 | Paper: 23 pages, 51 references | [no-final-save](https://github.com/Lourdhu02/no-final-save) README |
 | Achilles: 18 labs, 229 reference tests | this repository's README and CI |
 | BrainOvision: Walmart sales forecasting, +15% accuracy over baseline | your own claim. Before an interview, be able to say: the forecast target and horizon, the error metric (Walmart's Kaggle sales data is usually scored with holiday-weighted MAE, WMAE), the baseline it beat (e.g. a seasonal-naive or last-year forecast), and whether 15% is a relative error reduction. If you can't, say "about 15% lower error than our baseline" and explain the method instead |
