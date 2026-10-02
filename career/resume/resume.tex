@@ -16,6 +16,7 @@
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{fancyhdr}
+\usepackage{needspace}
 \usepackage[english]{babel}
 \usepackage{tabularx}
 \input{glyphtounicode}
@@ -84,17 +85,17 @@
 
 %----------- SUMMARY -----------
 \section{Professional Summary}
-ML engineer (about 2 years) who owns a utility-scale OCR system end to end, from training to TensorRT/Triton serving; lifted live accuracy \textbf{79\% $\rightarrow$ 91\%} over \textbf{40M} readings. Founder of SpaceDrift, a 5-person ML studio.
+Machine Learning Engineer (about 2 years) who owns a utility-scale OCR system end to end, from training runs to TensorRT/Triton serving and the benchmarks that gate every release; lifted live accuracy \textbf{79\% $\rightarrow$ 91\%} over \textbf{40M} readings. Founder of spacedrift, a 5-person ML studio with \textbf{INR 12 lakh revenue} from 36 clients. Author of a preprint on persistent AI agents and of Achilles, an open-source core-AI curriculum with 229 tests.
 
 %----------- SKILLS -----------
 \section{Technical Skills}
 \begin{itemize}[leftmargin=0.15in, label={}]
   \small{\item{
     \textbf{Languages}: Python, SQL, C++, Bash \\
-    \textbf{Modeling}: PyTorch, Hugging Face, YOLO (OBB), SVTRv2, MobileViTv2, OpenCV, scikit-learn, NumPy \\
-    \textbf{Inference}: TensorRT (FP16), Triton Inference Server, ONNX Runtime, \texttt{torch.compile}, load testing \\
-    \textbf{MLOps \& Cloud}: DVC, GitHub Actions, pytest, Docker, Kubernetes; AWS (EC2, Lambda, S3, DynamoDB) \\
-    \textbf{GenAI}: LangGraph, Ollama, RAG (Qdrant, ChromaDB, cross-encoder reranking), FastAPI, React
+    \textbf{Modeling}: PyTorch, Hugging Face, YOLO (OBB), SVTRv2, MobileViTv2, OpenCV, scikit-learn, XGBoost, NumPy, Pandas \\
+    \textbf{Inference \& Optimization}: TensorRT (FP16), Triton Inference Server, ONNX Runtime, \texttt{torch.compile}, load testing and p50/p95/p99 benchmarking \\
+    \textbf{MLOps \& Cloud}: DVC, GitHub Actions, pytest, Docker, Kubernetes, Helm; AWS (EC2, Lambda, S3, DynamoDB, CloudWatch) \\
+    \textbf{GenAI \& Backend}: LangGraph, Ollama, RAG (Qdrant, ChromaDB, cross-encoder reranking), sentence-transformers, FastAPI, React
   }}
 \end{itemize}
 
@@ -106,26 +107,50 @@ ML engineer (about 2 years) who owns a utility-scale OCR system end to end, from
     {Sujanix Private Limited}{Jan 2026 -- Present}
     {Machine Learning Engineer}{Bengaluru, India}
     \resumeItemListStart
-      \resumeItem{Own a five-model meter-reading pipeline (MobileViTv2, YOLO26n-OBB, \textbf{SVTRv2} + CTC) at up to \textbf{330K req/day}; raised live accuracy \textbf{79\% $\rightarrow$ 91\%} over 40M production readings.}
-      \resumeItem{Built the GPU path on Triton with 9 TensorRT FP16 engines on one L4: p50 latency \textbf{1,415 $\rightarrow$ 156 ms (9$\times$)}, \textbf{181 img/s} sustained at p95 340 ms with zero errors over 67,719 requests (12.6$\times$ peak load).}
-      \resumeItem{Ported the classifier from ONNX Runtime to TensorRT after patching an unsupported UINT8 \texttt{Transpose}: compute \textbf{309.5 $\rightarrow$ 3.3 ms (94$\times$)}, throughput 19 $\rightarrow$ 321 img/s.}
-      \resumeItem{Retrained SVTRv2 on production crops (\textbf{87.7\% $\rightarrow$ 90.1\%} exact match on a fixed 3,965-image set) and made training \textbf{3.8$\times$ faster} with fused SDPA and static \texttt{torch.compile}.}
-      \resumeItem{Root-caused a release regression to a CTC decoding bug (64.2\% $\rightarrow$ 84.0\% restored); added DVC-pinned releases, ONNX parity checks, benchmark-gated promotion and a canary router with serverless fallback.}
+      \resumeItem{Own a five-model meter-reading pipeline for a state electricity utility (MobileViTv2 classifiers, YOLO26n-OBB dial detection, \textbf{SVTRv2} + CTC recognition) handling up to \textbf{330K requests/day}; raised live accuracy from \textbf{79\% to 91\%} over 40M production readings.}
+      \resumeItem{Built the GPU serving path on Triton with 9 TensorRT FP16 engines on one NVIDIA L4: end-to-end p50 \textbf{1,415 $\rightarrow$ 156 ms (9$\times$)}; load-tested with 67,719 requests to \textbf{181 img/s} sustained at p95 340 ms with zero errors (12.6$\times$ the production peak), and traced the ceiling to host CPU, not GPU.}
+      \resumeItem{Moved the meter classifier from ONNX Runtime to TensorRT after patching a UINT8 \texttt{Transpose} that TensorRT rejects: compute \textbf{309.5 $\rightarrow$ 3.3 ms (94$\times$)}, throughput 19 $\rightarrow$ 321 img/s, removing a cliff where throughput fell as load rose.}
+      \resumeItem{Retrained SVTRv2 on production crops: exact match \textbf{87.7\% $\rightarrow$ 90.1\%} on a fixed 3,965-image set (+8.7 pp on low-quality photos); made training \textbf{3.8$\times$ faster} on a DGX Spark with fused SDPA and static \texttt{torch.compile} (peak memory 50.5 $\rightarrow$ 14.7 GB).}
+      \resumeItem{Root-caused a release regression to a CTC decoding bug (blank frames did not reset the repeat check, so \texttt{4777.1} read as \texttt{47.1}), restoring accuracy from 64.2\% to 84.0\%; releases now pin git SHA and DVC revision, check PyTorch$\rightarrow$ONNX parity (1.2e-5) and gate promotion on latency benchmarks and an A/B comparison.}
+      \resumeItem{Shipped frozen, checksummed serverless releases (exact match 83.4\% $\rightarrow$ 87.8\% on 2,950 meter photos; analog 67.2\% $\rightarrow$ 79.6\%), cut the image 4.43 $\rightarrow$ 2.2 GB, and built a hash-based canary router with automatic fallback to serverless on any error or 3-s timeout.}
     \resumeItemListEnd
 
   \resumeSubheading
-    {SpaceDrift (spacedrift.in)}{Aug 2024 -- Present}
+    {spacedrift}{Aug 2024 -- Present}
     {Founder \textbar{} MSME-registered ML \& AI studio}{Bengaluru, India}
     \resumeItemListStart
-      \resumeItem{Founded and lead a \textbf{5-person} studio that has delivered \textbf{10+} fixed-scope, fixed-price engagements in research ops for PhD scholars and document AI / OCR.}
-      \resumeItem{Own scoping, pricing and delivery; ship reproducible, seed-controlled experiment pipelines, baseline replications and extraction pipelines with code, data and environment handed over.}
+      \resumeItem{Founded and lead a \textbf{5-person} team (ML, Android, marketing) that has generated \textbf{INR 12 lakh revenue} from \textbf{36 clients} (6 repeat) across fixed-scope, fixed-price engagements, run alongside a full-time role.}
+      \resumeItem{Research ops for PhD scholars: reproducible, seed-controlled experiment pipelines, dataset curation and independent replication of published baselines, handed over with a one-command re-run.}
+      \resumeItem{Document AI and OCR for businesses: field-level extraction pipelines validated on held-out client documents; own scoping, pricing, delivery and client communication end to end.}
     \resumeItemListEnd
 
+  \needspace{8\baselineskip}
   \resumeSubheading
     {BrainOvision Solutions}{Feb 2024 -- Apr 2024}
     {Data Science Intern}{Hyderabad, India}
     \resumeItemListStart
-      \resumeItem{Improved forecasting accuracy \textbf{15\%} with ensemble gradient boosting on multi-million-row data.}
+      \resumeItem{Forecast weekly store- and department-level Walmart sales with gradient-boosted ensembles over lag, rolling-window and holiday features; improved forecast accuracy \textbf{15\%} over the baseline model.}
+      \resumeItem{Ran EDA on multi-million-row sales data and presented 3 prioritized recommendations, adopted by the analytics team, to senior stakeholders.}
+    \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+
+%----------- PUBLICATIONS -----------
+\section{Publications \& Open Source}
+\resumeSubHeadingListStart
+
+  \resumeProjectHeading
+    {\textbf{No Final Save} $|$ \emph{Preprint, PhilArchive, 2026}}
+    {\href{https://philarchive.org/rec/BANNFS}{\underline{philarchive.org/rec/BANNFS}}}
+    \resumeItemListStart
+      \resumeItem{\emph{No Final Save: Identity, Consciousness, and the Machine That Never Shuts Down}. Sole author (as S.\,L.\,R.\ Bandhanadam). A 23-page framework for persistent AI agents: a formal causal-continuity criterion for identity, a proof that terminal and instrumental self-preservation cannot be distinguished from behavior alone, and a developmental safety model; 51 references and runnable companion code.}
+    \resumeItemListEnd
+
+  \resumeProjectHeading
+    {\textbf{Achilles --- Core AI from First Principles} $|$ \emph{PyTorch, Triton, NumPy, pytest}}
+    {\href{https://github.com/Lourdhu02/achilles}{\underline{github.com/Lourdhu02/achilles}}}
+    \resumeItemListStart
+      \resumeItem{Open-source curriculum of \textbf{18 test-driven labs}: autograd, a Llama-style transformer, FlashAttention forward/backward in Triton, KV cache, LoRA, DPO, GRPO, quantization, speculative decoding and MoE, with \textbf{229 reference tests} in CI on Linux, macOS and Windows.}
     \resumeItemListEnd
 
 \resumeSubHeadingListEnd
@@ -135,17 +160,19 @@ ML engineer (about 2 years) who owns a utility-scale OCR system end to end, from
 \resumeSubHeadingListStart
 
   \resumeProjectHeading
-    {\textbf{ECHOME --- Local-First Agent Memory} $|$ \emph{LangGraph, Qdrant, Ollama, IRT}}
+    {\textbf{ECHOME --- Local-First Agent with Memory} $|$ \emph{LangGraph, Qdrant, IRT}}
     {\href{https://github.com/Lourdhu02/echome}{\underline{github.com/Lourdhu02/echome}}}
     \resumeItemListStart
-      \resumeItem{LangGraph agent with three-tier memory (episodic in Qdrant, LLM-consolidated semantic, procedural); adaptive IRT assessment with Fisher-information item selection cuts test length \textbf{70\%} at SE $<$ 0.32.}
+      \resumeItem{LangGraph agent with CoALA-style three-tier memory (episodic vectors in Qdrant with recency-decayed retrieval, LLM-consolidated semantic facts, mined procedural patterns); recalls \textbf{11 of 12} facts planted up to 52 turns earlier in the top 5, at about 1 ms per retrieval.}
+      \resumeItem{Adaptive personality assessment (graded response model, Fisher-information item selection, MAP estimation) that \textbf{halves test length} while matching full-test scores at \textbf{r = 0.97} (500 simulated respondents $\times$ 8 traits); fully offline, with Whisper and XTTSv2 voice.}
     \resumeItemListEnd
 
   \resumeProjectHeading
     {\textbf{FinSentinelAI --- Private Document RAG} $|$ \emph{FastAPI, Ollama, ChromaDB}}
     {\href{https://github.com/Lourdhu02/fin-sentinal.ai}{\underline{github.com/Lourdhu02/fin-sentinal.ai}}}
     \resumeItemListStart
-      \resumeItem{Fully local RAG over invoices and bank statements with cross-encoder reranking, JWT-isolated workspaces and VLM-based ingestion; no document leaves the machine.}
+      \resumeItem{Fully local RAG over invoices, receipts and bank statements: sentence-transformer embeddings in ChromaDB, cross-encoder reranking and a local LLM via Ollama, so no document leaves the machine.}
+      \resumeItem{Per-user isolation through JWT auth and database-level metadata filtering; multimodal ingestion of PDFs, CSV, JSON and images using local vision-language models.}
     \resumeItemListEnd
 
 \resumeSubHeadingListEnd
