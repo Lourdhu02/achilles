@@ -40,7 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         run: python -m pip install triton
       - name: Reference solutions pass every lab
-        run: python -m pytest --impl=solution -q
+        run: python -m pytest --impl=solution -q -n auto
       - name: Exercise stubs import cleanly
         run: python -m pytest labs --impl=exercise --collect-only -q
 
