@@ -9,7 +9,7 @@ help:
 	@echo "make solutions             verify the reference solutions (what CI runs)"
 	@echo "make exercises             create missing exercise stubs from solutions"
 	@echo "make links                 check relative links in all markdown files"
-	@echo "make gpu                   measure your GPU's roofline (matmul FLOP/s, bandwidth)"
+	@echo "make check                 check labs, stubs and tests (what CI runs)"
 	@echo "make docs                  build the docs site into site/ (pip install -r requirements-docs.txt)"
 	@echo "make docs-serve            live preview of the docs site at http://127.0.0.1:8000"
 
@@ -27,6 +27,9 @@ exercises:
 
 links:
 	$(PY) tools/check_links.py
+
+check:
+	$(PY) tools/check_labs.py
 
 gpu:
 	$(PY) tools/measure_gpu.py
