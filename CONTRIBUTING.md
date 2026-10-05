@@ -65,8 +65,7 @@ labs/NN_name/
 
 ## Pull request checklist
 
-- [ ] `python -m pytest --impl=solution` passes
-- [ ] For lab changes: the stub was regenerated with `tools/make_exercises.py` and still fails cleanly
+- [ ] `make check` passes
 - [ ] `python tools/check_links.py` reports no broken links
 - [ ] New facts and numbers have a source or a shown calculation
 - [ ] No large files: data, checkpoints and PDFs stay out of git
