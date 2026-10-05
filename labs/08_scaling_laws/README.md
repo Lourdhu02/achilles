@@ -109,11 +109,11 @@ the total for the smallest model below). Use $C = \text{FLOPs/token} \times \tex
 
 | `--d-model` / `--n-layer` / `--n-head` | params | MFLOP/token | steps at C = 1e15 | 3e15 | 1e16 |
 |---|---|---|---|---|---|
-| 128 / 4 / 2 | 0.89M | 6.1 | 10,003 | 30,009 | 100,029 |
-| 192 / 6 / 3 | 2.71M | 18.0 | 3,390 | 10,170 | 33,900 |
-| 256 / 8 / 4 | 6.49M | 42.1 | 1,450 | 4,349 | 14,498 |
-| 384 / 8 / 6 | 14.3M | 90.3 | 676 | 2,028 | 6,760 |
-| 512 / 10 / 8 | 32.3M | 201.4 | 303 | 909 | 3,031 |
+| 128 / 4 / 2 | 885,888 | 6.1 | 10,003 | 30,009 | 100,029 |
+| 192 / 6 / 3 | 2,705,856 | 18.0 | 3,390 | 10,170 | 33,900 |
+| 256 / 8 / 4 | 6,492,416 | 42.1 | 1,450 | 4,349 | 14,498 |
+| 384 / 8 / 6 | 14,260,608 | 90.3 | 676 | 2,028 | 6,760 |
+| 512 / 10 / 8 | 32,254,464 | 201.4 | 303 | 909 | 3,031 |
 
 Each budget needs points on both sides of its minimum. Drop cells with very few steps (under ~500)
 and add a size if a budget's minimum sits at the edge of your range.
