@@ -28,6 +28,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
+      - name: Cache HuggingFace Datasets
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/datasets
+          key: ${{ runner.os }}-hf-datasets-${{ hashFiles('**/requirements.txt') }}
       - name: Install CPU PyTorch (Linux, Windows)
         if: runner.os != 'macOS'
         run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
