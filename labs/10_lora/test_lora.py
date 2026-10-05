@@ -24,6 +24,18 @@ def test_merge_matches_adapter():
     torch.testing.assert_close(layer.merge()(x), layer(x), atol=1e-5, rtol=1e-5)
 
 
+def test_lora_output_scales_with_alpha_over_r():
+    torch.manual_seed(0)
+    layer = lo.LoRALinear(nn.Linear(12, 7), r=4, alpha=16)
+    with torch.no_grad():
+        layer.A.normal_()
+        layer.B.normal_()
+    x = torch.randn(3, 12)
+    adapter = layer(x) - layer.base(x)
+    expected = (x @ layer.A.T @ layer.B.T) * (16.0 / 4.0)
+    torch.testing.assert_close(adapter, expected, atol=1e-5, rtol=1e-5)
+
+
 def test_apply_lora_and_param_count():
     model = nn.Sequential()
     model.q = nn.Linear(32, 32)

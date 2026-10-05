@@ -36,7 +36,7 @@ def dpo_loss(pi_chosen, pi_rejected, ref_chosen, ref_rejected, beta: float = 0.1
     rejected = beta * (pi_rejected - ref_rejected)
     h = chosen - rejected
     loss = -(1 - label_smoothing) * F.logsigmoid(h) - label_smoothing * F.logsigmoid(-h)
-    return loss.mean(), chosen.detach(), rejected.detach()
+    return loss.mean(), chosen, rejected
     # END SOLUTION
 
 

@@ -37,6 +37,14 @@ def test_gradient_pushes_chosen_up_and_rejected_down():
     assert c.grad < 0 and r.grad > 0
 
 
+def test_implicit_rewards_are_detached():
+    c = torch.tensor([-1.0], requires_grad=True)
+    r = torch.tensor([-2.0], requires_grad=True)
+    _, rc, rr = dpo.dpo_loss(c, r, torch.tensor([-1.0]), torch.tensor([-2.0]))
+    assert not rc.requires_grad
+    assert not rr.requires_grad
+
+
 def test_ipo_and_simpo():
     t = lambda *v: torch.tensor(v)  # noqa: E731
     torch.testing.assert_close(dpo.ipo_loss(t(0.0), t(0.0), t(0.0), t(0.0), beta=0.5), t(1.0)[0])
