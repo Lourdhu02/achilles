@@ -211,9 +211,9 @@ Minimum hardware for each piece of work. "Reduced" means the same experiment at 
 
 | Preset | Model | Context × batch (× accumulation) | Steps |
 |---|---|---|---|
-| `cpu` | d_model 128, 4 layers, 4 heads (about 0.9M parameters) | 128 × 32 | 1,000 |
-| `gpu-8gb` | d_model 384, 6 layers, 6 heads (about 11M parameters) | 256 × 64 | 5,000 |
-| `gpu-24gb` | d_model 768, 12 layers, 12 heads (about 85M parameters) | 512 × 16 (× 2) | 10,000 |
+| `cpu` | d_model 128, 4 layers, 4 heads (885,888 parameters) | 128 × 32 | 1,000 |
+| `gpu-8gb` | d_model 384, 6 layers, 6 heads (10,720,128 parameters) | 256 × 64 | 5,000 |
+| `gpu-24gb` | d_model 768, 12 layers, 12 heads (85,150,464 parameters) | 512 × 16 (× 2) | 10,000 |
 
 ```bash
 python labs/05_transformer/train.py --data data/TinyStoriesV2-GPT4-train.txt --preset cpu           # CPU laptop

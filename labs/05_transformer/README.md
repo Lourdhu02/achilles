@@ -153,7 +153,7 @@ are documented there.
 
 | quantity | how to predict | S1 default |
 |---|---|---|
-| parameters | `V·d + L·(4d² + 3·d·d_ff + 2d) + d` for MHA | 10.72M (d_ff = 1024) |
+| parameters | `V·d + L·(4d² + 3·d·d_ff + 2d) + d` for MHA | 10,720,128 (d_ff = 1024) |
 | FLOPs/token (as printed) | `6·(non-embedding + V·d) + 6·L·T·d` | 67.9 MFLOP |
 | tokens seen | steps × batch × block | 5000 × 64 × 256 = 81.9M (~4% of one epoch of the ~2 GB file) |
 | total compute | tokens × FLOPs/token | 5.6e15 FLOP |
@@ -169,13 +169,13 @@ become coherent.
 
 No GPU? The same script runs on CPU with a smaller model. Try
 `--d-model 128 --n-layer 4 --n-head 4 --block-size 128 --batch-size 16 --max-steps 1000`
-(0.89M parameters, 5.7 MFLOP/token) and drop `--compile` and `--peak-tflops`. Measure tokens/s at
+(885,888 parameters, 5.7 MFLOP/token) and drop `--compile` and `--peak-tflops`. Measure tokens/s at
 step 100 and extrapolate before committing to a longer run. On Windows, `--compile` needs Triton;
 use WSL2 or leave it off.
 
 ### Running the ablation well
 
-- **Change one thing.** GQA with `--n-kv-head 2` also removes parameters (9.54M vs 10.72M at the
+- **Change one thing.** GQA with `--n-kv-head 2` also removes parameters (9,540,480 vs 10,720,128 at the
   S1 shape). Either report it as "GQA at fewer parameters" or compensate the width.
 - **Compare in bits per byte across tokenizers.** Loss per token is not comparable between byte-level
   and GPT-2 BPE, because a BPE token covers several bytes. Convert:
