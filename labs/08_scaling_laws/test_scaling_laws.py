@@ -34,3 +34,16 @@ def test_more_inference_means_smaller_models_trained_longer():
     n1, d1 = sl.inference_aware_optimum(2.2, inference_tokens=1e13)
     assert n1 < n0 and d1 > d0
     assert sl.chinchilla_loss(n1, d1) == pytest.approx(2.2, abs=1e-6)
+
+def test_inference_aware_matches_grid_search():
+    target = 2.2
+    inf = 1e13
+    n, d = sl.inference_aware_optimum(target, inf)
+    grid = np.logspace(7, 12, 1000)
+    gap = target - 1.69 - 406.4 / grid**0.34
+    valid = gap > 0
+    grid = grid[valid]
+    gap = gap[valid]
+    d_grid = (410.7 / gap) ** (1 / 0.28)
+    cost = 6 * grid * d_grid + 2 * grid * inf
+    assert n == pytest.approx(grid[np.argmin(cost)], rel=0.01)
