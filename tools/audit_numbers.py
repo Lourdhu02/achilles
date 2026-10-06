@@ -9,6 +9,7 @@ os.environ["LABS_IMPL"] = "solution"
 
 from labs._impl import load
 mod = load('labs/05_transformer/solution.py')
+moe_mod = load('labs/18_moe/solution.py')
 
 def count_params(vocab_size, d_model, n_layer, n_head, n_kv_head=None, tie_embeddings=True):
     if n_kv_head is None: n_kv_head = n_head
@@ -51,6 +52,15 @@ def audit():
         content = re.sub(r'14\.3M', f'{count_params(256, 384, 8, 6):,}', content)
         content = re.sub(r'32\.3M', f'{count_params(256, 512, 10, 8):,}', content)
         scaling_file.write_text(content, encoding="utf-8")
+
+    # Process MoE
+    moe_readme = root / "labs" / "18_moe" / "README.md"
+    if moe_readme.exists():
+        # Example: we could extract the precise number for Mixtral or just test the function
+        # Since the MoE README uses general 47B and 13B, we won't necessarily replace them
+        # if they are just conversational. But we can ensure moe_param_counts is correct.
+        total, active = moe_mod.moe_param_counts(4096, 14336, 8, 2)
+        print(f"MoE Mixtral layer parameters: Total={total:,}, Active={active:,}")
 
     print("Audit complete.")
 
