@@ -47,7 +47,7 @@ jobs:
       - name: Reference solutions pass every lab
         env:
           ACHILLES_STRICT_TIME: "1"
-        run: python -m pytest --impl=solution -q
+        run: python -m pytest --impl=solution -q -n auto
       - name: Exercise stubs import cleanly
         run: python -m pytest labs --impl=exercise --collect-only -q
       - name: Check labs and stubs (Ubuntu 3.12)
