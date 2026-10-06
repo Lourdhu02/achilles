@@ -19,7 +19,7 @@ Eighteen test-driven labs that rebuild the modern LLM stack. Each lab has a hand
 | 13 | [Quantization](13_quantization/README.md) | INT8, INT4 packing, NF4, SmoothQuant, GPTQ | 8 | 3–4 h | quality vs tokens/s |
 | 14 | [Speculative decoding](14_speculative_decoding/README.md) | Exact rejection sampling, verified lossless | 3 | 2–3 h | 0.5B draft → 1.5B target |
 | 15 | [Evaluation statistics](15_eval_stats/README.md) | CIs, paired tests, clustered SEs, pass@k, power, Bradley–Terry | 6 | 2–3 h | a leaderboard with error bars |
-| 16 | [Mechanistic interpretability](16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 9 | 3–4 h | an SAE on your S1 model |
+| 16 | [Mechanistic interpretability](16_interpretability/README.md) | Induction heads, activation patching, sparse autoencoders | 8 | 3–4 h | an SAE on your S1 model |
 | 17 | [Retrieval for RAG](17_retrieval/README.md) | BM25, RRF, MMR, nDCG, an IVF index | 5 | 2–3 h | evaluate your own RAG |
 | 18 | [Mixture of experts](18_moe/README.md) | Top-k routing, load balancing, capacity and dropping, total vs active params | 10 | 3–4 h | an MoE version of your S1 model |
 
