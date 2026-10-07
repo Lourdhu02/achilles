@@ -218,6 +218,7 @@ library/      90 visual guides and papers by topic, manifest.json
 companies/    Anthropic, OpenAI, Google DeepMind, Meta, NVIDIA and more labs
 tracks/       research-engineer/ and founder/
 career/       résumé, stories, outreach, negotiation, visas
+cheatsheet/   24-page interview cheat sheet and 5-page story version (PDF + LaTeX)
 journal/      templates for experiments, paper notes and reviews: your proof of work
 notebooks/    Colab and Kaggle quickstart
 tools/        stub generator · progress scoreboard · GPU roofline · PDF fetcher · link checker · docs build
