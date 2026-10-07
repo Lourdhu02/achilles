@@ -1,0 +1,29 @@
+\section{``What would you do?'' debugging scenarios}
+\lab{the round that separates people who have run things from people who have read about them}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \x/\t in {0/{reproduce\\small},16/{bisect: what\\changed?},32/{measure, don't\\guess (profile, log)},50/{one hypothesis,\\one change},68/{add a regression\\test / alert}}{
+  \node[box,text width=13mm] (n\x) at (\x,0) {\t};}
+\draw[arr] (n0)--(n16); \draw[arr] (n16)--(n32); \draw[arr] (n32)--(n50); \draw[arr] (n50)--(n68);
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Training]
+\Q{Loss is NaN at step 3{,}000.}{Find the first non-finite tensor (anomaly mode or hooks on a replay of the batch). Usual causes: LR too high or no warmup, fp16 overflow (switch to bf16 or check the loss scaler), $\log(0)$ or division by zero in custom code, attention logits blowing up (QK-norm, z-loss), a corrupt batch. Rewind to the last good checkpoint, skip the batch, lower LR.}
+\Q{Loss plateaus way above expected from step 0.}{Check initial loss $\approx\ln V$; overfit one batch (must go to $\approx0$); label shift by one; mask wrong; LR off by $10\times$; frozen params (\texttt{requires\_grad}); optimizer given the wrong param list; data shuffled into noise (tokenizer mismatch).}
+\Q{GPU OOM after an innocent change.}{Longer sequences or bigger micro-batch (activations scale with $B\cdot T$), a tensor kept in a list for logging (holds the graph: use \texttt{.item()} or \texttt{.detach()}), eval without \texttt{no\_grad}, fragmentation (\texttt{expandable\_segments}). Fix with checkpointing, smaller micro-batch + accumulation, FSDP, fused CE for big vocabs.}
+\Q{Throughput dropped 30\% after a library upgrade.}{Profile both versions on the same batch; compare kernel lists (a fused kernel replaced by an unfused path, FlashAttention fallback to math SDPA, recompilations in \texttt{torch.compile}), NCCL settings, data-loader workers. Pin versions in the image.}
+\Q{Multi-node job hangs at startup or mid-run.}{A rank waiting at a collective others never reached (rank-dependent control flow, unequal batch counts, an exception on one rank). Set \texttt{NCCL\_DEBUG=INFO}, \texttt{TORCH\_NCCL\_ASYNC\_ERROR\_HANDLING}, timeouts; check \texttt{py-spy dump} on every rank; check the network fabric and a bad node.}
+\Q{Validation loss improves but downstream evals get worse.}{Eval harness or prompt format changed; overfitting a narrow data mix; the eval was contaminated before and is now not; tokenizer/template mismatch at eval time; metric noise (check the CI).}
+\end{qa}
+
+\begin{qa}[Post-training and serving]
+\Q{DPO: rewards margin rises, outputs get longer and worse.}{Both chosen and rejected log-probs falling (likelihood displacement); length exploitation in preferences. Lower LR, raise $\beta$, add SFT loss on chosen (RPO), length-normalize or length-control the data, check that pairs are on-policy.}
+\Q{GRPO reward goes up, held-out accuracy flat.}{Reward hacking (format rewards, verifier holes), training on all-correct/all-wrong groups (zero advantage), entropy collapse (clip-higher, temperature), train/test prompt overlap. Read 20 samples before reading any curve.}
+\Q{vLLM p99 latency spikes under load.}{KV cache full \ra\ preemption and recompute; long prompts blocking decode (enable chunked prefill); too large \texttt{max\_num\_seqs}; prefix cache misses after a prompt change. Check queue time vs prefill vs decode in metrics.}
+\Q{Quantized model fine on benchmarks, worse for users.}{Benchmarks miss long-context, multilingual and tool-use regressions; outlier channels hurt by INT4; KV cache quantized too. Eval on production traffic samples, keep sensitive layers in higher precision, try AWQ/GPTQ with a domain calibration set.}
+\Q{Outputs differ between batch sizes with greedy decoding.}{Non-determinism from batch-dependent kernels (reduction order in matmuls/attention), FP8/bf16 rounding; expected unless you use batch-invariant kernels. Compare log-prob differences, not strings.}
+\Q{RAG answers are good offline, bad in production.}{Offline set not representative (query distribution shift), stale index, tenant filters dropping docs, chunking differs between pipelines, prompt truncation at the context limit. Log retrieved ids per request and replay.}
+\Q{Agent loops forever calling the same tool.}{Tool errors not surfaced in a useful form, no step budget, ambiguous tool descriptions, missing ``done'' criterion. Return actionable error messages, cap steps, dedupe identical calls, add a final-answer tool.}
+\end{qa}

@@ -1,0 +1,66 @@
+\section{Evaluation: measure like a scientist}
+\lab{module 08 \textperiodcentered\ lab 15 eval stats}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.4mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum height=4.6mm,text width=10.5mm,inner sep=1pt}]
+\node[bx,fill=soft] (d) {dataset + refs};
+\node[bx,right=of d] (p) {prompt / harness};
+\node[bx,right=of p] (s) {sampling ($T$, max tok)};
+\node[bx,right=of s,draw=acc2,fill=soft2] (x) {extract answer};
+\node[bx,right=of x] (g) {grade: EM, tests, judge};
+\node[bx,right=of g,draw=acc3,fill=acc3!8] (a) {aggregate + CI};
+\foreach \u/\v in {d/p,p/s,s/x,x/g,g/a} \draw[arr] (\u)--(\v);
+\node[lab,below=1mm of x] {every stage hides silent bugs: read 20 raw transcripts};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Statistics you must quote]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+95\% CI of accuracy & $\hat p\pm1.96\sqrt{\hat p(1-\hat p)/n}$; Wilson/bootstrap near 0, 1 or small $n$\\
+half-widths & $n{=}100$@50\%: $\pm$9.8;\ GPQA-D 198@70\%: $\pm$6.4;\ 1000@70\%: $\pm$2.8\\
+paired & SE of mean of $d_i=a_i-b_i$; McNemar on discordant pairs\\
+clustered & design effect $1+(m-1)\rho$ ($m{=}5,\rho{=}0.3$: 2.2$\times$ variance)\\
+seeds & $t_{0.975,k-1}$: 4.30 for 3 seeds, not 1.96\\
+power (unpaired) & 70 vs 72\%: 8{,}080 items/arm; 50 vs 60\%: 388\\
+pass@$k$ (unbiased) & $1-\binom{n-c}{k}/\binom{n}{k}$; $n{=}20,c{=}3,k{=}5$: 0.601 (plug-in 0.556 is biased)\\
+pass$^k$ ($\tau$-bench) & all $k$ tries succeed: $\binom ck/\binom nk$ --- what users feel\\
+multiple tests & 10 null ablations @0.05: 40\% chance $\ge$1 ``win''; Holm, BH\\
+Cohen's $\kappa$ & $\frac{p_o-p_e}{1-p_e}$; 85\% raw with 80/20 marginals \ra\ $\kappa{=}0.53$\\
+judge correction & $\hat p=\frac{\hat p_\text{obs}+\mathrm{TNR}-1}{\mathrm{TPR}+\mathrm{TNR}-1}$\\
+Elo & 100 pts $\approx$ 64\% win; 30 pts $\approx$ 54\%\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Benchmarks and validity]
+\Q{What makes an eval valid?}{Construct (measures the capability), content (covers the space), internal (difference caused by model, not harness), external (predicts your deployment), reliability (repeatable), freshness (not contaminated). Validity before precision.}
+\Q{Name today's benchmark landscape.}{Knowledge: MMLU (saturated), MMLU-Pro. Expert: GPQA Diamond, HLE. Math: GSM8K/MATH (saturated), AIME (fresh, tiny), FrontierMath. Code: HumanEval (saturated), LiveCodeBench, SWE-bench Verified (scaffold-dependent). IF: IFEval. Agents: $\tau$-bench, GAIA, OSWorld, MLE-bench. Long tasks: METR time horizon ($\sim$7-month doubling 2019--24). ARC-AGI. LMArena (style/length effects). And \textbf{your own product evals}, the only uncontaminated ones.}
+\Q{How do you detect contamination?}{$n$-gram overlap (misses paraphrase), canary strings, Min-K\% prob, exchangeability (canonical order more likely than shuffles), post-cutoff splits (LiveCodeBench dates items), fresh parallel sets (GSM1k), completion probes. Keep a private held-out split.}
+\Q{How do you calibrate an LLM judge?}{Binary/3-level rubric; humans label 100--200 items (human--human agreement is the ceiling); report confusion matrix, TPR, TNR, $\kappa$ on a held-out split. Mitigate position (swap order), verbosity (length-controlled), self-preference (different family), surface cues (grade specific claims).}
+\Q{Why is the harness part of the result?}{Prompt format, few-shot choice, option order, extraction regex move scores by points. Fix and report it, compare under one harness, use the model's chat template, give reasoning models enough tokens, report spread across 3 prompt variants.}
+\end{qa}
+
+\begin{qa}[Statistics]
+\Q{A is 72\%, B is 70\% on 1{,}000 items: 630 both right, 90 A-only, 70 B-only. Significant?}{Unpaired CI on the difference $\pm4.0$; paired $\pm2.5$ (38\% tighter); McNemar on 90 vs 70: $p\approx0.13$. Not significant: only the 160 disagreements carry information.}
+\Q{5 samples per question on 500 questions --- what is $n$?}{500. Average within item first; samples on one item are correlated.}
+\Q{Minimum detectable effect on a 200-item eval?}{Roughly 10 points unpaired. Say so before running.}
+\Q{How do you avoid fooling yourself with many ablations?}{Explore on a dev split, pick a winner, run \emph{one} confirmatory test on held-out data; otherwise Holm (FWER) or BH (FDR).}
+\Q{What goes in an eval report?}{Model + version, harness, $n$ items/clusters, score $\pm$ CI (method), paired difference $\pm$ CI, seeds and spread, variants tried, compute, per-item outputs path.}
+\end{qa}
+
+\begin{qa}[Product evals and research discipline]
+\Q{How do you build evals for an LLM product?}{Log real traces \ra\ read and open-code 100 \ra\ cluster into a failure taxonomy, count \ra\ 30--100 targeted items per failure mode (plus passing regression guards) \ra\ graders: programmatic $>$ reference-based $>$ calibrated judge \ra\ run in CI on every prompt/model/retrieval change; gate on no significant regression. Put \$ and latency next to every quality number.}
+\Q{What makes an ablation survive review?}{One change at a time, matched compute and tuning for baselines, multiple seeds, CIs, pre-registered metric, negative results reported, a reproduction script.}
+\Q{How do you compare models with different tokenizers on loss?}{Bits per byte, never per-token loss.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item ``+1.2 on MMLU, so better.'' Ask for $n$, CI, pairing.
+\item Trusting 85\% raw judge agreement: a constant ``pass'' judge gets 80\%.
+\item ``No contamination: we did $n$-gram decontam.'' Paraphrases and translations pass.
+\item Claiming a win over a baseline that got less tuning or compute.
+\end{itemize}
+\end{trap}

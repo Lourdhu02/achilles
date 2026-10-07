@@ -1,0 +1,133 @@
+\newpage
+\section{Rapid fire: answer in one breath}
+\lab{cover the right side, say the answer, check}
+
+\begin{qa}[Fundamentals]
+\RF{Why log-softmax not log(softmax)?}{numerical stability (LSE with max subtracted) + clean gradient $p-y$}
+\RF{Why does label smoothing help?}{prevents over-confident logits; better calibration}
+\RF{Dropout in LLM pretraining?}{usually 0: one epoch over huge data, little overfitting}
+\RF{Weight tying?}{share embedding and LM head: saves $Vd$ params; common in small models}
+\RF{Gradient clipping threshold?}{global norm 1.0; log the pre-clip norm}
+\RF{Teacher forcing?}{train on ground-truth prefixes; inference sees its own outputs (exposure bias)}
+\RF{Perplexity 20 in nats?}{$\ln20\approx3.0$}
+\RF{Why GELU/SiLU over ReLU?}{smooth, non-zero gradient for negatives; empirically better}
+\RF{Vanishing gradients in transformers prevented by?}{residuals + pre-norm + sane init}
+\RF{Causal vs bidirectional attention mask?}{lower-triangular vs full}
+\RF{What is a logit lens?}{decode intermediate residual streams with the final norm + unembedding}
+\RF{Gradient checkpointing cost?}{$\approx$+33\% compute (one extra forward)}
+\RF{Cross-entropy at uniform init?}{$\ln V$}
+\RF{Embedding lookup FLOPs?}{none (a gather); its backward is scatter-add}
+\end{qa}
+
+\begin{qa}[Architecture]
+\RF{Params of a GPT block ($4d$ GELU MLP, MHA)?}{$12d^2$}
+\RF{GPT-2 small?}{124M: $d$768, $L$12, $H$12, $V$50{,}257, ctx 1024}
+\RF{Llama-3-8B?}{$d$4096, $L$32, $H$32/$H_{kv}$8, $f$14336, $V$128k, RoPE $5{\cdot}10^5$}
+\RF{Llama-3-70B KV/token?}{320 KiB (80 layers, 8 KV heads)}
+\RF{Why RoPE over learned absolute?}{relative by construction, no params, works with KV cache, extendable}
+\RF{ALiBi?}{linear distance bias per head; extrapolates, recency-biased}
+\RF{Mixtral?}{8 experts, top-2, 46.7B total / 12.9B active}
+\RF{DeepSeek-V3?}{671B / 37B active, MLA, 256+1 experts top-8, MTP, FP8 training}
+\RF{Why no biases in LLMs?}{fewer drifting params, simpler sharding/quant, no quality loss}
+\RF{Sliding window $W$ over $L$ layers reaches?}{$L\cdot W$ tokens (not reliably)}
+\RF{Mamba vs attention, recall?}{fixed state $\approx$ KV of 64 tokens; weak exact recall}
+\RF{QK-norm fixes?}{attention-logit growth}
+\RF{Multi-token prediction?}{extra heads/modules predict $t{+}2..$; denser signal; drafts for spec decoding}
+\RF{Parallel attention + MLP block (GPT-J, PaLM)?}{$x+\mathrm{Attn}(n(x))+\mathrm{MLP}(n(x))$: one fused matmul, $\sim$15\% faster}
+\end{qa}
+
+\begin{qa}[Training and scaling]
+\RF{Chinchilla-optimal tokens for 7B?}{$\approx$140B (20/param)}
+\RF{Training FLOPs, 7B on 2T tokens?}{$6\cdot7\!\cdot\!10^9\cdot2\!\cdot\!10^{12}\approx8.4\!\cdot\!10^{22}$}
+\RF{Days on 256 H100 at 40\% MFU?}{$8.4\!\cdot\!10^{22}/(256\cdot989\!\cdot\!10^{12}\cdot0.4)\approx9.6$ days}
+\RF{Memory for AdamW on 70B?}{$16\times70$B $=$ 1.12 TB before activations}
+\RF{ZeRO stage that shards weights?}{3 (FSDP full-shard)}
+\RF{Pipeline bubble formula?}{$(p-1)/(m+p-1)$}
+\RF{Where does TP live?}{inside a node, over NVLink}
+\RF{MoE comm primitive?}{all-to-all}
+\RF{Why ramp batch size?}{critical batch grows as loss falls}
+\RF{Loss spike remedy?}{rewind $\sim$100 steps, skip batches, lower LR; QK-norm, z-loss}
+\RF{$\beta_2$ for LLMs?}{0.95}
+\RF{Weight decay applied to norms?}{no (nor biases, often embeddings)}
+\RF{Peak LR for 7B AdamW?}{$\sim$3e-4 (confirm on a proxy / $\mu$P)}
+\RF{Repeated-data limit?}{$\sim$4 epochs nearly as good as fresh}
+\RF{FineWeb MinHash setup?}{5-grams, 112 hashes $=$ 14 bands $\times$ 8 rows, $\sim$0.75 Jaccard}
+\end{qa}
+
+\begin{qa}[Post-training]
+\RF{SFT loss on prompt tokens?}{no; mask with $-100$; include end-of-turn}
+\RF{LoRA trainable params per matrix?}{$r(d_\text{in}+d_\text{out})$}
+\RF{LoRA LR vs full FT?}{$\sim$10$\times$ higher}
+\RF{QLoRA bits per param?}{$\approx$4.5 (NF4 + fp32 scale per 64) $\to$ $\sim$4.13 w/ double quant}
+\RF{DPO $\beta$ default?}{0.1 (range 0.01--0.5); smaller lets policy move further}
+\RF{DPO implicit reward?}{$\beta\log\pi_\theta(y|x)/\pi_\text{ref}(y|x)$}
+\RF{Why does $Z(x)$ vanish in DPO?}{it depends only on $x$; cancels in $r_w-r_l$}
+\RF{PPO clip $\varepsilon$?}{0.2}
+\RF{PPO models in memory?}{4: policy, value, ref, reward}
+\RF{GRPO group size?}{$G\approx8$--64; advantage $(r-\bar r)/\sigma$}
+\RF{DAPO clip-higher?}{$\varepsilon_\text{low}{=}0.2,\varepsilon_\text{high}{=}0.28$}
+\RF{Dr.\,GRPO removes?}{per-sequence length norm and std normalization}
+\RF{KL estimator in GRPO?}{$k_3=\rho-1-\log\rho$}
+\RF{Reasoning RL on all-correct groups?}{zero advantage: drop them (dynamic sampling)}
+\RF{RLHF KL direction?}{reverse, $\KL(\pi\|\pi_\text{ref})$}
+\RF{On-policy distillation reward?}{per-token $-(\log q_\theta-\log p_\text{teacher})$}
+\end{qa}
+
+\begin{qa}[Inference]
+\RF{Batch-1 decode bound?}{BW / weight bytes (8B bf16 on H100 $\approx$ 200 tok/s)}
+\RF{Prefill intensity?}{$\approx P$ (prompt length) $\Rightarrow$ compute-bound}
+\RF{Decode intensity?}{$\approx B$ for weights, $\approx1$ (or $g$ with GQA) for KV}
+\RF{vLLM block size?}{16 tokens}
+\RF{KV waste before/after paging?}{60--80\% \ra\ $<$4\%}
+\RF{Spec decode tokens per round?}{$(1-\alpha^{k+1})/(1-\alpha)$}
+\RF{Spec decode acceptance rule?}{accept w.p.\ $\min(1,p/q)$; else sample $\mathrm{norm}(\max(0,p-q))$}
+\RF{FP8 for inference?}{e4m3 (max 448)}
+\RF{GPTQ uses?}{inverse Hessian $H=2X^\top X$ to push rounding error to later columns}
+\RF{AWQ protects?}{$\sim$1\% salient channels by activation scale}
+\RF{SmoothQuant $\alpha$?}{$\approx0.5$; migrates difficulty from activations to weights}
+\RF{INT4 g128 bits/weight?}{4.125}
+\RF{Online softmax state?}{running max $m$, running sum $\ell$, accumulator $o$}
+\RF{TTFT is dominated by?}{queueing + prefill}
+\RF{Prefix cache killer?}{dynamic content (timestamps) early in the prompt}
+\RF{Chunked prefill benefit?}{no decode stalls; uses idle FLOPs}
+\RF{Min-$p$ sampling?}{keep tokens with $p\ge p_\text{min}\cdot p_\text{max}$}
+\end{qa}
+
+\begin{qa}[Eval, RAG, agents, safety]
+\RF{95\% CI, 1{,}000 items at 70\%?}{$\pm$2.8 points}
+\RF{Halve the CI?}{4$\times$ the items}
+\RF{pass@$k$ estimator?}{$1-\binom{n-c}{k}/\binom nk$}
+\RF{$\kappa$ with $p_o{=}.85$, $p_e{=}.68$?}{0.53}
+\RF{RRF constant?}{$k=60$}
+\RF{Most important retrieval metric for RAG?}{recall@$k$}
+\RF{Contextual retrieval gain?}{$-$49\% failures; $-$67\% with reranking}
+\RF{Lost in the middle?}{mid-context info used worst; put key passages at ends}
+\RF{IVF nlist rule of thumb?}{$\sim\!\sqrt N$ (4--16$\sqrt N$)}
+\RF{Agent 0.99/step, 50 steps?}{61\%}
+\RF{pass$^8$ at 90\%?}{43\%}
+\RF{Lethal trifecta?}{private data + untrusted content + exfil channel}
+\RF{Refusal in open models mediated by?}{one direction in the residual stream}
+\RF{Induction head pattern?}{\dots A B \dots A $\to$ B, via K-composition}
+\RF{SAE metrics?}{L0, FVU, $\Delta$CE, dead latents, auto-interp}
+\RF{FID measures?}{distance between Inception-feature Gaussians, real vs generated}
+\RF{CFG formula?}{$\epsilon_\varnothing+w(\epsilon_c-\epsilon_\varnothing)$}
+\end{qa}
+
+\needspace{16\baselineskip}
+\begin{mem}[Napkin constants]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+1 token & $\approx$ 4 English characters $\approx$ 0.75 words\\
+H100 SXM & 989 TF/s bf16, 1{,}979 FP8 dense, 3.35 TB/s, 80 GB, NVLink 900 GB/s\\
+H100 ridge & $\approx$295 FLOP/byte (bf16)\\
+A100 80G & 312 TF/s, 2.0 TB/s\\
+PCIe 5 x16 & 64 GB/s per direction\\
+IB NDR & 400 Gb/s $=$ 50 GB/s\\
+bytes/param & fp32 4, bf16 2, fp8 1, int4 0.5\\
+train state & 16 B/param (AdamW mixed precision)\\
+KV (GQA-8, 128 dh) & $2\cdot L\cdot8\cdot128\cdot2=4L$ KiB/token\\
+GPT-2 init loss & 10.82 \quad Llama 3: 11.76 \quad Llama 2: 10.37\\
+$\sqrt{128}$ & 11.3 \quad $1/\sqrt{4096}=1/64$\\
+$e^{-1}$, $\ln2$ & 0.368, 0.693\\\bottomrule
+\end{tabularx}
+\end{mem}

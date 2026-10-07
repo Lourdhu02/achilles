@@ -1,0 +1,152 @@
+\section{Post-training: SFT, PEFT, RLHF, DPO, GRPO}\label{sec:post}
+\lab{module 06 \textperiodcentered\ labs 10 LoRA, 11 DPO, 12 GRPO}
+
+\begin{center}
+\begin{tikzpicture}[node distance=2mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum height=6mm,text width=12.5mm,inner sep=1pt}]
+\node[bx,fill=soft] (b) {\textbf{base}\\next-token LM};
+\node[bx,right=of b] (s) {\textbf{SFT}\\demos, chat template};
+\node[bx,right=of s,draw=acc2,fill=soft2] (p) {\textbf{preferences}\\RM+PPO or DPO};
+\node[bx,right=of p,draw=acc2,fill=soft2] (r) {\textbf{RLVR}\\GRPO on checkers};
+\node[bx,right=of r,draw=acc3,fill=acc3!8] (d) {\textbf{distill}\\to small models};
+\foreach \u/\v in {b/s,s/p,p/r,r/d} \draw[arr] (\u)--(\v);
+\node[lab,below=0.8mm of s] {forward KL\\imitation};
+\node[lab,below=0.8mm of p] {reverse KL to\\$\pi_\text{ref}$};
+\node[lab,below=0.8mm of r] {verifiable\\reward};
+\node[lab,below=0.8mm of d] {on-policy\\reverse KL};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[SFT]
+\Q{What is the SFT loss, precisely?}{$-\sum_{t\in\text{response}}\log\pi_\theta(y_t|x,y_{<t})$; prompt tokens fed in but masked (label $-100$). It is forward KL to the data \ra\ mode-covering: imitates everything, including mistakes.}
+\Q{Most common silent SFT bugs?}{Template mismatch train vs serve; end-of-turn token masked out (pad = eos, collator masks pads) \ra\ model never stops; BOS added twice; loss on prompt tokens. Loss goes down, model gets worse. Decode a batch with masks shown.}
+\Q{Packing correctly?}{Block-diagonal causal mask + position ids restarting at 0 per example (varlen FlashAttention takes \texttt{cu\_seqlens}).}
+\Q{SFT data recipe?}{Human demos, stronger-model synthetic data, rejection sampling (STaR); decontaminate; mix $>$ size; 1--3 epochs; keep some general chat to limit forgetting. Read 50 random examples first.}
+\Q{Why does SFT on stronger-model outputs cause hallucination?}{It teaches the student to state facts the teacher knew but the student does not: it imitates confidence without the knowledge.}
+\end{qa}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[draw=acc,fill=soft,align=center,minimum width=11mm,minimum height=11mm] (w) at (0,0) {$W_0$\\frozen};
+\node at (8.5,0) {$+\ \dfrac{\alpha}{r}$};
+\node[draw=acc2,fill=soft2,minimum width=3mm,minimum height=11mm] (B) at (15,0) {$B$};
+\node[draw=acc2,fill=soft2,minimum width=11mm,minimum height=3mm,anchor=west] (A) at (17.5,4) {$A$};
+\node[font=\tiny\color{mute},anchor=north] at (15,-5.8) {$d_\text{out}{\times}r$, init 0};
+\node[font=\tiny\color{mute},anchor=west] at (17.5,0.5) {$r{\times}d_\text{in}$, Kaiming};
+\node[anchor=west,align=left] at (40,0) {$h=W_0x+\tfrac{\alpha}{r}BAx$\\[1pt]trainable: $r(d_\text{in}{+}d_\text{out})$ per matrix\\[1pt]merge $W=W_0+\tfrac{\alpha}{r}BA$:\\zero extra inference cost};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Parameter-efficient fine-tuning]
+\Q{Why init $B=0$, $A$ random?}{$BA=0$ so training starts exactly at the base model. Both random \ra\ perturbed start; both zero \ra\ no gradient for either ($\nabla A\propto B^\top$, $\nabla B\propto A^\top$).}
+\Q{Why the $\alpha/r$ scale?}{Keeps update magnitude roughly independent of $r$ at fixed $\alpha$. rsLoRA uses $\alpha/\sqrt r$ so higher ranks actually learn more.}
+\Q{Where to put LoRA, and what LR?}{All linear layers incl.\ MLP (attention-only underperforms). LR $\approx10\times$ full fine-tuning. Qwen2.5-0.5B, $r{=}16$ all 7 linears: 8.8M params (1.8\%).}
+\Q{What can't LoRA do?}{On large continued-pretraining-style data (code, math at scale) it learns less --- and forgets less. For RL it matches full FT even at tiny rank (an episode carries few bits).}
+\Q{Explain QLoRA.}{Frozen base in \textbf{NF4} (16 levels at normal quantiles, block 64 absmax), dequantized to bf16 per matmul; bf16 LoRA on top; double quantization of scales; paged optimizers. $\approx$4.5 bits/param \ra\ 7--8B on an 8 GB card.}
+\Q{Serving 1{,}000 customer fine-tunes?}{Keep one base; batch requests with different adapters in one forward (S-LoRA, Punica). Alternatives: prefix/prompt tuning, IA$^3$, DoRA (magnitude/direction split).}
+\end{qa}
+
+\begin{mem}[RLHF objective and its closed form]
+{\centering $\displaystyle\max_\pi\ \E_{y\sim\pi}[r(x,y)]-\beta\,\KL(\pi\|\pi_\text{ref})\ \Rightarrow\ \pi^*(y|x)=\tfrac{1}{Z(x)}\pi_\text{ref}(y|x)\,e^{r(x,y)/\beta}$\par}\smallskip
+RM loss (Bradley--Terry): $-\log\sigma(r_\phi(x,y_w)-r_\phi(x,y_l))$; only differences identified.\\
+Per-token PPO reward: $r_t=-\beta\log\frac{\pi_\theta}{\pi_\text{ref}}(y_t)+\mathbb 1[t{=}T]\,r_\phi(x,y)$.\\
+PPO-clip: $\E[\min(\rho A,\ \mathrm{clip}(\rho,1{\pm}\varepsilon)A)]$, $\varepsilon{=}0.2$.\\
+GAE: $\delta_t=r_t+\gamma V_{t+1}-V_t$, $\hat A_t=\sum_l(\gamma\lambda)^l\delta_{t+l}$.\\
+DPO: $-\log\sigma\big(\beta\log\frac{\pi_\theta(y_w)}{\pi_\text{ref}(y_w)}-\beta\log\frac{\pi_\theta(y_l)}{\pi_\text{ref}(y_l)}\big)$, $\beta\in[0.01,0.5]$.\\
+GRPO: $\hat A_i=\frac{r_i-\text{mean}(r)}{\text{std}(r)}$ per group of $G$; PPO-clip; $-\beta\,k_3$.
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.55\columnwidth,height=3.1cm,xmin=0,xmax=2,ymin=-0.2,ymax=1.6,axis lines=middle,
+  xtick={0.8,1,1.2},xticklabels={$1{-}\varepsilon$,1,$1{+}\varepsilon$},ytick=\empty,
+  tick label style={font=\tiny},title={\tiny $A>0$},title style={yshift=-2mm},
+  xlabel={\tiny$\rho$},xlabel style={at={(1,0)},anchor=north}]
+\addplot[mute,dashed,domain=0:2]{x};
+\addplot[acc,line width=1pt,domain=0:1.2]{x};
+\addplot[acc,line width=1pt,domain=1.2:2]{1.2};
+\node[font=\tiny,acc2] at (axis cs:1.6,0.95) {grad $=0$};
+\end{axis}
+\end{tikzpicture}\hfill
+\begin{tikzpicture}
+\begin{axis}[width=0.55\columnwidth,height=3.1cm,xmin=0,xmax=2,ymin=-1.6,ymax=0.2,axis lines=middle,
+  xtick={0.8,1,1.2},xticklabels={$1{-}\varepsilon$,1,$1{+}\varepsilon$},ytick=\empty,
+  tick label style={font=\tiny},title={\tiny $A<0$},title style={yshift=-2mm},
+  xlabel={\tiny$\rho$},xlabel style={at={(1,1)},anchor=south}]
+\addplot[mute,dashed,domain=0:2]{-x};
+\addplot[acc,line width=1pt,domain=0:0.8]{-0.8};
+\addplot[acc,line width=1pt,domain=0.8:2]{-x};
+\node[font=\tiny,acc2] at (axis cs:0.4,-1.1) {grad $=0$};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[RLHF and PPO]
+\Q{What does the PPO clip actually do?}{Removes the incentive to move further \emph{in the improving direction} once $\rho$ leaves $[1-\varepsilon,1+\varepsilon]$ (flat regions above). It never clips harmful moves: with $A<0$ and large $\rho$, $\rho A$ is smaller and its gradient pulls back. It does not bound the change --- monitor clip fraction and KL.}
+\Q{Why the KL penalty?}{Keeps the policy where the RM is still accurate, preserves fluency/diversity. Gao et al.: proxy reward keeps rising with KL while gold reward peaks then falls --- Goodhart with a curve.}
+\Q{How many models does PPO-RLHF hold?}{Four: policy (train), value (train), reference (frozen), reward (frozen) --- the cost DPO and GRPO remove.}
+\Q{GAE $\lambda$?}{$\lambda=0$: one-step TD (low variance, biased by $V$); $\lambda=1$: Monte Carlo (unbiased, high variance). LLMs often use $\gamma=1$.}
+\Q{RM accuracy ceiling?}{Inter-annotator agreement (often 65--75\%), not 100\%. RM = SFT model with a scalar head at the last token.}
+\Q{RLHF failure modes?}{Reward hacking, length exploitation, sycophancy, mode collapse (track entropy, distinct-$n$).}
+\end{qa}
+
+\begin{qa}[DPO]
+\Q{Derive DPO in five steps.}{(1) Optimum $\pi^*=\pi_\text{ref}e^{r/\beta}/Z$ (rewrite objective as $-\beta\KL(\pi\|\pi^*)+\beta\log Z$). (2) Invert: $r=\beta\log\frac{\pi^*}{\pi_\text{ref}}+\beta\log Z(x)$. (3) Plug into Bradley--Terry: $Z(x)$ cancels in $r_w-r_l$. (4) Replace $\pi^*$ by $\pi_\theta$, maximize likelihood of preferences. (5) Gradient weights each pair by $\sigma(\hat r_l-\hat r_w)$: mis-ordered pairs dominate.}
+\Q{``DPO has no reward model so it optimizes no reward.'' True?}{False: it optimizes the same KL-regularized objective, reward reparameterized through the policy (implicit reward $\beta\log\pi_\theta/\pi_\text{ref}$). It removes the explicit RM and sampling, not the objective.}
+\Q{DPO failure modes?}{Likelihood displacement (both chosen and rejected log-probs fall; mass goes elsewhere); deterministic preferences push $\pi(y_l)\to0$ regardless of $\beta$ (IPO fixes); length exploitation (SimPO normalizes); off-policy pairs (online/iterative DPO is better).}
+\Q{DPO debugging checklist?}{Same template/prompt for chosen and rejected; accuracy up while chosen log-prob collapses?; chosen systematically longer?; $\pi_\text{ref}$ = your SFT model, log-probs summed over response tokens with the shift.}
+\end{qa}
+
+\begin{mem}[The preference family]
+\begin{tabularx}{\linewidth}{@{}lcL@{}}
+\toprule
+method & ref? & idea\\\midrule
+DPO & yes & closed-form RLHF optimum, $-\log\sigma(\beta h)$\\
+cDPO & yes & label smoothing for noisy pairs\\
+IPO & yes & regress margin to $1/2\tau$: certain prefs don't blow up\\
+KTO & yes & unpaired good/bad labels, prospect theory\\
+SimPO & no & length-normalized log-prob + margin $\gamma$\\
+ORPO & no & SFT + odds-ratio term in one stage\\
+Online DPO & yes & fresh pairs from current policy + judge\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (q) at (0,0) {prompt $q$};
+\foreach \i/\r in {0/1,1/0,2/0,3/1,4/0,5/0,6/0,7/1}{
+ \pgfmathsetmacro\yy{8-\i*2.3}
+ \node[draw=acc,fill=white,minimum width=9mm,minimum height=1.8mm,inner sep=0pt] (o\i) at (20,\yy) {$o_{\the\numexpr\i+1\relax}$};
+ \draw[arr,line width=0.3pt] (q.east) -- (o\i.west);
+ \node at (30,\yy) {$r{=}\r$};
+ \ifnum\r=1 \node[text=acc3] at (40,\yy) {$A{=}{+}1.29$}; \else \node[text=acc2] at (40,\yy) {$A{=}{-}0.77$}; \fi
+}
+\node[anchor=west,align=left] at (47,4) {mean $=0.375$, std $=0.48$\\every token of $o_i$ gets $A_i$\\all-same group \ra\ $A\equiv0$ \ra\ no signal\\no value network needed};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[RLVR and GRPO]
+\Q{Why GRPO instead of PPO for reasoning?}{A value network for long CoT with one terminal reward is hard to learn and costs a policy-sized model. The group mean is a Monte Carlo estimate of the prompt's value.}
+\Q{Why must GRPO rollouts be sampled at temperature $>0$?}{At $T=0$ all $G$ samples are identical \ra\ every advantage 0 \ra\ nothing trains.}
+\Q{Known GRPO problems and fixes?}{Length bias from per-sequence $1/|o_i|$ (long wrong answers penalized less per token) \ra\ token-level or constant normalization (DAPO, Dr.\,GRPO). Std normalization over-weights too-easy/too-hard prompts \ra\ drop it (Dr.\,GRPO). Entropy collapse \ra\ clip-higher $\varepsilon_\text{high}{=}0.28$. Zero-variance groups \ra\ dynamic sampling. Truncated answers \ra\ overlong filtering. KL holds back long-CoT \ra\ $\beta{=}0$. Token-ratio noise (MoE) \ra\ sequence-level ratios (GSPO).}
+\Q{How do you design an RLVR reward?}{Correctness is the reward, format a gate; normalize and compare answers symbolically; code runs hidden tests in a sandbox; unparseable or multiple answers $=0$; avoid partial credit; keep prompts with pass rate strictly between 0 and 1.}
+\Q{Reward hacking examples?}{Listing several answers for a lenient extractor; special-casing visible tests, deleting tests, exiting early with success; flattering an LLM judge; unbounded length. Defence: read samples, stricter held-out grader, track the gap. Don't optimize against the CoT --- it teaches obfuscation.}
+\Q{Does RL create reasoning or select it?}{Evidence (Yue et al.): RLVR beats base at pass@1 but base catches up at large $k$ \ra\ mostly sharpening; longer RL (ProRL) may expand it. Know both sides.}
+\Q{What to log every RL step?}{Mean reward, zero-variance-group fraction, length split by correct/incorrect, entropy, clip fraction, KL to reference.}
+\end{qa}
+
+\begin{qa}[Test-time compute and distillation]
+\Q{Ways to buy accuracy with inference compute?}{CoT; self-consistency (majority of $N$); best-of-$N$ with a verifier/RM; PRM-guided beam/tree search; budget forcing (s1: append ``Wait''). Compute-optimal: easy/medium problems gain most; hardest need pretraining compute.}
+\Q{ORM vs PRM?}{Outcome RM scores the final answer; process RM scores each step (PRM800K). PRMs select better but are costly to label and hackable as RL rewards.}
+\Q{Forward-KL vs reverse-KL vs on-policy distillation?}{Sequence-level KD = SFT on teacher samples (forward, mode-covering). Logit KD at temperature $T$ (scale loss by $T^2$, same tokenizer). On-policy: sample from the student, teacher scores each token \ra\ dense per-token reward, no exposure bias (GKD, Qwen3).}
+\Q{Constitutional AI / RLAIF?}{Model critiques and revises its own answers against written principles (SL stage), then RL from AI preference labels; scalable, auditable labeling --- verify against humans.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item ``LoRA $r{=}8$ is $8/4096$ of params.'' It is $r(d_\text{in}{+}d_\text{out})$ per matrix, summed over targets.
+\item ``SFT loss went down so SFT worked'' / ``reward went up so RL worked.'' Evaluate generations with a stricter grader.
+\item ``A baseline biases the gradient.'' Only if it depends on the sampled action.
+\item The vocabulary trap: Qwen2.5-0.5B logits for 4$\times$1024 tokens are 2.5 GB in fp32 --- more than its weights. Chunk the loss.
+\end{itemize}
+\end{trap}

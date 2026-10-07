@@ -1,0 +1,173 @@
+\section{Implement from scratch: code you write blind}\label{sec:code}
+\lab{labs 01--18 \textperiodcentered\ write each in under 10 minutes, then test against \texttt{torch}}
+
+{\small Every snippet is minimal PyTorch: shapes in comments, no error handling. Invariants to test are listed under each. Interviewers watch for: masks, shifts by one, dtype, and the dimension you reduce over.}
+
+\newcommand{\CH}[1]{\par\needspace{6\baselineskip}\smallskip\noindent{\sffamily\bfseries\small\color{acc}#1}\par\nopagebreak}
+
+\CH{1. Causal self-attention (multi-head, GQA-ready)}
+\begin{lstlisting}
+def attention(x, Wq, Wk, Wv, Wo, H, Hkv):
+    B, T, d = x.shape; dh = d // H; g = H // Hkv
+    q = (x @ Wq).view(B, T, H,   dh).transpose(1, 2)  # B,H,T,dh
+    k = (x @ Wk).view(B, T, Hkv, dh).transpose(1, 2)  # B,Hkv,T,dh
+    v = (x @ Wv).view(B, T, Hkv, dh).transpose(1, 2)
+    k = k.repeat_interleave(g, dim=1); v = v.repeat_interleave(g, dim=1)
+    s = (q @ k.transpose(-2, -1)) / dh**0.5            # B,H,T,T
+    mask = torch.ones(T, T, dtype=torch.bool).tril()
+    s = s.masked_fill(~mask, float('-inf'))
+    o = s.softmax(-1) @ v                              # B,H,T,dh
+    return o.transpose(1, 2).reshape(B, T, d) @ Wo
+\end{lstlisting}
+{\scriptsize\color{mute}Test: equals \texttt{F.scaled\_dot\_product\_attention(is\_causal=True)}; output at $t$ unchanged when tokens $>t$ change.}
+
+\CH{2. RMSNorm and SwiGLU}
+\begin{lstlisting}
+def rmsnorm(x, g, eps=1e-6):
+    return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + eps) * g
+def swiglu(x, Wg, Wu, Wd):
+    return (F.silu(x @ Wg) * (x @ Wu)) @ Wd
+\end{lstlisting}
+
+\CH{3. RoPE (interleaved pairs)}
+\begin{lstlisting}
+def rope(x, pos, base=10000.0):           # x: ...,T,dh ; pos: T
+    dh = x.shape[-1]
+    inv = base ** (-torch.arange(0, dh, 2).float() / dh)   # dh/2
+    ang = pos[:, None].float() * inv[None]                 # T,dh/2
+    cos, sin = ang.cos(), ang.sin()
+    x1, x2 = x[..., 0::2], x[..., 1::2]
+    out = torch.stack([x1*cos - x2*sin, x1*sin + x2*cos], -1)
+    return out.flatten(-2)
+\end{lstlisting}
+{\scriptsize\color{mute}Test: norm preserved; $\langle\mathrm{rope}(q,m),\mathrm{rope}(k,n)\rangle$ depends only on $m-n$.}
+
+\CH{4. Decode loop with KV cache + top-$p$ sampling}
+\begin{lstlisting}
+def top_p_sample(logits, T=0.8, p=0.9):
+    probs = (logits / T).softmax(-1)
+    sp, idx = probs.sort(-1, descending=True)
+    keep = sp.cumsum(-1) - sp < p          # always keeps the top token
+    sp = sp * keep; sp = sp / sp.sum(-1, keepdim=True)
+    return idx.gather(-1, torch.multinomial(sp, 1))
+
+@torch.no_grad()
+def generate(model, ids, n_new):
+    cache = None
+    logits, cache = model(ids, cache=cache)         # prefill
+    for _ in range(n_new):
+        nxt = top_p_sample(logits[:, -1])
+        ids = torch.cat([ids, nxt], 1)
+        logits, cache = model(nxt, cache=cache)     # 1 token/step
+    return ids
+\end{lstlisting}
+{\scriptsize\color{mute}Test: cached and uncached generation give identical logits (greedy).}
+
+\CH{5. Online softmax (the FlashAttention core, one query row)}
+\begin{lstlisting}
+def online_attn(q, K, V, block=64):       # q: dh ; K,V: T,dh
+    m, l = float('-inf'), 0.0; o = torch.zeros_like(V[0])
+    for s0 in range(0, K.shape[0], block):
+        s = K[s0:s0+block] @ q / q.numel()**0.5
+        m_new = max(m, s.max().item())
+        scale = math.exp(m - m_new)
+        p = (s - m_new).exp()
+        l = l * scale + p.sum().item()
+        o = o * scale + p @ V[s0:s0+block]
+        m = m_new
+    return o / l
+\end{lstlisting}
+
+\CH{6. Byte-level BPE training}
+\begin{lstlisting}
+def train_bpe(text, vocab_size):
+    ids = list(text.encode('utf-8')); merges = {}
+    for new in range(256, vocab_size):
+        pairs = Counter(zip(ids, ids[1:]))
+        if not pairs: break
+        best = max(pairs, key=pairs.get)
+        merges[best] = new
+        out, i = [], 0
+        while i < len(ids):
+            if i < len(ids)-1 and (ids[i], ids[i+1]) == best:
+                out.append(new); i += 2
+            else:
+                out.append(ids[i]); i += 1
+        ids = out
+    return merges        # encode: apply merges in rank order
+\end{lstlisting}
+
+\CH{7. LoRA linear layer}
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, base: nn.Linear, r=16, alpha=32):
+        super().__init__(); self.base = base.requires_grad_(False)
+        self.A = nn.Parameter(torch.empty(r, base.in_features))
+        self.B = nn.Parameter(torch.zeros(base.out_features, r))
+        nn.init.kaiming_uniform_(self.A, a=5**0.5); self.s = alpha / r
+    def forward(self, x):
+        return self.base(x) + (x @ self.A.T @ self.B.T) * self.s
+\end{lstlisting}
+{\scriptsize\color{mute}Test: output equals base at init; merged $W_0+sBA$ gives identical outputs.}
+
+\CH{8. Sequence log-prob, DPO loss, GRPO advantages}
+\begin{lstlisting}
+def seq_logprob(logits, ids, resp_mask):        # B,T,V ; B,T ; B,T
+    lp = logits[:, :-1].log_softmax(-1)         # predicts t+1
+    tok = lp.gather(-1, ids[:, 1:, None]).squeeze(-1)
+    return (tok * resp_mask[:, 1:]).sum(-1)     # sum over response
+
+def dpo_loss(pw, pl, rw, rl, beta=0.1):          # policy/ref logps
+    h = (pw - rw) - (pl - rl)
+    return -F.logsigmoid(beta * h).mean()
+
+def grpo_adv(r, eps=1e-6):                       # r: n_prompts, G
+    mu, sd = r.mean(1, keepdim=True), r.std(1, keepdim=True)
+    return (r - mu) / (sd + eps)
+
+def clip_obj(logp, logp_old, A, e=0.2):
+    rho = (logp - logp_old).exp()
+    return torch.min(rho*A, rho.clamp(1-e, 1+e)*A).mean()
+\end{lstlisting}
+
+\CH{9. AdamW step}
+\begin{lstlisting}
+def adamw_step(p, g, m, v, t, lr, b1=0.9, b2=0.95, eps=1e-8, wd=0.1):
+    p.mul_(1 - lr * wd)                          # decoupled decay
+    m.mul_(b1).add_(g, alpha=1 - b1)
+    v.mul_(b2).addcmul_(g, g, value=1 - b2)
+    mh = m / (1 - b1**t); vh = v / (1 - b2**t)
+    p.addcdiv_(mh, vh.sqrt().add_(eps), value=-lr)
+\end{lstlisting}
+
+\CH{10. InfoNCE for embeddings, and MoE top-$k$ routing}
+\begin{lstlisting}
+def info_nce(q, d, tau=0.05):                  # q,d: N,D normalized
+    logits = q @ d.T / tau                     # in-batch negatives
+    return F.cross_entropy(logits, torch.arange(len(q)))
+
+def route(x, Wr, k=2):                         # x: N,d
+    probs = (x @ Wr).softmax(-1)               # N,E
+    g, idx = probs.topk(k, -1)
+    return g / g.sum(-1, keepdim=True), idx    # renormalized gates
+\end{lstlisting}
+
+\CH{11. Speculative-decoding acceptance (one position)}
+\begin{lstlisting}
+def accept(x, p, q):                 # p,q: target/draft probs over V
+    if torch.rand(()) < min(1.0, (p[x] / q[x]).item()):
+        return x, True
+    resid = (p - q).clamp(min=0); resid /= resid.sum()
+    return torch.multinomial(resid, 1).item(), False
+\end{lstlisting}
+
+\CH{12. pass@$k$ and a bootstrap CI}
+\begin{lstlisting}
+def pass_at_k(n, c, k):
+    if n - c < k: return 1.0
+    return 1 - np.prod(1 - k / np.arange(n - c + 1, n + 1))
+
+def boot_ci(x, B=10_000, a=0.05):            # per-item scores
+    idx = np.random.randint(0, len(x), (B, len(x)))
+    return np.quantile(x[idx].mean(1), [a/2, 1-a/2])
+\end{lstlisting}

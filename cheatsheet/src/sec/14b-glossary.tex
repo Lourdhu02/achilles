@@ -1,0 +1,80 @@
+\section{Glossary A--Z}
+{\small
+\newcommand{\G}[2]{\par\noindent\hangindent=0.9em\hangafter=1{\sffamily\bfseries\color{acc}#1}\ \ #2\par}
+\G{ABF}{adjusted base frequency: raise RoPE base before long-context training.}
+\G{Activation checkpointing}{store few activations, recompute in backward; +33\% compute.}
+\G{AdamW}{Adam with decoupled weight decay.}
+\G{Alignment tax}{capability lost to safety/preference tuning.}
+\G{All-reduce / all-gather / reduce-scatter / all-to-all}{the four collectives (section~\ref{sec:compute}).}
+\G{Attention sink}{first tokens absorb attention mass; keep them when evicting KV (StreamingLLM).}
+\G{AWQ / GPTQ}{4-bit weight quantization: salient-channel scaling / Hessian error compensation.}
+\G{Beam search}{keep top-$b$ partial sequences by log-prob; bland for chat.}
+\G{BPE}{byte-pair encoding: merge most frequent pairs.}
+\G{Bradley--Terry}{$P(a\succ b)=\sigma(r_a-r_b)$; RMs, DPO, arenas.}
+\G{Capacity factor}{expert buffer size multiplier in MoE; overflow tokens dropped.}
+\G{Chat template}{serialization of roles with special tokens; must match training.}
+\G{Chinchilla}{70B on 1.4T tokens; compute-optimal $\approx$20 tokens/param.}
+\G{Chunked prefill}{split prompts into budgeted chunks interleaved with decode.}
+\G{Constitutional AI}{self-critique against written principles + RLAIF.}
+\G{Context parallelism}{shard the sequence across GPUs for attention (ring).}
+\G{Continuous batching}{batch re-formed every decode step.}
+\G{Contrastive loss}{InfoNCE: pull positives together, push negatives apart.}
+\G{Cross-encoder}{scores query and doc jointly; reranking.}
+\G{DPO / IPO / KTO / SimPO / ORPO}{preference objectives without RL (section~\ref{sec:post}).}
+\G{Distillation}{train a student on a teacher's outputs or logits.}
+\G{Double descent}{test error falls again past the interpolation threshold.}
+\G{Emergence}{abrupt task gains; often an artifact of discontinuous metrics.}
+\G{Expert parallelism}{experts on different GPUs; all-to-all dispatch.}
+\G{Exposure bias}{train on gold prefixes, generate on own prefixes.}
+\G{FlashAttention}{IO-aware tiled exact attention with online softmax.}
+\G{FSDP / ZeRO}{shard params, grads, optimizer states across data-parallel ranks.}
+\G{Function calling}{model emits structured tool calls validated against JSON Schema.}
+\G{GAE}{generalized advantage estimation, $\lambda$-weighted TD errors.}
+\G{GQA / MQA / MLA}{fewer KV heads / one KV head / latent-compressed KV.}
+\G{Grokking}{sudden generalization long after memorizing training data.}
+\G{GRPO}{group-relative PPO without a value net (section~\ref{sec:post}).}
+\G{Hallucination}{fluent unsupported content; measure faithfulness.}
+\G{HNSW / IVF-PQ}{graph-based / clustered + compressed ANN indexes.}
+\G{In-context learning}{learning from examples in the prompt, no weight update.}
+\G{Induction head}{copy circuit \dots A B \dots A $\to$ B.}
+\G{Instruction hierarchy}{train to prioritize system $>$ user $>$ tool text.}
+\G{KV cache}{stored keys/values of past tokens; $2LH_{kv}d_h$ elems/token.}
+\G{Label smoothing}{target $(1-\epsilon)$ on gold, $\epsilon$ spread elsewhere.}
+\G{LoRA / QLoRA / DoRA}{low-rank adapters / on 4-bit base / magnitude--direction split.}
+\G{Lost in the middle}{models use mid-context information worst.}
+\G{Matryoshka embedding}{prefixes of the vector are valid embeddings.}
+\G{MCP}{Model Context Protocol: standard tool/resource servers.}
+\G{MFU / HFU}{useful FLOPs / all FLOPs incl.\ recompute, over peak.}
+\G{Mixture of experts}{router picks top-$k$ expert MLPs per token.}
+\G{Model collapse}{degradation from recursive training on own synthetic data.}
+\G{$\mu$P}{parameterization making hyperparameters width-transferable.}
+\G{Muon}{orthogonalized momentum for matrix params.}
+\G{NF4}{4-bit NormalFloat levels at normal quantiles.}
+\G{Online softmax}{streaming softmax with running max and sum.}
+\G{PagedAttention}{KV in fixed blocks via block tables.}
+\G{pass@$k$ / pass$^k$}{any of $k$ succeeds / all $k$ succeed.}
+\G{Perplexity}{$\exp$ of mean NLL per token.}
+\G{PPO}{clipped surrogate policy optimization.}
+\G{Prefix caching}{reuse KV of shared prompt prefixes.}
+\G{Prompt injection}{untrusted text hijacks model instructions.}
+\G{PRM / ORM}{process vs outcome reward models.}
+\G{QK-norm}{normalize $q,k$ to stop logit growth.}
+\G{RAG}{retrieve then generate with citations.}
+\G{Reward hacking}{exploiting reward flaws instead of solving the task.}
+\G{RLHF / RLAIF / RLVR}{RL from human / AI feedback / verifiable rewards.}
+\G{RMSNorm}{scale by root-mean-square, no centering.}
+\G{RoPE / YaRN / NTK}{rotary positions and their extension tricks.}
+\G{RRF}{reciprocal rank fusion, $\sum1/(60+\text{rank})$.}
+\G{SAE}{sparse autoencoder dictionary over activations.}
+\G{Self-consistency}{majority vote over sampled CoTs.}
+\G{Speculative decoding}{draft $k$ tokens, verify in one target pass, exact.}
+\G{Superposition}{more features than dimensions, almost-orthogonal.}
+\G{SwiGLU}{gated MLP with SiLU; hidden $\approx8d/3$.}
+\G{Sycophancy}{agreeing with the user over the truth.}
+\G{Tensor parallelism}{split each matmul across GPUs (Megatron).}
+\G{Test-time compute}{spend inference FLOPs (CoT, sampling, search) for accuracy.}
+\G{Tied embeddings}{embedding matrix reused as LM head.}
+\G{Top-$k$ / top-$p$ / min-$p$}{truncation sampling rules.}
+\G{WSD}{warmup--stable--decay LR schedule.}
+\G{z-loss}{penalty on $\log^2 Z$ to keep logits bounded.}
+}

@@ -1,0 +1,46 @@
+\section{Four-week plan and the cold self-check}
+\lab{spaced repetition: read, recall out loud, re-test only the misses}
+
+\begin{mem}[Four weeks to ``answer in my sleep'']
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+week & read + recall (sections) \quad \textbullet\ build (Achilles labs)\\\midrule
+1 & math, foundations, compute, GPU, training, tokenizers \textbullet\ labs 01--04 (autograd, training core, napkin math, BPE)\\
+2 & transformer, pretraining, post-training, reasoning \textbullet\ labs 05, 08--12 (GPT, scaling, parallelism, LoRA, DPO, GRPO)\\
+3 & inference, eval, interp/safety \textbullet\ labs 06, 07, 13--16 (kernels, KV cache, quantization, spec decoding, eval stats, interp)\\
+4 & RAG/agents, production, GenAI, design, code, napkin, loops \textbullet\ labs 17--18 (retrieval, MoE); two mock interviews\\\bottomrule
+\end{tabularx}\par\smallskip
+{\scriptsize Daily: 20 rapid-fire cards, one formula rewritten from memory, one napkin problem on paper, one from-scratch snippet typed blind. Re-test misses on days 3, 7, 21.}
+\end{mem}
+
+\begin{trap}[The cold self-check: can you, without notes, \dots]
+{\setlength{\columnsep}{4mm}
+\newcommand{\CK}{\par\noindent$\square$\ }
+\CK derive the softmax-CE gradient and the matmul VJP
+\CK compute FLOPs, training memory and KV bytes for any model card
+\CK place a kernel on the roofline and say what would move it
+\CK compute occupancy and a GEMM tile's arithmetic intensity
+\CK explain pre-norm, RMSNorm, SwiGLU sizing and RoPE extension
+\CK count Llama-3-8B's parameters to within 1\%
+\CK explain GQA vs MLA and why GQA helps decode only
+\CK write attention, RoPE, BPE and LoRA in 10 minutes each
+\CK derive DPO from the RLHF objective in five steps
+\CK say what GRPO removes from PPO and its three known bugs
+\CK explain why speculative decoding is lossless and estimate its speedup
+\CK size a serving fleet for given QPS, prompt and output lengths
+\CK pick a quantization method for a given batch size and justify it
+\CK give a CI for an eval score and say whether a 2-point gain is real
+\CK design a RAG system and name where quality is lost first
+\CK list prompt-injection defenses, strongest first
+\CK run a 7-step system-design answer with numbers
+\CK tell three STAR stories with sourced numbers, three follow-ups deep
+\CK name the trigger signals of all 18 DSA patterns
+\CK debug a NaN, an OOM and a hung multi-node job out loud
+\par}
+\end{trap}
+
+\vfill
+\begin{center}
+{\color{rule}\rule{0.6\columnwidth}{0.4pt}}\\[2pt]
+{\scriptsize\color{mute}Mastery levels (rate yourself monthly): 0 heard of it \textperiodcentered\ 1 explain \textperiodcentered\ 2 derive \textperiodcentered\ 3 implemented + tested \textperiodcentered\ 4 predicted numbers before measuring \textperiodcentered\ 5 extended it or found where it breaks. Core-AI interviews probe 3--4.}
+\end{center}

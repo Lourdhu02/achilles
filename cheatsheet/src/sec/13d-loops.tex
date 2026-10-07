@@ -1,0 +1,87 @@
+\section{The interview loop: rounds, stories, DSA}
+\lab{companies/ \textperiodcentered\ career/stories.md \textperiodcentered\ tracks/research-engineer \textperiodcentered\ formats change, confirm with your recruiter}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \x/\t/\c in {0/{recruiter\\screen}/box,16/{coding or\\take-home}/box,32/{tech / HM\\screen}/box,50/{onsite: coding, ML,\\design, deep dive,\\values}/hbox,70/{references,\\team match}/box}{
+  \node[\c,text width=13mm] (n\x) at (\x,0) {\t};}
+\draw[arr] (n0)--(n16); \draw[arr] (n16)--(n32); \draw[arr] (n32)--(n50); \draw[arr] (n50)--(n70);
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[What each lab emphasizes (reported, varies by team and year)]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Anthropic & practical multi-part coding (CodeSignal/Colab, can look things up), ML/system design, project deep dive, values round strong engineers underestimate; no AI in live rounds; perf take-home is public\\
+OpenAI & practical coding that grows in scope, in your editor; ML depth and debugging for research roles; LLM system design; every project number probed\\
+Google / GDM & DSA medium in 20--25 min, often without running code; GDM ``quiz'' (rapid math/stats/ML breadth); ML rounds; hiring committee; JAX helps\\
+Meta & 2 DSA problems per 45 min; AI-enabled coding round in CoderPad (fix, implement, optimize); ML system design; behavioral by level (E4 vs E5 scope)\\
+NVIDIA & C++/Python, CUDA execution model, memory hierarchy, roofline-style performance reasoning, DL fundamentals; outside AI tools disqualify\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Round-by-round playbook]
+\Q{Practical coding round: how to run it?}{Restate the spec, ask about scale and edge cases, write a tiny working version first, add tests as you go, narrate trade-offs, then extend. Clean names and small functions beat cleverness. Requirements will grow: design so step 2 is a small change.}
+\Q{ML coding (``implement attention / BPE / DPO'')?}{State shapes before writing, write the core in 10 minutes, then test invariants (causality, equivalence to a library call, a gradient check). Mention dtype, masking and numerical stability unprompted (section~\ref{sec:code}).}
+\Q{ML / LLM system design structure?}{Clarify goal and metric \ra\ constraints (QPS, latency, cost, privacy) \ra\ data \ra\ baseline \ra\ architecture diagram \ra\ evaluation offline/online \ra\ serving and scaling \ra\ failure modes, monitoring, iteration. Quantify with napkin math at each step.}
+\Q{Project deep dive: what gets probed?}{Data (test set, size, split, leakage); numbers (metric with CI, baseline tuned equally?); choices (why this loss/model, what failed); costs (accuracy vs latency, on what hardware); next (10$\times$ compute, what would change your mind). Keep a numbers sheet per project.}
+\Q{Research-taste questions?}{``Most surprising result you got'', ``a paper you think is wrong'', ``what would you work on with a cluster for a month''. Show a hypothesis, a cheap experiment to test it, and what result would falsify it.}
+\Q{Values / mission round?}{Specific (named paper, policy, incident), personal (something you did), nuanced (state the strongest opposing view), calibrated (``I think X, I'd change my mind if Y''). Prepare one thing you'd refuse to build and one borderline case you'd accept with conditions.}
+\end{qa}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\fill[acc!25] (0,0) rectangle (10,4); \node at (5,2) {S 20s};
+\fill[acc!40] (10,0) rectangle (18,4); \node at (14,2) {T 15s};
+\fill[acc2!45] (18,0) rectangle (60,4); \node at (39,2) {\textbf{A 60--90 s: your 3 decisions, alternatives, trade-offs}};
+\fill[acc3!40] (60,0) rectangle (75,4); \node at (67.5,2) {R numbers};
+\fill[acc3!20] (75,0) rectangle (86,4); \node at (80.5,2) {L lesson};
+\node[lab] at (43,-2.5) {STAR + learning, 2--3 minutes; ``I'' for your actions; every number traceable to a record};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Story bank: 12--15 true stories, each covering several themes]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+hard technical problem & loss design, quantization trade-off, a bug you root-caused\\
+ownership / ambiguity & a project you scoped from nothing\\
+failure / mistake & badly scoped work and what you changed after\\
+conflict / pushback & cost vs accuracy vs speed with a stakeholder\\
+learning fast & a new domain in weeks; your from-scratch labs\\
+leading without authority & contractors, cross-team asks\\
+saying no & turning down bad-fit work\\
+honesty under pressure & reporting a worse number than hoped\\
+safety/privacy over speed & choosing on-prem/local for sensitive data\\
+research taste & the most surprising experimental result\\\bottomrule
+\end{tabularx}\par\smallskip
+{\scriptsize Follow-up drill, three levels deep: How did you measure it? What else did you consider? What if you'd done nothing? Who disagreed? What would you change? Where did you apply the lesson since?}
+\end{mem}
+
+\begin{mem}[The 18 DSA patterns and their trigger signals]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+two pointers & sorted array pair/triplet, merge two sequences, palindrome\\
+sliding window & longest/shortest substring or subarray with a condition\\
+binary search & sorted, find target/boundary, need $O(\log n)$\\
+search on answer & ``smallest $X$ such that $Y$'', rotated array, peak\\
+cyclic sort & values in $[1,N]$, find missing/duplicate\\
+linked-list reversal & reverse (part of) list, reorder, cycle, middle\\
+tree BFS & level by level, shortest path in tree, side views\\
+tree DFS & path sums, construction, validation, LCA\\
+graph BFS/DFS/topo & components, shortest unweighted path, cycles, dependency order\\
+backtracking & all subsets/permutations, N-queens, Sudoku\\
+greedy & interval scheduling, jump game, local choice provably optimal\\
+two heaps & running median, split into two groups\\
+top-$K$ & $k$-th largest, $k$ most frequent (size-$k$ heap)\\
+$K$-way merge & merge $K$ sorted lists, $k$-th smallest in matrix\\
+DP 1-D & number of ways, min/max cost, overlapping subproblems\\
+DP 2-D & two strings (LCS, edit distance), grids\\
+trie & prefix matching, word search, autocomplete\\
+union-find & dynamic connectivity, counting components\\\bottomrule
+\end{tabularx}\par\smallskip
+{\scriptsize Standard: a medium in 20--25 min, narrated, with complexity and edge cases. Practise follow-ups: ``doesn't fit in memory'', ``now it's a stream'', ``now concurrent''.}
+\end{mem}
+
+\begin{trap}[Questions to ask them, and what not to ask]
+HM: what success looks like at 6 months, the team's hardest open problem, how research becomes product. Engineers: how experiments are reviewed, eval culture, on-call. Skip-level: strategy for two years. Never ask what the website already answers.
+\end{trap}

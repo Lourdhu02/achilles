@@ -1,0 +1,97 @@
+\section{Compute and hardware}\label{sec:compute}
+\lab{module 02 \textperiodcentered\ lab 03 napkin math}
+
+Every design decision reduces to \textbf{FLOPs, bytes and bandwidth}. Most kernels are limited by moving bytes, not doing math; every optimization below (fusion, tiling, FlashAttention, quantization, KV compression) moves fewer bytes through slow memory.
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,font=\scriptsize]
+% memory hierarchy
+\foreach \i/\w/\t/\n in {0/18/Registers/{256 KB/SM, $\sim$1 cycle},1/24/SMEM / L1/{$\le$228 KB/SM, you tile here},2/30/L2 cache/{50 MB shared},3/36/HBM3/{80 GB, 3.35 TB/s},4/42/NVLink/{900 GB/s bidir.},5/48/InfiniBand NDR/{$\approx$50 GB/s/port}}{
+  \pgfmathsetmacro\y{-\i*4.6}
+  \pgfmathtruncatemacro\shade{38-6*\i}
+  \draw[draw=acc,fill=acc!\shade!white,rounded corners=0.6pt] (-\w/2,\y) rectangle (\w/2,\y-3.8);
+  \node[font=\scriptsize\bfseries] at (0,\y-1.9) {\t};
+  \node[anchor=west,font=\tiny\color{mute}] at (25.5,\y-1.9) {\n};
+}
+\draw[->,acc2,line width=0.6pt] (-27,0) -- (-27,-26.5) node[midway,sloped,above,font=\tiny\color{acc2}]{slower \& larger, $\sim$10$\times$ per level};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.98\columnwidth,height=4.3cm,xmode=log,ymode=log,
+  xmin=0.5,xmax=5000,ymin=1,ymax=4000,
+  xlabel={arithmetic intensity (FLOP/byte)},ylabel={TFLOP/s},
+  label style={font=\scriptsize},tick label style={font=\tiny},
+  axis line style={draw=mute},grid=none]
+\addplot[acc,line width=1pt,domain=0.5:295,samples=2]{3.35*x};
+\addplot[acc,line width=1pt,domain=295:5000,samples=2]{989};
+\draw[dashed,mute] (axis cs:295,1) -- (axis cs:295,989);
+\node[font=\tiny,acc] at (axis cs:295,1.6) [right] {ridge 295};
+\fill[acc2] (axis cs:1,3.35) circle (1.3pt) node[font=\tiny,align=left,above right]{decode\\matvec};
+\fill[acc2] (axis cs:62,207.7) circle (1.3pt) node[font=\tiny,align=center,below right]{naive attn\\($\approx d/2$)};
+\fill[acc2] (axis cs:1365,989) circle (1.3pt) node[font=\tiny,align=center,below]{$4096^3$\\matmul};
+\fill[acc2] (axis cs:2048,989) circle (0pt);
+\node[font=\tiny,rotate=33,mute] at (axis cs:6,40) {memory-bound, slope = BW};
+\node[font=\tiny,mute] at (axis cs:900,2000) {compute-bound};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Roofline]
+$t\ge\max\big(\tfrac{\text{FLOPs}}{\text{peak}},\tfrac{\text{bytes}}{\text{BW}}\big)$ + overhead. Intensity $I=$ FLOPs/bytes; ridge $=$ peak/BW.\\
+Matmul: $I=\frac{mkn}{mk+kn+mn}$ (bf16). Square: $n/3$ (1365 at 4096). Decode ($m{=}1$): $I\approx1$. Batched decode: $I\approx B$ \ra\ need $B\approx300$ to hit the H100 ridge. Elementwise ops: $I<1$ \ra\ fuse them.\\[2pt]
+\begin{tabularx}{\linewidth}{@{}lrrrr@{}}
+\toprule
+GPU & bf16 dense & HBM & BW & ridge\\\midrule
+A100 80G & 312 TF/s & 80 GB & 2.0 TB/s & 150\\
+H100 SXM & 989 TF/s & 80 GB & 3.35 TB/s & 295\\
+B200 & $\sim$2.2 PF/s & 180 GB & $\sim$8 TB/s & 280\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{mem}[Number formats: exponent = range, mantissa = precision]
+\begin{tabularx}{\linewidth}{@{}llllL@{}}
+\toprule
+fmt & s/e/m & max & $\epsilon$ & use\\\midrule
+fp32 & 1/8/23 & $3\!\cdot\!10^{38}$ & $1.2\!\cdot\!10^{-7}$ & master weights, optimizer, reductions\\
+bf16 & 1/8/7 & $3\!\cdot\!10^{38}$ & $7.8\!\cdot\!10^{-3}$ & default train/infer, no loss scaling\\
+fp16 & 1/5/10 & 65{,}504 & $9.8\!\cdot\!10^{-4}$ & needs loss scaling to train\\
+e4m3 & 1/4/3 & 448 & 0.125 & FP8 fwd weights/acts\\
+e5m2 & 1/5/2 & 57{,}344 & 0.25 & FP8 gradients\\
+fp4 e2m1 & 1/2/1 & 6 & 0.5 & MXFP4 (32/blk, pow2 scale), NVFP4 (16/blk, fp8 scale)\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Compute and memory]
+\Q{Why fp32 master weights if you compute in bf16?}{bf16's gap after 1.0 is 0.0078; an Adam update of $10^{-3}$ relative size rounds away (\texttt{bf16(1)+1e-3 == 1}). The fp32 copy accumulates small updates. Same reason accumulations run in fp32 (\texttt{bf16(256)+1 == 256}).}
+\Q{Why bf16 over fp16 for training?}{fp16 has 5 exponent bits: overflow above 65{,}504, gradients underflow below $\sim\!6\!\cdot\!10^{-8}$ \ra\ dynamic loss scaling, still fragile on spikes. bf16 has fp32's range.}
+\Q{Forward and training FLOPs per token?}{Forward $\approx2N$ (one multiply-add per weight). Backward computes $\bar X$ and $\bar W$, each as big as the forward matmul \ra\ training $\approx6N$; activation checkpointing adds a forward \ra\ $8N$. Attention adds $\approx 6LTd$ per token in training: at 128k context it exceeds $6N$ for an 8B model.}
+\Q{Memory to train a 7B model with AdamW?}{16 B/param: bf16 weights 2 + bf16 grads 2 + fp32 master 4 + Adam $m$ 4 + $v$ 4 = 112 GB before activations \ra\ ZeRO/FSDP, 8-bit optimizers or LoRA.}
+\Q{Activation memory per layer (GPT-3 style, 16-bit)?}{$sbh(34+5as/h)$ bytes (Korthikanti et al.). The $5as^2b$ term is the attention matrices; FlashAttention removes it. Full checkpointing stores only $2sbh$ per layer at +33\% compute. Don't forget the fp32 logits: $s\cdot b\cdot V\cdot4$ bytes.}
+\Q{What is MFU and what is good?}{Model FLOPs (6N + attention) achieved $\div$ peak. Good large runs: 35--55\% (Llama 3 405B: 38--43\%). HFU also counts recomputation. MFU $>100\%$ \ra\ missing \texttt{cuda.synchronize}, tied embedding counted twice, MoE total instead of active params, or wrong peak.}
+\Q{Small model runs equally fast on A100 and H100. Why?}{Overhead-bound: kernels too small to fill 132 SMs; CPU launch and Python dominate. Fix with bigger batches, \texttt{torch.compile}, CUDA graphs, fusion --- not a faster GPU.}
+\Q{Batch-1 decode speed upper bound for an 8B bf16 model?}{tokens/s $\le$ BW $\div$ weight bytes $=3.35/16\approx$ 200 tok/s, whatever the FLOPs.}
+\end{qa}
+
+\begin{mem}[Collectives (ring, $n$ ranks, buffer $S$)]
+\begin{tabularx}{\linewidth}{@{}llL@{}}
+\toprule
+collective & bytes/rank & where\\\midrule
+all-reduce & $2\frac{n-1}{n}S$ & DP grads, TP partial sums\\
+reduce-scatter & $\frac{n-1}{n}S$ & ZeRO-2/3, FSDP grads\\
+all-gather & $\frac{n-1}{n}S$ & ZeRO-3/FSDP params\\
+all-to-all & $\frac{n-1}{n}S$ & MoE dispatch, Ulysses SP\\
+send/recv & activations & pipeline parallel\\\bottomrule
+\end{tabularx}
+All-reduce = reduce-scatter + all-gather; per-rank cost $\approx$ independent of $n$. 2 GB grads over 8 GPUs: 55 ms on PCIe 5 (64 GB/s), 7.8 ms on NVLink (450 GB/s/dir).
+\end{mem}
+
+\begin{trap}
+\begin{itemize}
+\item ``Make the math cheaper.'' Cut bytes first; FlashAttention does \emph{more} FLOPs and is faster.
+\item Quoting sparse TFLOP/s (H100 ``1{,}979'' assumes 2:4 sparsity). GB vs GiB; Gb vs GB (IB is in gigabits).
+\item ``Batching makes decode attention efficient.'' It amortizes weights, not per-sequence KV reads.
+\item Timing GPU code without \texttt{torch.cuda.synchronize()} or CUDA events; not discarding warm-up iterations.
+\end{itemize}
+\end{trap}

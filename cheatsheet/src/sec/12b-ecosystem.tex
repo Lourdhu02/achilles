@@ -1,0 +1,59 @@
+\section{Model timeline and the tooling ecosystem}
+\lab{gap-fill \textperiodcentered\ snapshot October 2026; verify versions before quoting}
+
+\begin{center}
+\begin{tikzpicture}[x=0.95mm,y=1mm,every node/.style={font=\tiny}]
+\draw[acc,line width=0.8pt,->] (0,0) -- (88,0);
+\foreach \x/\yr in {0/2017,10/2018,20/2019,30/2020,40/2021,50/2022,60/2023,70/2024,80/2025}{
+  \draw[acc] (\x,-0.8) -- (\x,0.8); \node[below=0.8mm,font=\tiny\bfseries] at (\x,0) {\yr};}
+\foreach \x/\y/\t in {0/2/Transformer,10/12/{GPT-1, BERT},20/2/{GPT-2, T5},30/12/{GPT-3, scaling laws},40/2/{CLIP, Codex, LoRA},50/12/{Chinchilla, InstructGPT, ChatGPT, SD},60/2/{LLaMA, GPT-4, DPO, Mixtral},70/12/{Llama 3, DeepSeek-V3, o1},80/2/{DeepSeek-R1, GRPO era, agents}}{
+  \draw[mute,line width=0.3pt] (\x,0.8) -- (\x,\y-1.2);
+  \node[align=center,text width=13mm,inner sep=0.5pt,anchor=south] at (\x,\y-1.4) {\t};}
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Milestones and what each proved]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Transformer (2017) & attention alone, parallel training\\
+GPT-1 / BERT (2018) & generative vs masked pretraining + fine-tuning\\
+GPT-2 (2019) & zero-shot multitask from scale; pre-norm\\
+T5 (2019) & everything as text-to-text\\
+GPT-3 (2020) & in-context few-shot learning at 175B\\
+Kaplan (2020) / Chinchilla (2022) & power laws; then 20 tokens/param\\
+Codex (2021) & code LMs, pass@$k$\\
+InstructGPT (2022) & SFT + RM + PPO; 1.3B preferred over 175B\\
+LLaMA (2023) & open weights, over-trained small models\\
+DPO (2023) & preference learning without RL\\
+Mixtral (2023), DeepSeek-V3 (2024) & sparse MoE at quality; MLA, FP8\\
+o1 (2024), DeepSeek-R1 (2025) & RL on verifiable rewards \ra\ long CoT reasoning\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{mem}[Tooling map]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+modeling & PyTorch, JAX; HF \texttt{transformers}, \texttt{tokenizers}, \texttt{datasets}\\
+fine-tuning & HF PEFT, TRL (SFT/DPO/GRPO), Axolotl, Unsloth, torchtune, LLaMA-Factory\\
+RL at scale & verl, OpenRLHF, NeMo-RL; vLLM/SGLang as rollout engines\\
+pretraining & Megatron-LM, DeepSpeed (ZeRO), PyTorch FSDP2, torchtitan, nanotron\\
+kernels & Triton, CUDA, CUTLASS, FlashAttention, Liger kernels, \texttt{torch.compile}\\
+serving & vLLM, SGLang, TensorRT-LLM, TGI, llama.cpp/Ollama, MLC; NVIDIA Dynamo\\
+quantization & bitsandbytes, AutoGPTQ/GPTQModel, AutoAWQ, llm-compressor, GGUF\\
+retrieval & FAISS, pgvector, Qdrant, Milvus, Weaviate, Elasticsearch/OpenSearch (BM25)\\
+orchestration & LangChain/LangGraph, LlamaIndex, DSPy, provider SDKs, MCP\\
+evals & lm-eval-harness, HELM, Inspect, OpenAI evals, RAGAS, promptfoo\\
+observability & Langfuse, LangSmith, Phoenix, OpenTelemetry GenAI\\
+experiment tracking & Weights \& Biases, MLflow, TensorBoard\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Ecosystem questions]
+\Q{Open-weight vs API model --- how do you choose?}{API: best quality, no infra, fast iteration, data-sharing terms. Open: control, privacy/on-prem, fine-tuning freedom, cost at high utilization, latency control. Decide with your eval set and a cost model at expected volume; keep the app model-agnostic.}
+\Q{When is a framework (LangChain etc.) worth it?}{Prototyping and integrations. For production hot paths, thin provider SDK calls + your own orchestration are easier to debug, test and trace. DSPy when you want prompts optimized against a metric.}
+\Q{Which vector store?}{Start with what you already run (Postgres + pgvector, OpenSearch); dedicated stores (Qdrant, Milvus) for scale, filtering performance, multi-tenancy; FAISS for in-process/offline. Choose by recall at your latency, filtering, ops burden --- not benchmarks.}
+\Q{HF \texttt{generate} vs vLLM?}{\texttt{generate} is fine for experiments; vLLM/SGLang give continuous batching, paged KV, prefix caching --- often 10$\times$+ throughput for serving and RL rollouts.}
+\Q{What is \texttt{torch.compile} doing?}{TorchDynamo captures graphs from Python bytecode, Inductor generates fused Triton kernels; \texttt{mode="reduce-overhead"} adds CUDA graphs. Wins on memory-bound elementwise chains and launch overhead.}
+\Q{Model licenses?}{Apache-2.0/MIT (permissive) vs custom community licenses with use restrictions or user caps; also check output-use terms for synthetic data generated from API models.}
+\end{qa}

@@ -1,0 +1,41 @@
+\twocolumn[{%
+\begin{tikzpicture}[remember picture,overlay]
+\fill[acc] ($(current page.north west)+(0,-0mm)$) rectangle ($(current page.north east)+(0,-4mm)$);
+\end{tikzpicture}
+\vspace*{1mm}
+{\sffamily\bfseries\fontsize{19}{21}\selectfont\color{acc}LLM \& GenAI Engineer}\\[1mm]
+{\sffamily\large\color{acc2}The memorize-cold sheet: what you must be able to answer in your sleep}\\[1.5mm]
+{\small\color{mute}Built on the Achilles curriculum (modules 00--10, labs 01--18) and extended across the field. Interview-style Q\&A first, derivations only where the answer \emph{is} the derivation. Numbers are for bf16 on an H100 unless stated. Snapshot: October 2026.}
+\vspace{2mm}
+{\color{rule}\hrule height 0.4pt}
+\vspace{3mm}
+}]
+\thispagestyle{plain}
+
+\section*{How to use this sheet}
+\begin{itemize}
+\item \textbf{Three passes.} Day 1: read a section. Day 3: cover every answer and say it out loud. Day 7 and 21: only the questions you missed. Spaced repetition beats re-reading.
+\item \textbf{Boxes.} {\color{acc}\textbf{Blue}} = interview Q\&A. {\color{acc2}\textbf{Rust}} = numbers and formulas to memorize. {\color{acc3}\textbf{Green}} = traps interviewers use to separate memorizers from people who can do the arithmetic.
+\item \textbf{The four numbers of any model card}: $d$ (width), $L$ (layers), $H/H_{kv}$ (query/KV heads), $V$ (vocab). Parameters, FLOPs, KV cache and communication all follow.
+\item \textbf{Answer shape} for any ``why'' question: mechanism \ra\ number \ra\ trade-off \ra\ what you would measure.
+\item Pair each section with its Achilles lab (\lab{lab NN}) --- understanding shows up in what you build and measure.
+\end{itemize}
+
+\begin{mem}[The 12 numbers everyone asks]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+$2mkn$ & FLOPs of an $(m{\times}k)(k{\times}n)$ matmul\\
+$2N$ / $6N$ & forward / training FLOPs per token ($8N$ with checkpointing)\\
+16 B/param & mixed-precision AdamW training state\\
+$\approx$295 & H100 bf16 ridge point, FLOP/byte (989 TF/s \,/\, 3.35 TB/s)\\
+$\ln V$ & loss at init (10.82 for $V{=}50{,}257$; 11.76 for 128k)\\
+$2LH_{kv}d_h b$ & KV bytes per token (Llama-3-8B: 128 KiB)\\
+$1/\sqrt{d_h}$ & keeps attention logits unit-variance at init\\
+$8d/3$ & SwiGLU hidden size matching a $4d$ GELU MLP\\
+$\approx$20 & Chinchilla tokens/param (compute-optimal, training only)\\
+$2\frac{n-1}{n}S$ & ring all-reduce bytes per rank\\
+$\sqrt{p(1{-}p)/n}$ & SE of an accuracy; $p{=}0.7,n{=}1000\Rightarrow\pm2.8$ pts\\
+$0.95^{20}=0.36$ & a 95\%-per-step agent over 20 steps\\
+\end{tabularx}
+\end{mem}
+
+{\small\tableofcontents}

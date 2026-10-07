@@ -1,0 +1,52 @@
+\section{Math you actually use}
+\lab{module 01 \textperiodcentered\ lab 01 autograd}
+
+\begin{mem}[Identities]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Matmul VJP & $Y{=}XW$: $\bar X=\bar Y W^\top$, $\bar W = X^\top\bar Y$\\
+Softmax Jacobian & $J=\mathrm{diag}(y)-yy^\top$; VJP $\bar z = y\odot(\bar y-\langle\bar y,y\rangle)$\\
+Softmax CE & $\bar z=\softmax(z)-\mathrm{onehot}(t)$ \;($\div$$N$ for batch mean)\\
+LayerNorm VJP & $\bar x=\frac1\sigma(\bar y-\overline{\bar y}-\hat x\,\overline{\bar y\odot\hat x})$\\
+RMSNorm VJP & $\bar x=\frac1r(\bar y-\hat x\,\overline{\bar y\odot\hat x})$\\
+gather / sum & VJP is scatter-\textbf{add} / broadcast\\
+MLE & $\E_p[-\log q]=H(p)+\KL(p\|q)$\\
+Log-derivative & $\nabla\E_{p_\theta}[f]=\E[f\,\nabla\log p_\theta]$\\
+Baseline & $\E[b\,\nabla\log p_\theta]=b\nabla\!\sum p_\theta=0$\\
+Importance sampling & $\E_p[f]=\E_q[f\,p/q]$\\
+Bradley--Terry & $P(a\succ b)=\sigma(r_a-r_b)$\\
+KL est.\ ($\rho{=}p/q$, $x{\sim}q$) & $k_1=-\log\rho$; $k_3=\rho-1-\log\rho\ge0$\\
+SE of accuracy & $\sqrt{p(1-p)/n}$; 95\% CI $=\pm1.96\,$SE\\
+GD on quadratic & stable iff $\eta<2/L$; best $\eta=\frac{2}{L+\mu}$, rate $\frac{\kappa-1}{\kappa+1}$\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Calculus and linear algebra]
+\Q{Derive $\partial L/\partial z$ for softmax cross-entropy.}{$L=-z_t+\log\sum_k e^{z_k}$, so $\partial L/\partial z_j=-\delta_{jt}+e^{z_j}/\sum_k e^{z_k}$, i.e.\ $\bar z=\softmax(z)-\mathrm{onehot}(t)$. It sums to 0. Frameworks fuse \texttt{log\_softmax} with NLL for exactly this gradient and for numerical stability (log-sum-exp with the max subtracted).}
+\Q{Does backprop compute the Jacobian?}{No: it computes vector--Jacobian products. The Jacobian of a $4096^2$ matmul output w.r.t.\ one input has $\sim\!2.8\times10^{14}$ entries. Reverse mode costs a small constant ($\approx2\times$) of the forward regardless of parameter count; forward mode costs one pass per input direction.}
+\Q{Derive the matmul VJP.}{Trace trick: $dL=\mathrm{tr}(\bar Y^\top(dX\,W+X\,dW))=\mathrm{tr}((\bar YW^\top)^\top dX)+\mathrm{tr}((X^\top\bar Y)^\top dW)$. Shape check: the gradient has the shape of the variable, and there is only one way to combine the factors into it.}
+\Q{Why do the rows of the softmax Jacobian sum to zero?}{Adding a constant to all logits does not change the softmax, so $J\mathbf 1=0$. A saturated (one-hot) softmax has $J\approx0$: no gradient flows. That is why attention scales logits by $1/\sqrt{d_h}$.}
+\Q{Two free unit tests for a LayerNorm backward?}{$\sum_j\bar x_j=0$ (shift invariance) and $\sum_j\bar x_j\hat x_j=0$ when $\epsilon=0$ (scale invariance). RMSNorm keeps only the second.}
+\Q{Why can FlashAttention's backward skip the $T\times T$ matrix $\bar P$?}{The softmax VJP needs $\langle\bar P_i,P_i\rangle$ per row, which equals $\langle\bar O_i,O_i\rangle$ (swap sums, $\sum_jP_{ij}V_j=O_i$): one length-$d$ dot product per row ($D_i$ in FA-2).}
+\Q{What does SVD buy you in LLM work?}{Eckart--Young: the best rank-$r$ approximation keeps the top $r$ singular values (error $\sqrt{\sum_{i>r}\sigma_i^2}$). LoRA bets updates are low rank; Muon replaces $G=U\Sigma V^\top$ by $UV^\top$; spectral norm $\sigma_{\max}$ bounds how much a layer stretches inputs.}
+\Q{Two random unit vectors in $d{=}4096$: expected dot product?}{Mean 0, variance $1/d$, std $1/64\approx0.016$: nearly orthogonal. High-dimensional space holds exponentially many almost-orthogonal directions \ra\ the geometric basis of superposition.}
+\Q{How do you gradient-check correctly?}{Central differences in float64 with $\epsilon\approx u^{1/3}\approx10^{-5}$, using a random upstream gradient $G$ on $\sum f(x)\odot G$. In float32 you cannot tell a subtle bug from rounding.}
+\end{qa}
+
+\begin{qa}[Probability and information]
+\Q{Why is pretraining ``just'' minimizing KL?}{Cross-entropy $=H(p_\text{data})+\KL(p_\text{data}\|q_\theta)$ and $H$ is constant, so MLE minimizes forward KL. Loss is in nats/token; divide by $\ln2$ for bits; compare across tokenizers with \emph{bits per byte}.}
+\Q{Forward vs reverse KL?}{Forward $\KL(p\|q)$ is \textbf{mode-covering} (punishes $q\approx0$ where $p>0$): SFT, pretraining, classic distillation. Reverse $\KL(q\|p)$ is \textbf{mode-seeking}: RLHF's penalty $\KL(\pi\|\pi_\text{ref})$, on-policy distillation. Example $p=(.5,.5),q=(.9,.1)$: forward 0.511, reverse 0.368 nats. KL is not a distance (asymmetric, no triangle inequality).}
+\Q{What is the log-derivative (REINFORCE) trick and why does RL need it?}{$\nabla_\theta\E_{x\sim p_\theta}[f(x)]=\E[f(x)\nabla_\theta\log p_\theta(x)]$. It needs only samples and $\log p$, not a differentiable reward --- so rewards can be unit tests, verifiers or humans.}
+\Q{Does a baseline bias the policy gradient?}{No --- it reduces \emph{variance}. $\E[b\nabla\log p_\theta]=0$ for any $b$ independent of the sampled $x$. RLOO uses the mean of the \emph{other} samples; GRPO's group mean includes the sample itself, which only rescales the gradient by $(1-1/G)$.}
+\Q{Where does importance sampling show up in LLMs?}{PPO/GRPO ratio $\pi_\theta/\pi_\text{old}$ (reuse rollouts for several steps), speculative decoding's $\min(1,p/q)$, off-policy correction in async RL. Variance explodes when $q$ under-covers $p$ \ra\ clipping.}
+\Q{Which KL estimator does GRPO use and why?}{$k_3=\rho-1-\log\rho$: unbiased (since $\E_q[\rho]=1$), always $\ge0$, low variance. Subtlety: differentiating it through sampled tokens gives the gradient of the \emph{other} KL direction --- still a valid regularizer.}
+\Q{Entropy, cross-entropy, perplexity?}{$H(p)=-\sum p\log p$; perplexity $=e^{\text{CE}}$ = effective branching factor. PPL 10 $\Leftrightarrow$ loss 2.30 nats. Not comparable across tokenizers.}
+\end{qa}
+
+\begin{qa}[Optimization and statistics]
+\Q{GD on a quadratic: stable step and convergence?}{Each eigen-direction scales by $(1-\eta\lambda_i)$; stable iff $\eta<2/L$. Best fixed step gives contraction $(\kappa-1)/(\kappa+1)$. $\kappa=100$: GD 0.980/step (350 steps for $10^3\times$), heavy-ball momentum 0.818/step (35 steps) --- the $\sqrt\kappa$ speed-up is why every optimizer has momentum.}
+\Q{What is the edge of stability?}{Full-batch GD drives sharpness (top Hessian eigenvalue) up to $\approx2/\eta$ and hovers there while loss keeps falling non-monotonically (Cohen et al.\ 2021).}
+\Q{Model A 71.2\%, B 70.0\% on 1{,}000 items. Better?}{Unpaired 95\% CI is $\pm2.8$ pts each --- not established. Use a \textbf{paired} test on per-item differences (shared variance cancels), bootstrap when no formula exists, clustered SEs when items share a document, and report spread over seeds, not the best seed.}
+\Q{Critical batch size?}{Below it, doubling batch nearly halves steps; above it, extra batch buys almost nothing (McCandlish et al.\ 2018). It grows as loss falls, so large runs ramp batch size.}
+\end{qa}

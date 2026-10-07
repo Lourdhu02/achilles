@@ -1,0 +1,54 @@
+\section{System design: answer templates}
+\lab{tracks/research-engineer: ml-system-design, interview-loops}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.3mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum height=7mm,text width=10.2mm,inner sep=1pt}]
+\node[bx,fill=soft] (a) {1 clarify users, task, SLOs};
+\node[bx,right=of a] (b) {2 napkin math: QPS, tokens, \$};
+\node[bx,right=of b] (c) {3 baseline: prompt + API};
+\node[bx,right=of c,draw=acc2,fill=soft2] (d) {4 eval set + metrics first};
+\node[bx,right=of d] (e) {5 iterate: RAG, tools, FT};
+\node[bx,right=of e] (f) {6 serve, cache, route};
+\node[bx,right=of f,draw=acc3,fill=acc3!8] (g) {7 safety, monitor, rollout};
+\foreach \u/\v in {a/b,b/c,c/d,d/e,e/f,f/g} \draw[arr] (\u)--(\v);
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[The 7-step answer (say the steps out loud)]
+\begin{enumerate}[leftmargin=1.2em,label=\arabic*.]
+\item \textbf{Clarify}: users, task, inputs/outputs, languages, quality bar, latency (TTFT/E2E), cost per task, privacy/tenancy, failure cost.
+\item \textbf{Napkin math}: requests/s, tokens in/out, context size, KV and GPU count or API \$/month.
+\item \textbf{Simplest baseline}: frontier API + prompt; it sets the quality ceiling and the cost floor.
+\item \textbf{Evals before architecture}: real traces, failure taxonomy, graders, CIs, gates in CI.
+\item \textbf{Iterate by failure bucket}: knowledge \ra\ RAG; actions \ra\ tools/agent; format/style/cost \ra\ fine-tune or distill.
+\item \textbf{Serve}: model routing, prompt caching, batching, streaming, fallbacks.
+\item \textbf{Safety and ops}: injection architecture, PII, guardrails, tracing, canary + rollback, feedback loop into evals.
+\end{enumerate}
+\end{mem}
+
+\begin{qa}[Worked designs]
+\Q{Design a support chatbot over 50k help-center docs for 10 tenants.}{\textbf{SLO}: TTFT $<$1.5 s, answer with citations or escalate. \textbf{Index}: layout-aware parse, structure chunks + contextual headers, hybrid dense+BM25, tenant ACL as pre-filter, cross-encoder rerank to 8. \textbf{Gen}: mid-size model, cite-or-abstain, quote-then-answer for policy questions, structured output with \texttt{escalate} flag. \textbf{Eval}: 300 real tickets, span labels, 15\% unanswerable, recall@10 + faithfulness + resolution rate, paired CIs. \textbf{Ops}: prompt caching (stable prefix), router to a small model for FAQs, per-tenant leak tests, injection tests with poisoned docs, human handoff. \textbf{Metric that matters}: resolved-without-escalation at fixed CSAT, cost per resolved ticket.}
+\Q{RAG vs fine-tuning for a legal-domain assistant?}{Facts change and must be cited \ra\ RAG. Fine-tune (LoRA) only for format/terminology or to distill a cheaper model once evals show parity. Often both: small fine-tuned model that cites retrieved passages.}
+\Q{Design a code-review agent for PRs.}{Inputs: diff + repo context (retrieval over symbols, tests). Tools: read file, grep, run tests in sandbox (no network, scoped tokens). Output: structured findings with file:line, severity, evidence. Eval: historical PRs with known bugs (recall) + false-positive rate judged by maintainers; pass$^k$ consistency. Guard: never auto-merge; treat PR text as untrusted (injection).}
+\Q{Moderate 1B messages/day with an LLM?}{Too costly per message on a frontier model ($\sim$10$^9\times$ tokens). Label a few hundred k with the frontier model + human audit, distill into a small classifier (encoder or 1B LLM), cascade: cheap model for all, frontier for uncertain ($\sim$1--5\%), humans for appeals; calibrate thresholds per policy, monitor drift.}
+\Q{Design LLM serving for an internal 70B model.}{Use the method of section~\ref{sec:inf}: weights 141 GB, KV 320 KiB/token, TP8 replicas, continuous batching + paged KV + prefix caching, FP8, chunked prefill or disaggregation at scale, autoscale on queue depth, SLO-aware admission control, canary model rollouts.}
+\Q{How would you reduce hallucinations?}{Ground with retrieval + citations + abstention; constrain outputs; verifier pass (claims vs sources); lower temperature for factual tasks; train/prompt to say ``I don't know''; measure faithfulness and unsupported-claim rate on a labeled set.}
+\Q{How would you cut cost 5$\times$ without losing quality?}{Measure per-slice quality first; prompt caching; trim context; shorter outputs; route easy traffic to a small model; batch offline work; distill the hot path; self-host at high utilization. Gate each change on paired evals.}
+\Q{Fine-tune a 7B model for a narrow task --- end-to-end plan?}{Baseline evals; 1--5k clean examples with the correct chat template and loss masking; QLoRA/LoRA $r$ 16, all linears, LR $\sim$1--2e-4, 1--3 epochs; eval each checkpoint with paired CIs incl.\ a general set for forgetting; optional DPO on own samples; quantize and serve; monitor drift.}
+\end{qa}
+
+\begin{qa}[Research-engineer and behavioral]
+\Q{``Implement X from a blank file'' --- what do they expect?}{Attention with causal mask + KV cache, RoPE, RMSNorm, top-$p$ sampling, BPE merges, LoRA layer, DPO/GRPO loss, online softmax, AdamW step, beam search. Shape comments, test with tiny sizes, check against a reference (\texttt{torch} functional) and invariants.}
+\Q{Debug a diverging run in the interview?}{Read the curves (section~\ref{sec:train} table); check init loss vs $\ln V$; overfit one batch; inspect data; per-layer grad norms and max logits; bisect recent changes.}
+\Q{Tell me about a project (STAR + numbers).}{Situation/Task in one line each; Action: what \emph{you} did and why that option; Result: metric $\pm$ CI, cost, what broke, what you'd do next. Interviewers believe ``I measured X'' over ``I built X''.}
+\Q{What paper influenced you most and what are its limits?}{Pick one you've implemented (Chinchilla, DPO, FlashAttention, induction heads); state the claim, the experiment, a weakness, a follow-up you'd run.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item Jumping to fine-tuning or agents before a prompt baseline and an eval set.
+\item Designs without numbers (QPS, tokens, \$, GPUs) or without a rollback plan.
+\item Ignoring the long tail: p95 output length, long-prompt bursts, multilingual users.
+\end{itemize}
+\end{trap}
