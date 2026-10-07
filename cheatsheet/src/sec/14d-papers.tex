@@ -1,0 +1,29 @@
+\section{Paper cards: what to say in 20 seconds}
+\lab{curriculum/papers.md \textperiodcentered\ claim, key number, limitation}
+
+{\small
+\newcommand{\PC}[3]{\par\noindent\hangindent=0.9em\hangafter=1{\sffamily\bfseries\color{acc}#1}\ \ #2\ {\color{acc2}\textit{Limit:} #3}\par\vspace{1pt}}
+\PC{Attention Is All You Need (2017)}{Encoder--decoder of attention + MLP, no recurrence; parallel training; 28.4 BLEU EN--DE.}{quadratic in length; sinusoidal positions extrapolate poorly.}
+\PC{GPT-2 (2019)}{1.5B decoder LM trained on WebText does tasks zero-shot; pre-norm.}{zero-shot far below fine-tuned SOTA.}
+\PC{GPT-3 (2020)}{175B, few-shot in-context learning improves smoothly with scale.}{weak on reasoning; prompt sensitivity; not compute-optimal.}
+\PC{Kaplan scaling laws (2020)}{Loss is a power law in $N$, $D$, $C$; bigger models are more sample-efficient.}{fixed LR schedule biased the $N$ vs $D$ split.}
+\PC{Chinchilla (2022)}{IsoFLOP sweeps: scale $N$ and $D$ equally; 70B/1.4T beats 280B Gopher.}{ignores inference cost; real models over-train.}
+\PC{InstructGPT (2022)}{SFT + RM + PPO; 1.3B preferred to 175B GPT-3 by raters.}{alignment tax; reward hacking; rater bias.}
+\PC{LoRA (2021) / QLoRA (2023)}{Low-rank adapters match full FT on many tasks with $\sim$0.1--1\% params; QLoRA fine-tunes 65B on one 48 GB GPU via NF4.}{learns less and forgets less than full FT; weaker for new knowledge.}
+\PC{FlashAttention (2022)}{IO-aware tiling + online softmax: exact attention, $O(T)$ memory, 2--4$\times$ faster.}{kernel engineering per hardware generation.}
+\PC{PagedAttention / vLLM (2023)}{KV in fixed blocks with block tables: near-zero fragmentation, 2--4$\times$ throughput.}{indirection overhead in kernels.}
+\PC{Speculative decoding (2023)}{Draft + verify with rejection sampling: identical distribution, 2--3$\times$ speedups.}{gains shrink at large batch (compute-bound).}
+\PC{DPO (2023)}{Closed-form RLHF optimum turns preference learning into a classification loss; no RM, no sampling.}{offline; likelihood displacement; sensitive to data distribution.}
+\PC{LLaMA (2023)}{Open 7--65B models trained past Chinchilla on public data; 13B rivals GPT-3.}{data and license constraints.}
+\PC{Mixtral (2023)}{8 experts top-2: 47B total / 13B active matches Llama-2-70B.}{memory of all experts at serve time.}
+\PC{GPTQ (2022) / AWQ (2023)}{3--4-bit weight-only quantization with small loss via Hessian compensation / salient-channel scaling.}{activation outliers still hard; calibration-set dependence.}
+\PC{Toy Models of Superposition (2022)}{Sparse features get packed into fewer dimensions; explains polysemanticity.}{toy setting.}
+\PC{In-context learning and induction heads (2022)}{Induction heads form in a phase change that coincides with ICL gains.}{causal evidence strongest in small models.}
+\PC{Lost in the Middle (2023)}{Models use information at the start/end of context best; U-shaped accuracy.}{newer long-context training reduces it.}
+\PC{RAG (2020)}{Retriever + generator trained jointly; better factuality on open QA.}{retrieval errors propagate.}
+\PC{DeepSeekMath / GRPO (2024)}{Group-relative advantages remove the value network; strong math RL.}{length bias, std normalization issues (Dr.\,GRPO).}
+\PC{DeepSeek-V3 (2024)}{671B/37B MoE, MLA, aux-loss-free balancing, MTP, FP8 training for $\sim$2.8M H800-hours.}{complex to serve; reported cost excludes research.}
+\PC{DeepSeek-R1 (2025)}{RL on verifiable rewards yields long CoT reasoning; distilled small models are strong.}{readability, language mixing (R1-Zero); verifiable domains only.}
+\PC{Sparse autoencoders at scale (2024)}{Monosemantic, steerable features in production-size models.}{dead latents, absorption, reconstruction error.}
+\PC{Scaling test-time compute (2024)}{Compute-optimal mix of sampling and revision can beat a 14$\times$ larger model on some problems.}{needs good verifiers; problem-difficulty dependent.}
+}

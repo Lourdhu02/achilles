@@ -1,0 +1,126 @@
+\section{Pretraining: data, scaling, parallelism}
+\lab{module 05 \textperiodcentered\ labs 08 scaling laws, 09 parallelism}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.3mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum height=4.6mm,text width=12mm,inner sep=1pt}]
+\node[bx,fill=soft] (a) {Common Crawl WARC};
+\node[bx,right=of a] (b) {extract (trafilatura)};
+\node[bx,right=of b] (c) {lang-ID (fastText)};
+\node[bx,right=of c] (d) {heuristic filters (Gopher, C4)};
+\node[bx,right=of d,draw=acc2,fill=soft2] (e) {dedup (MinHash, exact)};
+\node[bx,below=2.2mm of e] (f) {quality classifier};
+\node[bx,left=of f] (g) {PII / toxicity};
+\node[bx,left=of g] (h) {decontam (13-gram)};
+\node[bx,left=of h] (i) {mix + up-sample};
+\node[bx,left=of i,draw=acc3,fill=acc3!8] (j) {tokenize, pack};
+\foreach \u/\v in {a/b,b/c,c/d,d/e,e/f,f/g,g/h,h/i,i/j} \draw[arr] (\u)--(\v);
+\end{tikzpicture}
+\end{center}
+{\small FineWeb funnel: 96 snapshots \ra\ 36T tokens after base filters \ra\ 20T after per-snapshot MinHash \ra\ \textbf{15T} released; FineWeb-Edu (classifier-kept) $\approx$1.3T and trains much better on knowledge benchmarks. Llama 3 mix $\approx$ 50\% general, 25\% math/reasoning, 17\% code, 8\% multilingual.}
+
+\begin{qa}[Data]
+\Q{How does MinHash near-dedup work?}{Shingle docs (word 5-grams); $\Pr[\min h(A)=\min h(B)]=J(A,B)$ (Jaccard). $k=b\cdot r$ hashes in $b$ bands of $r$; candidate if any band fully matches: $P=1-(1-s^r)^b$, threshold $\approx(1/b)^{1/r}$. FineWeb: 112 = 14$\times$8 \ra\ $\sim$0.75 similarity. Cluster candidates, keep one per cluster.}
+\Q{Is global dedup always better?}{No (FineWeb): global dedup across 96 crawls removed up to 90\% of old snapshots and barely helped; survivors were disproportionately one-off spam, while good pages recur. Dedup per snapshot.}
+\Q{How much can you repeat data?}{Up to $\sim$4 epochs is nearly as good as fresh at fixed compute (Muennighoff 2023); beyond that returns decay to zero. Always tabulate \textbf{epochs per source}: 50B math tokens at 10\% of a 2T run = 4 epochs.}
+\Q{How do you decontaminate, and what slips through?}{Drop/flag docs sharing $n$-grams (GPT-3: 13-grams) with test sets; report clean vs contaminated subsets. Paraphrases, translations and forum solutions slip through \ra\ prefer post-cutoff and private evals.}
+\Q{What is mid-training / annealing?}{During the final LR decay, upsample highest-quality data (math, code, instruction-like, long docs). Per token it moves benchmarks most.}
+\Q{Packing and document masking?}{Concatenate docs with EOS into fixed-length sequences (no padding waste); mask attention across document boundaries (matters most at long context).}
+\Q{Role and risk of synthetic data?}{Rephrased web, textbook-style text, reasoning traces are central now; they inherit the generator's blind spots and narrow diversity \ra\ keep a real-data baseline, measure diversity.}
+\end{qa}
+
+\begin{mem}[Scaling laws]
+{\centering $L(N,D)=E+\dfrac{A}{N^\alpha}+\dfrac{B}{D^\beta}$\qquad(Chinchilla)\par}
+$E{=}1.69$, $A{=}406.4$, $B{=}410.7$, $\alpha{=}0.34$, $\beta{=}0.28$.\\
+With $C=6ND$: $N^*\propto C^{\beta/(\alpha+\beta)}$, $D^*\propto C^{\alpha/(\alpha+\beta)}$. Approaches 1--2: $a\approx0.5$ \ra\ $\approx$\textbf{20 tokens/param} (Chinchilla = 70B on 1.4T).\\[2pt]
+\begin{tabularx}{\linewidth}{@{}lrrrr@{}}
+\toprule
+$C$ (approach-3 fit) & $N^*$ & $D^*$ & tok/param & loss\\\midrule
+$10^{20}$ & 0.64B & 26B & 40 & 2.60\\
+$10^{22}$ & 5.2B & 323B & 63 & 2.14\\
+$5.76\!\cdot\!10^{23}$ & 32B & 3.0T & 93 & 1.93\\\bottomrule
+\end{tabularx}
+Inference-aware: minimize $6ND+2NI$. Llama 3 8B saw 15T tokens ($\approx$1{,}900/param) --- correct for a model served billions of times.
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.98\columnwidth,height=3.4cm,xmode=log,xmin=1e8,xmax=1e11,ymin=2.0,ymax=3.1,
+  xlabel={model size $N$ (params)},ylabel={final loss},label style={font=\scriptsize},tick label style={font=\tiny},axis lines=left]
+\foreach \C/\col in {1e20/acc!45,1e21/acc!70,1e22/acc}{
+ \edef\tmp{\noexpand\addplot[\col,line width=0.8pt,domain=1e8:1e11,samples=60]{1.69+406.4/x^0.34+410.7/(\C/(6*x))^0.28};}\tmp }
+\addplot[only marks,mark=*,mark size=1.2pt,acc2] coordinates {(0.64e9,2.60) (1.8e9,2.33) (5.2e9,2.14)};
+\node[font=\tiny,acc2,anchor=west] at (axis cs:6.5e9,2.12) {$N^*(C)$};
+\node[font=\tiny,mute,anchor=east] at (axis cs:9e10,2.95) {IsoFLOP curves, $C=10^{20},10^{21},10^{22}$ (light$\to$dark)};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Scaling]
+\Q{Derive compute-optimal $N^*$.}{Substitute $D=C/6N$, set $dL/dN=0$: $\alpha AN^{-\alpha-1}=\beta B(C/6)^{-\beta}N^{\beta-1}$ \ra\ $N^*=G(C/6)^{\beta/(\alpha+\beta)}$, $G=(\alpha A/\beta B)^{1/(\alpha+\beta)}$.}
+\Q{How do you run an IsoFLOP sweep?}{5--9 budgets over $\ge$1.5 decades; 6--10 sizes each trained for $D=C/6N$ \emph{with LR schedule sized to its own length}; fit a parabola of loss vs $\log N$, vertex $=N^*(C)$; fit $\log N^*$ vs $\log C$. Bootstrap CIs on the exponent.}
+\Q{Why did Kaplan (2020) and Chinchilla (2022) disagree?}{Kaplan's smaller-scale accounting (excluded embedding params/last-layer FLOPs), warmup and per-scale tuning differences (Porian et al.); not mainly the LR schedule. Kaplan said ``scale $N$ faster''; Chinchilla said scale both equally.}
+\Q{Is ``20 tokens/param'' a law?}{No: it is training-compute-optimal under one protocol. Inference-heavy models should train far longer; small cost (6.72B on 2T: loss 2.023 vs 2.016 for optimal 13.2B, at half the serving cost).}
+\Q{Do downstream tasks scale smoothly?}{Loss does; tasks are noisier, and discontinuous metrics (exact match) make smooth loss gains look like ``emergence''. Predict loss, then map loss to tasks.}
+\end{qa}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+% DP
+\node[font=\scriptsize\bfseries,acc] at (8,15) {DP};
+\foreach \i in {0,1,2}{\draw[draw=acc,fill=soft] (\i*5.5,0) rectangle ++(4.5,12); \node at (\i*5.5+2.25,6) {$\theta$};}
+\node[lab] at (8,-3) {split batch\\all-reduce $\nabla$};
+% TP
+\node[font=\scriptsize\bfseries,acc] at (30,15) {TP};
+\foreach \i in {0,1,2}{\draw[draw=acc2,fill=soft2] (22+\i*5.5,0) rectangle ++(4.5,12); \node at (22+\i*5.5+2.25,6) {$W_{:,\i}$};}
+\node[lab] at (30,-3) {split each matmul\\2 all-reduce/layer};
+% PP
+\node[font=\scriptsize\bfseries,acc] at (52,15) {PP};
+\foreach \i in {0,1,2}{\draw[draw=acc3,fill=acc3!8] (44+\i*5.5,0) rectangle ++(4.5,12); \node[align=center] at (44+\i*5.5+2.25,6) {L\\\the\numexpr\i*4+1\relax--\the\numexpr\i*4+4\relax};}
+\node[lab] at (52,-3) {split layers\\p2p activations};
+% ZeRO
+\node[font=\scriptsize\bfseries,acc] at (76,15) {ZeRO-3/FSDP};
+\foreach \i in {0,1,2}{\draw[draw=acc,fill=soft] (66+\i*7,0) rectangle ++(6,12);
+  \fill[acc!60] (66+\i*7,\i*4) rectangle ++(6,4);}
+\node[lab] at (76,-3) {shard params, grads, opt\\gather per layer};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Parallelism cheat table]
+\begin{tabularx}{\linewidth}{@{}l>{\raggedright\arraybackslash}p{21mm}L@{}}
+\toprule
+strategy & shards & communication\\\midrule
+DP & batch & all-reduce grads, overlapped with backward\\
+ZeRO-1/2/3 & opt / +grads / +params & reduce-scatter grads; ZeRO-3 adds param all-gathers (1.5$\times$ DP)\\
+TP & matmuls (col, then row) & 2 all-reduces per layer per pass; NVLink only\\
+SP & norm/dropout acts by seq & paired with TP\\
+PP & layers into $p$ stages & p2p; bubble $\frac{p-1}{m+p-1}$ (16\% at $p{=}4,m{=}16$)\\
+CP & sequence inside attention & KV blocks passed around a ring\\
+EP & MoE experts & all-to-all dispatch + combine\\\bottomrule
+\end{tabularx}
+ZeRO per GPU, 7.5B on 64 GPUs: 120 \ra\ 31.4 \ra\ 16.6 \ra\ 1.9 GB. Global batch = DP $\times$ micro-batch $\times$ grad-accum.
+\end{mem}
+
+\begin{qa}[Distributed training]
+\Q{Order of decisions for a parallel layout?}{(1) Does one replica fit (16 B/param + activations)? If not, shard state in-node (FSDP) or TP $\le$ GPUs/node, then PP across nodes. (2) Does one sequence fit? SP, then CP. (3) Scale throughput with DP/HSDP. (4) Check every collective overlaps or costs $<$10\% of step. Llama 3 405B: TP8 $\times$ PP16 $\times$ CP $\times$ DP, 38--43\% MFU on 16k H100s.}
+\Q{Why never TP across nodes?}{Its all-reduces sit on the critical path of every layer; NVLink $\sim$450 GB/s/dir vs IB $\sim$50 GB/s (9$\times$). Example: 17 ms in-node vs 150 ms over IB against 52 ms of compute.}
+\Q{Explain Megatron TP for an MLP.}{Split $W_1$ by columns (each GPU computes part of the hidden, elementwise GELU stays local), $W_2$ by rows (partial sums) \ra\ one all-reduce forward, one backward per block. Attention splits by heads.}
+\Q{Does ZeRO-2 cost more communication than DP?}{No: all-reduce = reduce-scatter + all-gather; ZeRO-2 does RS of grads + AG of updated params --- same bytes. ZeRO-3/FSDP adds a param all-gather in backward: 1.5$\times$, per micro-batch.}
+\Q{How do you shrink the pipeline bubble?}{More micro-batches $m$ (bubble $(p-1)/(m+p-1)$), interleaved/virtual stages, 1F1B schedules, zero-bubble schedules (DualPipe in DeepSeek-V3).}
+\Q{Plan a 7B run: 2T tokens, 256 H100s.}{6.72B params ($d$4096, $L$32, GQA-8, $V$128k). $\approx$40.4 GFLOP/token \ra\ $C=8.1\!\cdot\!10^{22}$. At 40\% MFU: 9.2 days, 57k GPU-h. Batch 4.2M tokens, 477k steps, AdamW 3e-4, WSD. HSDP: FSDP in-node $\times$ 32 replicas; $\sim$40 GB/GPU. Checkpoint every $\sim$2 h; spend 5--10\% on proxies first.}
+\end{qa}
+
+\begin{qa}[Stability, failures, long context]
+\Q{A loss spike on day 6. What do you do?}{Check grad norm and max-logit history one or two steps before, which layers; rewind $\sim$100 steps, skip the offending 200--500 batches (PaLM did $\sim$20 times), lower LR if it repeats. Prevent: QK-norm, z-loss, smaller $\epsilon$.}
+\Q{How often to checkpoint?}{Young: $\tau\approx\sqrt{2\delta M}$. $\delta$=1 min, MTBF 8.4 days \ra\ $\sim$155 min. Llama 3 405B: 419 unexpected interruptions in 54 days (78\% hardware).}
+\Q{How do you get a 128k-context model?}{Pretrain at 4--8k with a large RoPE base; extend in stages (Llama 3: 6 stages, $\sim$800B tokens) with long docs while keeping short data; CP/ring attention for memory; evaluate with RULER-style tasks and report \emph{effective} context, not needle-only.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item Using Chinchilla's published $A,B,\alpha,\beta$ and expecting 20 tokens/param (that fit gives 40--100).
+\item ``FSDP costs the same as DP.'' Not ZeRO-3: 1.5$\times$, per micro-batch.
+\item Changing GPU count and silently changing global batch (= changing the optimization).
+\item Treating hardware failure as rare: at 16k GPUs it is daily; restart is part of the design.
+\end{itemize}
+\end{trap}

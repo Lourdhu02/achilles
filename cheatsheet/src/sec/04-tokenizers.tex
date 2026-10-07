@@ -1,0 +1,56 @@
+\section{Tokenization}
+\lab{module 04 \S1, 05 \S2 \textperiodcentered\ lab 04 tokenizer}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.6mm,every node/.style={font=\tiny}]
+\node[sbox] (t) {text};
+\node[box,right=of t] (p) {normalize +\\regex split};
+\node[box,right=of p] (b) {UTF-8 bytes};
+\node[hbox,right=of b] (m) {apply merges\\in rank order};
+\node[gbox,right=of m] (i) {ids};
+\foreach \u/\v in {t/p,p/b,b/m,m/i} \draw[arr] (\u)--(\v);
+\end{tikzpicture}
+
+\vspace{1mm}
+\begin{tikzpicture}[every node/.style={font=\tiny\ttfamily}]
+\matrix[matrix of nodes,row sep=0.6mm,column sep=1.5mm,nodes={anchor=west}]{
+ \textrm{\bfseries corpus} & l o w \_ \textbar\ l o w e r \_ \textbar\ n e w e s t \_ & \\
+ \textrm{merge 1} & (l,o)$\to$lo & \textrm{most frequent adjacent pair}\\
+ \textrm{merge 2} & (lo,w)$\to$low & \\
+ \textrm{merge 3} & (e,s)$\to$es & \textrm{repeat until vocab size}\\
+ \textrm{encode} & lower $\to$ [low][e][r] & \textrm{apply merges by rank}\\
+};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Families]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+BPE (byte-level) & greedy merges of most frequent pair; 256 base bytes \ra\ no \texttt{<unk>}, ever. GPT-2/4, Llama 3 (tiktoken, 128k)\\
+WordPiece & merge pair maximizing $\frac{c(ab)}{c(a)c(b)}$ (likelihood gain); \texttt{\#\#} continuation; BERT\\
+Unigram LM & start big, prune tokens whose removal hurts likelihood least; Viterbi/sampled segmentation; SentencePiece (T5, Gemma)\\
+SentencePiece & treats input as raw stream incl.\ spaces (\texttt{\_}); BPE or Unigram inside\\
+Byte/char-level & no vocab issues, $\sim$4$\times$ longer sequences (ByT5; BLT uses dynamic byte patches)\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Tokenizers]
+\Q{Why byte-level BPE?}{Every string is representable (256 byte fallback), so no unknown token; merges learned from data compress common sequences. The cost: rare scripts fragment into many bytes.}
+\Q{What does the pre-tokenization regex do?}{Splits text (letters, digits in groups of $\le$3, punctuation, whitespace) so merges never cross those boundaries --- e.g.\ ``dog.'' and ``dog!'' share ``dog''. It is frozen into the model.}
+\Q{Vocab size trade-off?}{Bigger $V$ \ra\ fewer tokens per text (cheaper long context, faster decode per character) but a bigger embedding + LM head ($2dV$ FLOPs per token; 6.5\% of Llama-3-8B's forward) and rarer, under-trained tokens. 32k (Llama 2) \ra\ 128k (Llama 3) \ra\ 256k (Gemma).}
+\Q{What is fertility and why does it matter?}{Tokens per word. High-fertility languages (e.g.\ Telugu under cl100k, split at every vowel sign) pay more per word in cost and context, and get worse quality. Lab 04 measures this.}
+\Q{Why are LLMs bad at counting letters or arithmetic?}{They see tokens, not characters; digit grouping is arbitrary (``1234'' may be one or two tokens). Fixes: single-digit tokenization, right-to-left grouping, tool use.}
+\Q{What are glitch tokens?}{Tokens in the vocab that almost never appear in training data (e.g.\ ``SolidGoldMagikarp'') \ra\ untrained embeddings \ra\ bizarre behavior. Caused by training the tokenizer on different data than the model.}
+\Q{Special tokens and chat templates?}{BOS/EOS, \texttt{<|im\_start|>}-style role markers, tool-call tokens. The template must match training exactly; a missing EOS or a role mismatch silently degrades SFT and inference. Never let user text be parsed into special tokens (injection).}
+\Q{Can you change a trained model's tokenizer?}{Not cheaply: embeddings are tied to ids. Adding tokens needs new embedding rows (init as mean of sub-token embeddings) and fine-tuning; swapping tokenizers needs transplant methods + substantial training.}
+\Q{How do you compare losses across tokenizers?}{Bits per byte: $\text{BPB}=\frac{\text{total nats}}{\ln2\cdot\#\text{bytes}}$. Per-token loss rewards coarse tokenizers.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item Tokenizer and model trained on different normalization (NFC/NFKC) or whitespace handling \ra\ silent quality loss.
+\item Trailing-space prompts: ``Answer:\textvisiblespace'' produces a token the model rarely saw before the answer.
+\item Counting the input embedding as FLOPs (it is a lookup), but forgetting the LM head (a matmul).
+\end{itemize}
+\end{trap}

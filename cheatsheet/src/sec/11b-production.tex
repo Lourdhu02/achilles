@@ -1,0 +1,55 @@
+\section{Shipping GenAI in production}
+\lab{module 10 applied LLM systems \textperiodcentered\ gap-fill for GenAI engineer loops}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (s) at (0,0) {need};
+\node[box,text width=14mm] (p) at (16,0) {prompt +\\few-shot + evals};
+\node[box,text width=15mm,draw=acc3,fill=acc3!8] (r) at (37,0) {+ retrieval\\(knowledge gap)};
+\node[box,text width=15mm,draw=acc2,fill=soft2] (f) at (58,0) {+ fine-tune\\(format/style/skill)};
+\node[box,text width=11mm] (d) at (77,0) {distill to\\small model};
+\draw[arr] (s)--(p); \draw[arr] (p)--(r); \draw[arr] (r)--(f); \draw[arr] (f)--(d);
+\node[lab] at (38,-6) {move right only when the eval set says the cheaper step plateaued; facts \ra\ RAG, behavior \ra\ fine-tune};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Building the app]
+\Q{Prompt vs RAG vs fine-tune, in one answer?}{Prompting first (cheap, reversible). RAG when the model lacks knowledge that changes or must be cited. Fine-tune when you need a consistent format, tone, a narrow skill, lower latency or a smaller model; it teaches behavior, not reliable new facts. Distill once traffic justifies it.}
+\Q{Structure of a production prompt?}{Role and goal; hard rules; tool descriptions; retrieved context in delimited blocks with ids; few-shot examples covering edge cases; output schema. Static parts first (prefix caching), dynamic parts last. Version prompts like code and gate changes on the eval set.}
+\Q{How do you get reliable JSON?}{Native structured outputs / JSON-schema constrained decoding (grammar-masked logits) $>$ tool calling $>$ prompt + parse + retry. Keep schemas shallow, enums explicit, and let the model reason in a field \emph{before} the answer field, since forcing format early can cost accuracy.}
+\Q{Guardrails stack?}{Input: auth, rate limits, PII redaction, injection/jailbreak classifiers, topic filters. Output: schema validation, moderation classifier, groundedness check, policy rules, PII scan. Tools: least privilege, allow-lists, human approval for irreversible actions. Log every decision.}
+\Q{Streaming: why and how?}{Users perceive TTFT, not total latency. SSE/WebSockets token streams; buffer partial JSON with an incremental parser; moderate on chunks with a short lag; allow cancel to stop generation and save cost.}
+\Q{What should you cache?}{Provider prompt caching (shared prefix, often $\sim$90\% cheaper input), exact-match response cache (keyed on model + prompt + params), semantic cache (embedding similarity; risky for personalized or time-sensitive answers), retrieval and embedding caches.}
+\Q{Latency budget for a voice agent?}{Target $<$800\,ms to first audio: VAD/endpointing $\sim$200, STT final $\sim$150, LLM TTFT $\sim$250, TTS first chunk $\sim$150. Stream every stage, allow barge-in, keep turns short, or use a native speech-to-speech model.}
+\Q{Long context or RAG?}{Long context: simpler, good for one big document, but cost $\propto$ tokens, slower TTFT and mid-context recall drops. RAG: cheaper per query, citable, scales to corpora, fails on retrieval misses. Common hybrid: retrieve generously, then let a long-context model read.}
+\Q{Choosing an embedding model?}{Evaluate on your queries (recall@$k$ on 100--500 labeled pairs), not MTEB rank. Check max length, languages, dims (Matryoshka truncation), query/document prefixes, cost and license. Re-embedding the corpus is the migration cost; version indexes.}
+\Q{Multi-model routing?}{Classifier or small LLM picks cheap vs strong model by difficulty; cascade (cheap first, escalate on low confidence or failed validation). Measure quality per route; routers drift with traffic.}
+\Q{How do you handle PII and data residency?}{Classify data, redact before logging, zero-retention API terms or self-host, region-pinned endpoints, encryption, tenant isolation in indexes and caches, deletion paths (including embeddings and fine-tuning sets).}
+\end{qa}
+
+\begin{mem}[Cost and latency levers]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+cost driver & lever\\\midrule
+input tokens & trim context, rerank to top-$k$, prompt caching, summarise history\\
+output tokens & concise formats, \texttt{max\_tokens}, stop sequences, JSON not prose\\
+model size & route/cascade, distill, quantize (self-hosted)\\
+utilization (self-host) & continuous batching, autoscaling, batch API for offline jobs ($\sim$50\% off)\\
+TTFT & shorter prompts, prefix caching, smaller model, regional endpoints\\
+TPOT & speculative decoding, quantization, smaller model, less load\\
+retries & validation + targeted repair instead of full regeneration\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Operating it]
+\Q{What do you monitor?}{Latency (TTFT, TPOT, p50/p95/p99), error and refusal rates, tokens and cost per request/tenant, cache hit rate, tool-call failure rate, guardrail triggers, retrieval hit/empty rates, user feedback, and sampled LLM-judge quality scores. Traces per request (OpenTelemetry GenAI spans).}
+\Q{Offline vs online evaluation?}{Offline: frozen golden set + regression suite on every prompt/model change (CI gate). Online: A/B tests on task success, thumbs, retention, escalation rate; shadow traffic for model swaps; canary rollouts with automatic rollback.}
+\Q{LLM-as-judge done right?}{Rubric with anchored levels, pairwise $>$ absolute, randomize position, hide model names, calibrate against 100--200 human labels (report agreement / $\kappa$), different family than the generator, re-validate after judge updates.}
+\Q{A provider silently updates the model. Protection?}{Pin dated model versions, run the regression suite on schedule, alert on metric drift, keep a fallback provider/model behind the same interface.}
+\Q{How do you build the first eval set?}{Collect 50--200 real or realistic inputs, include failure cases from logs, write expected properties (not exact strings), label with domain experts, split by difficulty and slice (language, tenant, intent), grow it from every incident.}
+\Q{Incident: answers suddenly cite wrong documents. Debug path?}{Check recent changes (index rebuild, embedding model, chunker, prompt), retrieval logs for the failing queries, tenant filters, cache keys; reproduce offline, add the cases to the regression set, roll back first, fix second.}
+\end{qa}
+
+\begin{trap}[GenAI engineer anti-patterns]
+No eval set (``it looks good''); judging by a handful of demos; one giant prompt nobody owns; retries without validation; caching personalized answers; logging raw PII; letting tools act on untrusted text without approval; framework lock-in on the hot path; optimizing cost before quality is measured.
+\end{trap}

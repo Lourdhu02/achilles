@@ -1,0 +1,58 @@
+\section{Formula sheet: write each from memory}
+\lab{cover the page, rewrite, compare}
+
+{\small
+\newcommand{\F}[2]{\par\noindent{\sffamily\bfseries\scriptsize\color{acc}#1}\par\nopagebreak\vspace{-1pt}\noindent\hspace*{0.6em}#2\par\vspace{2.5pt}}
+
+\paragraph{Core layers}
+\F{Scaled dot-product attention}{$\mathrm{Attn}(Q,K,V)=\softmax\!\big(QK^\top/\sqrt{d_h}+M\big)V$, $M_{ij}=-\infty$ for $j>i$}
+\F{Multi-head}{$\mathrm{MHA}(x)=[\,h_1;\dots;h_H\,]W_O$, $h_i=\mathrm{Attn}(xW_Q^i,xW_K^{g(i)},xW_V^{g(i)})$, $g$ maps heads to KV groups}
+\F{RMSNorm / LayerNorm}{$\frac{x}{\sqrt{\frac1d\sum x_i^2+\epsilon}}\odot g$ \quad / \quad $\frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}\odot g+b$}
+\F{SwiGLU MLP}{$\big(\mathrm{SiLU}(xW_g)\odot xW_u\big)W_d$, $\mathrm{SiLU}(z)=z\,\sigma(z)$}
+\F{RoPE (pair $i$, position $m$)}{$\theta_i=b^{-2i/d_h}$; $(x_{2i},x_{2i+1})\mapsto R(m\theta_i)(x_{2i},x_{2i+1})$; $\langle R_mq,R_nk\rangle=f(q,k,m-n)$}
+\F{Pre-norm block}{$h=x+\mathrm{Attn}(\mathrm{N}(x))$;\quad $y=h+\mathrm{MLP}(\mathrm{N}(h))$}
+\F{Softmax-CE gradient}{$\partial L/\partial z=\softmax(z)-e_y$}
+
+\paragraph{Optimization}
+\F{AdamW}{$m\leftarrow\beta_1m+(1-\beta_1)g$, $v\leftarrow\beta_2v+(1-\beta_2)g^2$, $\theta\leftarrow\theta-\eta\big(\frac{\hat m}{\sqrt{\hat v}+\epsilon}+\lambda\theta\big)$, $\hat m=\frac{m}{1-\beta_1^t}$}
+\F{Cosine schedule}{$\eta_t=\eta_\text{min}+\frac12(\eta_\text{max}-\eta_\text{min})(1+\cos(\pi t/T))$ after linear warmup}
+\F{Kaiming / Xavier}{$\mathrm{Var}(W)=2/n_\text{in}$ (ReLU) \quad / \quad $2/(n_\text{in}+n_\text{out})$}
+\F{Grad clipping}{$g\leftarrow g\cdot\min(1,c/\|g\|_2)$}
+
+\paragraph{Scaling and compute}
+\F{FLOPs}{forward $\approx2N$ per token; training $C\approx6ND$; attention adds $\approx 4\,L\,T\,d$ per token forward (causal halves it)}
+\F{Chinchilla loss}{$L(N,D)=E+A/N^\alpha+B/D^\beta$, $\alpha\approx\beta\approx0.3$ \ra\ $N^*\propto C^{0.5}$, $D^*\approx20N^*$}
+\F{Memory}{train $\approx16N$ bytes (bf16 W,G + fp32 master, $m$, $v$); KV $=2\cdot L\cdot H_{kv}\cdot d_h\cdot b$ bytes/token}
+\F{Roofline}{$\text{attainable}=\min(\text{peak},\ I\cdot\text{BW})$, $I=$ FLOPs/byte; ridge $=$ peak/BW}
+\F{Pipeline bubble}{$(p-1)/(m+p-1)$;\quad ring all-reduce bytes/GPU $=2\frac{n-1}{n}S$}
+
+\paragraph{Post-training}
+\F{RLHF objective and optimum}{$\max_\pi\E[r]-\beta\KL(\pi\|\pi_\text{ref})$ \ra\ $\pi^*\propto\pi_\text{ref}\,e^{r/\beta}$}
+\F{Bradley--Terry RM loss}{$-\log\sigma(r(x,y_w)-r(x,y_l))$}
+\F{DPO}{$-\log\sigma\!\Big(\beta\big[\log\frac{\pi_\theta(y_w|x)}{\pi_\text{ref}(y_w|x)}-\log\frac{\pi_\theta(y_l|x)}{\pi_\text{ref}(y_l|x)}\big]\Big)$}
+\F{PPO clip}{$\E\big[\min(\rho A,\ \mathrm{clip}(\rho,1{-}\epsilon,1{+}\epsilon)A)\big]$, $\rho=\pi_\theta/\pi_\text{old}$}
+\F{GAE}{$\delta_t=r_t+\gamma V_{t+1}-V_t$, $A_t=\sum_l(\gamma\lambda)^l\delta_{t+l}$}
+\F{GRPO advantage, KL}{$A_i=(r_i-\bar r)/\sigma_r$ over $G$ samples; $k_3=\rho-1-\log\rho$ with $\rho=\pi_\text{ref}/\pi_\theta$}
+\F{Policy gradient}{$\nabla J=\E\big[\nabla\log\pi_\theta(y|x)\,(R-b)\big]$}
+\F{LoRA}{$W=W_0+\frac{\alpha}{r}BA$, $B\in\mathbb R^{d\times r}=0$ at init}
+
+\paragraph{Inference}
+\F{Sampling}{$p_i\propto e^{z_i/T}$; top-$p$: smallest set with $\sum p\ge p$; min-$p$: $p_i\ge p_\text{min}\,p_\text{max}$}
+\F{Speculative decoding}{accept w.p.\ $\min(1,p/q)$; else sample $\propto\max(0,p-q)$; $\E[\text{tokens}]=\frac{1-\alpha^{k+1}}{1-\alpha}$}
+\F{Online softmax}{$m'=\max(m,\max s)$, $\ell'=\ell e^{m-m'}+\sum e^{s-m'}$, $o'=oe^{m-m'}+e^{s-m'}V$}
+\F{Quantization}{$q=\mathrm{clip}(\mathrm{round}(x/s)+z)$, $s=(\max-\min)/(2^b-1)$ (asym) or $\max|x|/(2^{b-1}-1)$ (sym)}
+
+\paragraph{Evaluation and retrieval}
+\F{Binomial CI}{$\hat p\pm1.96\sqrt{\hat p(1-\hat p)/n}$;\quad sample size for effect $\delta$: $n\approx(z_{\alpha/2}+z_\beta)^2\,2p(1-p)/\delta^2$}
+\F{pass@$k$ (unbiased)}{$1-\binom{n-c}{k}\big/\binom{n}{k}$}
+\F{Cohen's $\kappa$}{$(p_o-p_e)/(1-p_e)$}
+\F{InfoNCE}{$-\log\frac{e^{s(q,d^+)/\tau}}{\sum_j e^{s(q,d_j)/\tau}}$}
+\F{BM25}{$\sum_t\mathrm{idf}(t)\frac{f(t,d)(k_1+1)}{f(t,d)+k_1(1-b+b\,|d|/\overline{|d|})}$, $k_1\approx1.2$, $b\approx0.75$}
+\F{RRF, nDCG}{$\sum_r\frac1{60+\mathrm{rank}_r(d)}$;\quad $\mathrm{DCG}=\sum_i\frac{2^{rel_i}-1}{\log_2(i+1)}$}
+
+\paragraph{Generative models}
+\F{DDPM}{$x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$; loss $\|\epsilon-\epsilon_\theta(x_t,t)\|^2$}
+\F{Classifier-free guidance}{$\hat\epsilon=\epsilon_\varnothing+w(\epsilon_c-\epsilon_\varnothing)$}
+\F{Flow matching}{$x_t=(1-t)x_0+t\,\epsilon$, regress $v_\theta(x_t,t)\approx\epsilon-x_0$}
+\F{VAE ELBO}{$\log p(x)\ge\E_q[\log p(x|z)]-\KL(q(z|x)\|p(z))$}
+}

@@ -1,0 +1,75 @@
+\section{ML and DL foundations interviewers still ask}
+\lab{gap-fill \textperiodcentered\ the screening round before the LLM round}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.98\columnwidth,height=3.2cm,xmin=0,xmax=10,ymin=0,ymax=1.1,axis lines=left,
+  xtick=\empty,ytick=\empty,xlabel={model capacity},ylabel={error},label style={font=\scriptsize},
+  legend style={font=\tiny,draw=none,fill=none,at={(0.5,1.02)},anchor=south,legend columns=4}]
+\addplot[acc,line width=0.9pt,domain=0.3:10,samples=60]{0.9*exp(-0.45*x)+0.02};\addlegendentry{bias$^2$}
+\addplot[acc3,line width=0.9pt,domain=0.3:10,samples=60]{0.012*x^1.7};\addlegendentry{variance}
+\addplot[acc2,line width=1.1pt,domain=0.3:10,samples=60]{0.9*exp(-0.45*x)+0.02+0.012*x^1.7+0.08};\addlegendentry{test error}
+\addplot[mute,dashed,domain=0:10]{0.08};\addlegendentry{noise}
+\end{axis}
+\end{tikzpicture}
+\end{center}
+{\scriptsize\color{mute}Classical U-curve. Over-parameterized nets show \emph{double descent}: error peaks near the interpolation threshold, then falls again with more capacity, data or training.}
+
+\begin{qa}[Learning theory and regularization]
+\Q{Bias--variance decomposition?}{$\E[(y-\hat f)^2]=\text{bias}^2+\text{variance}+\sigma^2$. High bias: underfit (bigger model, better features). High variance: overfit (more data, regularize, ensembling, early stopping).}
+\Q{L1 vs L2 regularization?}{L2 (ridge, Gaussian prior) shrinks smoothly; L1 (lasso, Laplace prior) drives weights to exactly zero (sparsity) because its subgradient is constant near 0.}
+\Q{Why does dropout work?}{Trains an implicit ensemble of thinned subnetworks; prevents co-adaptation; scale by $1/(1-p)$ at train time (inverted dropout) so inference needs no change.}
+\Q{BatchNorm vs LayerNorm?}{BN normalizes each feature over the batch (needs running stats, breaks with small/variable batches and autoregressive decoding); LN normalizes each token over features (batch-independent) \ra\ LN/RMSNorm in transformers.}
+\Q{Why does Adam generalize differently from SGD?}{Adaptive per-parameter steps converge fast but can find sharper minima in vision; with AdamW and good schedules it is the LLM default. SGD+momentum still common in CNNs.}
+\Q{Cross-validation and leakage?}{$k$-fold for small data; split by group/time to avoid leakage (same user, future data); never fit preprocessing on the full set.}
+\Q{Class imbalance?}{Use PR-AUC/F1 not accuracy; reweight or resample; focal loss; threshold tuning on a validation set; calibrate afterwards.}
+\end{qa}
+
+\begin{mem}[Metrics]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+precision / recall & $\frac{TP}{TP+FP}$ / $\frac{TP}{TP+FN}$;\ \ F1 $=\frac{2PR}{P+R}$\\
+ROC-AUC & P(score pos $>$ score neg); threshold-free; misleading under heavy imbalance\\
+PR-AUC & better for rare positives\\
+calibration & ECE: $\sum_b\frac{n_b}{n}|\text{acc}_b-\text{conf}_b|$; fix with temperature scaling\\
+perplexity & $\exp(\text{mean NLL})$\\
+BLEU / ROUGE & $n$-gram precision (brevity penalty) / recall-oriented overlap; weak for LLM outputs\\
+BERTScore & token embedding similarity\\
+recall@$k$, MRR, nDCG & retrieval: hit in top $k$; $1/\text{rank}$ of first hit; graded, log-discounted\\
+WER & speech: (S+D+I)/N\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Neural network history you'll be asked to connect]
+\Q{Why did RNNs/LSTMs lose to transformers?}{Sequential computation (no parallelism over time), vanishing gradients over long ranges (LSTM gates help but don't fix), fixed-size state bottleneck. Attention gives $O(1)$ path length between any two tokens and parallel training.}
+\Q{What did attention originally fix (Bahdanau 2014)?}{The seq2seq bottleneck: the decoder attends over all encoder states instead of one context vector.}
+\Q{word2vec in one line?}{Skip-gram with negative sampling learns embeddings so that $\sigma(u_o^\top v_c)$ is high for real context pairs and low for sampled negatives; implicitly factorizes a shifted PMI matrix.}
+\Q{CNN essentials?}{Local receptive fields, weight sharing, translation equivariance; output size $\lfloor(n+2p-k)/s\rfloor+1$; params $k^2C_\text{in}C_\text{out}$. ResNets made depth trainable with identity skips --- the same idea as the residual stream.}
+\Q{What is the universal approximation theorem's catch?}{One hidden layer can approximate any continuous function, but may need exponential width; says nothing about learnability. Depth buys efficiency.}
+\Q{Generative vs discriminative?}{Model $p(x,y)$ (or $p(x)$) vs $p(y|x)$. LLMs are generative models used discriminatively via prompting.}
+\Q{What is self-supervised learning?}{Labels come from the data: next-token prediction, masked LM (BERT 15\% masking), contrastive (SimCLR, CLIP), masked autoencoding (MAE).}
+\Q{Encoder (BERT) pretraining details?}{MLM: mask 15\% (80\% \texttt{[MASK]}, 10\% random, 10\% unchanged); NSP was later shown unnecessary (RoBERTa). Used for embeddings, classification, rerankers.}
+\end{qa}
+
+\begin{qa}[Probability refreshers]
+\Q{Bayes' rule and why it matters for evals?}{$P(A|B)=P(B|A)P(A)/P(B)$. A 95\%-accurate detector at 1\% base rate has precision $\approx16\%$ --- always ask for the base rate (e.g.\ judge pass rates, safety classifiers).}
+\Q{Expected value of a max over $n$ draws?}{Grows with $n$ (best-of-$n$, best seed, best prompt): selection inflates reported scores --- report means, hold out a confirm set.}
+\Q{Temperature in softmax?}{$p_i\propto e^{z_i/T}$: $T\to0$ argmax, $T\to\infty$ uniform; entropy increases with $T$.}
+\end{qa}
+
+\begin{qa}[Classical ML in one breath]
+\RF{Logistic regression loss and gradient?}{BCE; $\nabla_w=X^\top(\sigma(Xw)-y)/n$; convex}
+\RF{Linear regression closed form?}{$w=(X^\top X+\lambda I)^{-1}X^\top y$}
+\RF{Naive Bayes assumption?}{features conditionally independent given the class}
+\RF{SVM objective?}{max margin: hinge loss $+\frac\lambda2\|w\|^2$; kernels via the dual}
+\RF{Decision tree split criterion?}{Gini or entropy (information gain); MSE for regression}
+\RF{Random forest vs gradient boosting?}{bagging + feature subsampling (variance $\downarrow$) vs sequential fit to residuals/gradients (bias $\downarrow$)}
+\RF{Why do GBDTs still win on tabular data?}{handle heterogenous features, missing values, monotone splits; little tuning}
+\RF{$k$-means objective and pitfall?}{within-cluster SSE; local optima (k-means++ init), assumes spherical clusters}
+\RF{PCA?}{top eigenvectors of the covariance $=$ top right singular vectors of centered $X$}
+\RF{$k$-NN complexity?}{no training; $O(nd)$ per query (ANN indexes for scale)}
+\RF{EM algorithm?}{alternate posterior over latents (E) and maximize expected log-likelihood (M); monotone in likelihood}
+\RF{Curse of dimensionality?}{distances concentrate; volume grows exponentially; need data $\propto e^d$}
+\RF{Gaussian MLE?}{$\hat\mu=\bar x$, $\hat\sigma^2=\frac1n\sum(x-\bar x)^2$ (biased; $\frac1{n-1}$ unbiased)}
+\RF{A/B test $p$-value?}{P(effect at least this large $\mid$ no true effect); not P(H$_0$ true)}
+\end{qa}

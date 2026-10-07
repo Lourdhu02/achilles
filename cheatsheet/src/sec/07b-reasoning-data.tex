@@ -1,0 +1,52 @@
+\section{Reasoning models, post-training data, adaptation}
+\lab{gap-fill \textperiodcentered\ extends section on post-training}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (b) at (0,0) {base};
+\node[box,text width=12mm] (c) at (15,0) {cold-start SFT\\(long CoT)};
+\node[box,draw=acc2,fill=soft2,text width=13mm] (r) at (32,0) {RLVR\\(GRPO, verifiers)};
+\node[box,text width=14mm] (s) at (50,0) {rejection-sample\\SFT + general data};
+\node[box,draw=acc3,fill=acc3!8,text width=13mm] (g) at (68,0) {RL for helpful,\\harmless, format};
+\node[gbox,text width=7mm] (d) at (82,0) {distill};
+\draw[arr] (b)--(c); \draw[arr] (c)--(r); \draw[arr] (r)--(s); \draw[arr] (s)--(g); \draw[arr] (g)--(d);
+\node[lab] at (41,-6) {DeepSeek-R1-style recipe; R1-Zero skipped cold start and got poor readability and language mixing};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Reasoning and test-time compute]
+\Q{What changed with o1 / R1-style models?}{RL on verifiable rewards (math answers, unit tests) teaches long chains of thought with self-checking and backtracking; accuracy scales with both RL compute and the number of thinking tokens at inference.}
+\Q{Self-consistency vs best-of-$N$ vs search?}{Self-consistency: majority vote over sampled answers (no verifier, needs a final answer to vote on). Best-of-$N$: pick by a reward model or verifier; gains saturate and the RM gets exploited at large $N$. Search (beam over steps, MCTS) needs a PRM and is costly; sequential revision helps on easy problems, parallel sampling on hard ones.}
+\Q{How do you control thinking length?}{Length penalties or budget tokens in RL; ``budget forcing'' at inference (append ``Wait'' to extend, force the answer token to stop, as in s1); train on a mix of short and long traces; route easy queries to no-think mode.}
+\Q{What is overthinking and how do you measure it?}{Many tokens spent after the answer is already found, or on trivial problems. Measure accuracy vs tokens curves per difficulty bucket; tokens-to-first-correct; reward shaping on length within correct samples.}
+\Q{Is the visible chain of thought faithful?}{Not necessarily: models can use hints without mentioning them. Treat CoT as useful evidence for monitoring, not ground truth; optimizing CoT for appearance can hide misbehavior (obfuscation).}
+\Q{Why distill reasoning into small models instead of RL on them?}{SFT on a strong model's traces transfers reasoning cheaply and beat RL directly on small models in R1's report; RL on small models still adds on top once they have the behaviors.}
+\Q{What makes a good verifier?}{Exact-match with normalization (math: sympy equivalence), sandboxed unit tests with hidden tests, format checks; guard against reward hacking (special-casing tests, printing expected output, editing the checker).}
+\end{qa}
+
+\begin{qa}[Post-training data]
+\Q{How do you build an SFT set?}{Define the target behaviors and a taxonomy (tasks, domains, difficulty, safety); seed with expert-written examples; expand with synthetic generation (Self-Instruct, Evol-Instruct, persona-driven) filtered by a judge and verifiers; dedup; decontaminate against evals; balance the mix; a few thousand excellent examples beat many mediocre ones (LIMA).}
+\Q{How do you collect preference data?}{Sample 2+ responses per prompt from the current policy (on-policy matters), have raters or a judge pick with a rubric, record margins and ties, measure inter-annotator agreement, refresh iteratively (online/iterative DPO).}
+\Q{Annotation guidelines that work?}{Concrete rubric with examples of each grade, tie-break rules, what to do with unsafe/unsure, calibration rounds, gold questions to monitor raters, disagreement adjudication.}
+\Q{Synthetic data risks?}{Model collapse from recursive training on own outputs (keep real data in the mix), homogenized style, inherited errors and hallucinations, license/terms of the generator, contamination of evals.}
+\Q{How do you filter data quality at scale?}{Heuristics (length, language ID, repetition), perplexity filters, a classifier trained on judge labels (FineWeb-Edu style), dedup (exact + MinHash), PII scrubbing; ablate the filter on small proxy models.}
+\end{qa}
+
+\begin{qa}[Adapting a model to your domain]
+\Q{Continued pretraining vs SFT?}{CPT on raw domain text (billions of tokens) teaches vocabulary and knowledge; SFT teaches the task format. Typical: CPT with a replay of general data (5--30\%), lower LR with re-warmup, then SFT and preference tuning.}
+\Q{How do you prevent catastrophic forgetting?}{Replay general data, lower LR, fewer steps, LoRA (forgets less, learns less), regularize toward the base (KL), evaluate general benchmarks alongside domain ones.}
+\Q{What is model merging and when does it work?}{Average weights of fine-tunes from the same base (model soups), task arithmetic (add $\tau=\theta_\text{ft}-\theta_\text{base}$), TIES/DARE resolve sign conflicts and sparsify deltas. Works because fine-tunes stay in one loss basin; fails across different bases.}
+\Q{Your fine-tuned model got worse at following instructions. Why?}{Wrong chat template or missing EOS, loss on prompt tokens, overfitting (too many epochs), low-diversity data, LR too high; check with a held-out instruction-following eval and compare to the base.}
+\Q{Fine-tuning a model to call your tools?}{Collect real or synthetic multi-turn traces with tool calls, results and final answers in the provider's tool format; include no-tool and error-recovery cases; mask loss on tool outputs; evaluate on exact argument match and end-task success.}
+\end{qa}
+
+\begin{mem}[Starting hyperparameters (then sweep)]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+full SFT (7--8B) & LR 1e-5--2e-5, cosine, warmup 3\%, 2--3 epochs, batch 64--128 seqs, loss on responses only\\
+LoRA SFT & LR 1e-4--2e-4, $r$ 16--64, $\alpha=2r$ (or rsLoRA), all linear layers, dropout 0--0.05\\
+DPO & LR 5e-7--1e-6 (full) / 5e-6 (LoRA), $\beta=0.1$, 1--2 epochs, watch chosen log-prob\\
+GRPO & LR 1e-6, $G=8$--16, temp 1.0, KL 0--0.04, clip 0.2/0.28, max length budgeted\\
+CPT & 0.1--0.3$\times$ pretrain peak LR, re-warmup, 5--30\% replay\\\bottomrule
+\end{tabularx}
+\end{mem}

@@ -1,0 +1,111 @@
+\section{Applied LLM systems: RAG, agents, LLMOps}
+\lab{module 10 \textperiodcentered\ lab 17 retrieval}
+
+\begin{mem}[Which tool first?]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+behavior, tone, framing & \textbf{prompting} (cheapest; measure first)\\
+changing / private / cited knowledge & \textbf{RAG}: update the index, not the model; ACL at retrieval\\
+format, style, narrow skill & \textbf{fine-tune} (LoRA): teaches \emph{how}, poor at injecting facts\\
+small corpus, relaxed latency & \textbf{long context} + prompt caching\\
+lower cost at fixed quality & distill / smaller model + RAG, once evals prove parity\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.3mm and 1.6mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum height=4.4mm,text width=11mm,inner sep=1pt}]
+\node[font=\tiny\bfseries\color{mute},anchor=west] at (-6mm,5mm) {OFFLINE};
+\node[bx,fill=soft] (pa) {parse (layout, VLM)};
+\node[bx,right=of pa] (ch) {chunk by structure};
+\node[bx,right=of ch] (cx) {contextualize chunk};
+\node[bx,right=of cx] (em) {embed (bi-encoder)};
+\node[bx,right=of em,draw=acc2,fill=soft2] (ix) {HNSW / IVF-PQ + BM25};
+\foreach \u/\v in {pa/ch,ch/cx,cx/em,em/ix} \draw[arr] (\u)--(\v);
+\node[font=\tiny\bfseries\color{mute},anchor=west] at (-6mm,-6mm) {ONLINE};
+\node[bx,fill=soft,below=6.5mm of pa] (q) {query rewrite + tenant filter};
+\node[bx,right=of q] (r) {dense + BM25 top-$k$};
+\node[bx,right=of r,draw=acc2,fill=soft2] (f) {RRF fuse};
+\node[bx,right=of f] (rr) {cross-encoder rerank 50$\to$8};
+\node[bx,right=of rr,draw=acc3,fill=acc3!8] (g) {generate w/ citations or abstain};
+\foreach \u/\v in {q/r,r/f,f/rr,rr/g} \draw[arr] (\u)--(\v);
+\draw[darr] (ix.south) -- ++(0,-1.8mm) -| (r.north);
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Retrieval-augmented generation]
+\Q{Where is RAG quality lost first?}{Parsing: PDFs are layout, not text (columns, tables, footnotes interleave). Use layout-aware parsers or VLMs; eyeball 20 parsed docs before building anything.}
+\Q{How do you chunk?}{Along structure (sections, list items, table rows with headers); 200--800 tokens, 10--20\% overlap as a start --- a hyperparameter to sweep per question type. Parent-document retrieval: retrieve small, pass the enclosing section. Contextual retrieval: prepend a doc-specific summary to each chunk before embedding/BM25 (49\% fewer top-20 failures, 67\% with reranking).}
+\Q{Bi-encoder vs cross-encoder vs ColBERT?}{Bi-encoder embeds query and doc separately (fast, pre-computed; first stage). Cross-encoder reads them together (accurate, one forward per pair; rerank top 50--100). ColBERT: token-level late interaction (MaxSim), higher recall, bigger index.}
+\Q{How are embedding models trained?}{Contrastive InfoNCE on (query, positive) pairs with in-batch and hard negatives: $\mathcal L=-\log\frac{e^{s(q,d^+)/\tau}}{\sum_j e^{s(q,d_j)/\tau}}$. Bigger batches = more negatives. Matryoshka training makes prefixes usable (1024$\to$256 dims, 4$\times$ smaller).}
+\Q{HNSW vs IVF-PQ?}{HNSW: layered proximity graph, greedy descent; params $M$, efConstruction, efSearch; great recall/latency, memory-heavy, awkward deletes. IVF: k-means into $\sim\!\sqrt N$ cells, probe nprobe; IVF-PQ compresses to 64 B/vector for billion scale. Always measure ANN recall vs exact search.}
+\Q{Index memory for 1M chunks $\times$ 1024 dims?}{fp32 4.1 GB; fp16 2.0; int8 1.0; binary 128 MB; PQ (64 B) 64 MB.}
+\Q{Why hybrid search, and how do you fuse?}{Dense matches meaning; BM25 matches exact strings (IDs, error codes, rare names). Reciprocal rank fusion $\sum1/(60+\text{rank})$ needs no score normalization and rewards agreement.}
+\Q{BM25 in one line?}{$\sum_{t\in q}\mathrm{IDF}(t)\frac{f(t,d)(k_1+1)}{f(t,d)+k_1(1-b+b\,|d|/\overline{|d|})}$, $k_1\approx1.2$, $b\approx0.75$: saturating term frequency, length normalization.}
+\Q{MMR?}{$\arg\max_d\lambda\,\mathrm{sim}(q,d)-(1-\lambda)\max_{s\in S}\mathrm{sim}(d,s)$: relevance minus redundancy, for near-duplicate results.}
+\Q{Query-side tricks?}{Rewriting (resolve pronouns, expand acronyms), decomposition for multi-hop, HyDE (embed a hypothetical answer), metadata filters from the query, routing between indexes. Each adds latency --- add only if the eval says so.}
+\Q{How do you make generation faithful?}{Passage ids; cite after every claim; abstain when unsupported; most relevant passages at start/end (Lost in the Middle); for high stakes quote-then-answer and verify quotes verbatim.}
+\Q{How do you evaluate RAG?}{Separately then end-to-end. Retrieval: recall@$k$ (most important), MRR, nDCG. Generation: faithfulness, correctness, citation precision/recall, abstention. System: p50/p95 latency, cost/query. Eval set: 100--300 real questions, span-level labels (survive re-chunking), 10--20\% unanswerable, multi-hop, exact IDs, every language; frozen test split; paired CIs.}
+\Q{Multi-tenant RAG security?}{Filter by tenant/ACL \emph{inside} the retrieval query, never post-filter generated text; per-tenant leak tests in CI; separate caches; retrieved docs are untrusted (injection).}
+\end{qa}
+
+\begin{mem}[RAG failure $\to$ check]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+doc exists, answer ``not found'' & retrieval miss: recall@$k$, parse, chunk split\\
+confident wrong + real citation & generator misread: faithfulness, quote-then-answer\\
+entities mixed up & chunk lost context: contextualize, filters, MMR\\
+IDs/codes never retrieved & dense-only: add BM25\\
+drop after re-index & embedder/chunker changed; chunk-id labels\\
+good offline, bad prod & eval unlike real queries: sample prod weekly\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (t) at (0,0) {task};
+\node[box,draw=acc2,fill=soft2] (l) at (17,0) {LLM decides};
+\node[box,text width=14mm] (v) at (44,0) {validate args\\+ policy};
+\node[box,text width=14mm] (x) at (68,0) {execute in\\sandbox};
+\node[box] (o) at (44,-11) {append tool result};
+\node[gbox] (a) at (17,-14) {final answer / escalate};
+\draw[arr] (t)--(l);
+\draw[arr] (l)--node[above,font=\tiny,text=mute]{tool call}(v);
+\draw[arr] (v)--(x); \draw[arr] (x) |- (o); \draw[arr] (o) -| ([xshift=4mm]l.south);
+\draw[arr] ([xshift=-4mm]l.south) -- node[left,font=\tiny,text=mute]{done / budget} ([xshift=-4mm]l.south |- a.north);
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Agents and tools]
+\Q{What is an agent vs a workflow?}{Agent: LLM in a loop choosing tool calls from observations until done or out of budget. Workflow: fixed code paths calling an LLM at set steps (chain, route, parallelize, orchestrator--workers, evaluator--optimizer). Prefer workflows when the path is known (Building Effective Agents).}
+\Q{Tool-calling mechanics?}{Declare name + description (the model's only docs) + JSON Schema; model emits structured calls (possibly parallel); runtime validates, checks policy, executes, appends result tied to call id; loop with step/token/time/cost budgets.}
+\Q{How do you design good tools?}{Few, well-scoped, non-overlapping; descriptions say when \emph{not} to use; concise outputs, pagination; actionable errors (``date must be YYYY-MM-DD; got 03/04/25''); idempotent where possible.}
+\Q{95\% per-step agent, 20 steps?}{$0.95^{20}=36\%$. 0.99 \ra\ 82\%. Verify-and-retry with recall $r$: failure $q\to q(1-r+rq)$; $q{=}0.05,r{=}0.8$ \ra\ 79\%. pass$^8$ at 90\%/trial = 43\%.}
+\Q{How do you sandbox an agent?}{Container/microVM per task, egress off + allowlist, short-lived least-privilege tokens (never secrets in context), scoped FS with snapshots, CPU/mem/time/spend limits, human confirmation for irreversible actions, full audit log.}
+\Q{How do you evaluate an agent?}{End state in resettable environments (not transcript claims), several trials (pass@1 with CI, pass$^k$), failure taxonomy from trajectories, cost/latency per task incl.\ failures, safety (injections planted). The scaffold is part of the system.}
+\Q{What is MCP?}{Model Context Protocol: standard servers exposing tools, resources and prompts to any client. Transport and discovery, not security --- descriptions and outputs are untrusted.}
+\Q{ReAct, reflection, planning?}{ReAct interleaves reasoning and actions; Reflexion adds self-critique memory; plan-then-execute separates planning from untrusted data. Multi-agent only when subtasks are parallel and the eval shows a gain.}
+\Q{Memory for agents?}{Short-term = context; compaction summaries; structured notes/memory files re-read later; vector or key--value long-term stores; sub-agents with clean contexts returning summaries. Evaluate recall after $N$ turns, updates, cross-user leakage.}
+\end{qa}
+
+\begin{qa}[Prompting, context engineering, structured output]
+\Q{Prompting techniques that matter?}{Clear role + task + constraints + output format; few-shot examples (diverse, consistent format); CoT / ``think step by step'' for reasoning (less needed for reasoning models); decomposition and prompt chaining; self-consistency; delimiting untrusted data (XML tags) --- helpful but not a security boundary.}
+\Q{What is context engineering?}{Deciding what goes in the window, in what order, at what cost: stable first (system, tools, few-shot) for caching; long docs before the question, restate key instruction at the end; less irrelevant context (quality drops long before the limit); compaction for long horizons.}
+\Q{Constrained decoding: guarantees and costs?}{Guarantees syntax, not semantics; can hurt reasoning when format fights the model --- put a free-text \texttt{reasoning} field first, shallow schemas, enums; validate and retry with the error, log retry rate; version schemas like APIs.}
+\end{qa}
+
+\begin{mem}[LLMOps and cost]
+Cost/request $=T_\text{in,uncached}p_\text{in}+T_\text{in,cached}p_\text{cache}+T_\text{out}p_\text{out}$. Example (\$3 / \$0.30 / \$15 per M): 4k cached + 2k fresh + 500 out \ra\ \$0.0147 vs \$0.0255 uncached; output is now the biggest line.\\[2pt]
+Levers: prompt caching, shorter outputs, routing/cascades (FrugalGPT, RouteLLM), fewer better passages, batch APIs ($\sim$50\% off), self-hosting at high utilization. Report \textbf{cost per successful task}.\\[2pt]
+Ops: trace every call (prompt/config version, model, tokens cached/uncached, TTFT, cost, tools, tenant; OpenTelemetry GenAI spans); version prompt+tools+retrieval+model together; evals in CI; pin model versions, canary, rollback; fallback providers with circuit breakers. Semantic caching is risky (``cancel my order'' $\approx$ ``cancel my subscription'').
+\end{mem}
+
+\begin{trap}
+\begin{itemize}
+\item ``We switched embedding models and RAG improved'' --- with no recall@$k$, CI or pairing.
+\item Measuring RAG only end to end; post-filtering tenants after generation.
+\item Grading agents from their own transcript claims.
+\item ``Constrained decoding means correct.'' It means it parses.
+\item A timestamp or user name at the top of the system prompt kills prompt caching.
+\end{itemize}
+\end{trap}

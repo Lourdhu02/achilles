@@ -1,0 +1,80 @@
+\section{Interpretability, alignment, security}
+\lab{module 09 \textperiodcentered\ lab 16 interpretability}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \i/\t in {0/{\dots},1/A,2/B,3/{\dots},4/A}{
+  \node[draw=acc,fill=soft,minimum width=7mm,minimum height=4mm] (t\i) at (\i*11,0) {\t};}
+\node[lab] at (11,-3.6) {$j{-}1$}; \node[lab] at (22,-3.6) {$j$}; \node[lab] at (44,-3.6) {$i$};
+\draw[->,acc2,line width=0.6pt] (t2.south) to[out=-120,in=-60] (t1.south);
+\node[font=\tiny,text=acc2] at (16.5,-8) {\textbf{1} prev-token head (L1)};
+\draw[->,acc,line width=0.7pt] (t4.north) to[out=150,in=30] (t2.north);
+\node[font=\tiny,text=acc] at (33,8.6) {\textbf{2} induction head (L2): query ``A'' finds key ``prev = A''};
+\node[gbox,anchor=west] (pb) at (51,0) {predict B};
+\draw[arr] (t4) -- (pb);
+\end{tikzpicture}
+\end{center}
+{\scriptsize\color{mute}K-composition: the key at $j$ was written by head 1. Works for never-seen pairs, which is in-context copying.}
+
+\begin{qa}[Mechanistic interpretability]
+\Q{What is the residual-stream view?}{Every layer reads from the stream (via a norm) and adds to it (via an out-projection); the stream is a shared linear communication channel, so contributions decompose additively into paths.}
+\Q{QK and OV circuits?}{Per head, $W_QW_K^\top$ decides where to attend, $W_VW_O$ decides what is moved; each is a $d\times d$ matrix of rank $\le d_h$. Only these products matter, not individual matrices.}
+\Q{Explain induction heads and why they matter.}{Two-head circuit ``\dots A B \dots A $\to$ B'' (diagram). They form in a sudden phase change early in training (visible bump in loss) coinciding with a jump in in-context learning (Olsson et al.\ 2022). Induction score: attention to $i-T+1$ on period-$T$ repeats.}
+\Q{What is superposition?}{With sparse features the model stores more features than dimensions in almost-orthogonal directions and tolerates interference (ReLU + negative bias filter it). Hence \textbf{polysemantic neurons} are expected (Toy Models of Superposition).}
+\Q{Sparse autoencoders?}{Overcomplete dictionary $F\gg d$: $f=\mathrm{ReLU}((x-b_d)W_e+b_e)$, $\hat x=fW_d+b_d$, loss $\|x-\hat x\|^2+\lambda\sum f_i\|W_{d,i}\|$. Variants: TopK (no shrinkage, sets L0), BatchTopK, Gated, JumpReLU (Gemma Scope), transcoders, cross-layer transcoders. Report L0, FVU, $\Delta$CE in nats, dead latents, auto-interp --- at matched L0.}
+\Q{SAE pitfalls?}{Dead latents, feature splitting (no single true width), feature absorption, dark matter in the error, top-activation illusions; SAE probes didn't beat plain linear probes downstream (Kantamneni 2025).}
+\Q{Probe gets 95\%. Does the model use the feature?}{Decodable $\neq$ used. Check selectivity vs control tasks and a random model; prefer difference-of-means directions; intervene (ablate/add) and check behavior changes as predicted.}
+\Q{Denoising vs noising patching?}{Denoising (clean $\to$ corrupted run) tests \emph{sufficiency}; noising (corrupted $\to$ clean) tests \emph{necessity}. Metric: normalized logit difference $(m_p-m_c)/(m_\text{clean}-m_c)$. Path patching isolates edges (IOI circuit); attribution patching = first-order Taylor (cheap, breaks at saturation); ACDC automates. Beware self-repair (backup heads).}
+\Q{Steering?}{Add $c\cdot v$ to the residual stream ($v$ from contrastive means); directional ablation $x\leftarrow x-(x\cdot\hat r)\hat r$ --- one ``refusal direction'' mediates refusal in many open models (Arditi 2024). Evaluate collateral damage and compare with just prompting.}
+\Q{What are attribution graphs?}{Replace MLPs by a cross-layer transcoder, freeze attention/norms for one prompt, add error nodes \ra\ linear local model; graph of direct effects between features; validate by intervening on the real model. Found two-hop reasoning, rhyme planning, multilingual features.}
+\end{qa}
+
+\begin{mem}[Alignment failure modes: mechanism + evidence]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+reward hacking & optimizer finds unintended high reward; coding agents edit tests (Baker 2025)\\
+overoptimization & proxy up, gold down past a KL (Gao 2022)\\
+sycophancy & raters prefer agreement; RLHF amplifies (Sharma 2023)\\
+unfaithful CoT & stated reasoning $\neq$ computation (Turpin 2023)\\
+obfuscation & penalizing bad thoughts hides them (Baker 2025)\\
+alignment faking & behaves differently when it thinks it's trained (Greenblatt 2024)\\
+sleeper agents & backdoors survive SFT/RL/adversarial training (Hubinger 2024)\\
+sandbagging & strategic underperformance on capability evals\\
+in-context scheming & disables oversight in agentic setups (Apollo 2024)\\
+emergent misalignment & narrow fine-tune (insecure code) \ra\ broad misbehavior (Betley 2025)\\
+\bottomrule
+\end{tabularx}
+\textbf{AI control}: assume possible misalignment; trusted monitoring by a weaker model, auditing samples, restricted affordances.
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[node distance=2mm and 3mm,every node/.style={font=\tiny}]
+\node[sbox] (u) {user request (trusted)};
+\node[box,right=of u,text width=20mm] (p) {privileged planner LLM: sees only trusted input};
+\node[box,below=of p,draw=acc2,fill=soft2,text width=20mm] (ex) {executor: policy check on every call};
+\node[box,left=of ex,text width=17mm,draw=mute] (t) {untrusted: web, email, docs, tool output};
+\node[box,below=of t,text width=17mm] (q) {quarantined LLM: parses, no tools};
+\node[box,right=of ex,text width=13mm,draw=acc3,fill=acc3!8] (act) {tools / APIs};
+\node[box,below=of act,text width=13mm,draw=acc2] (h) {human confirm (irreversible)};
+\draw[arr] (u)--(p); \draw[arr] (p)--(ex); \draw[arr] (ex)--(t); \draw[arr] (t)--(q); \draw[arr] (q) -| node[pos=0.25,below,font=\tiny]{typed values} (ex.south);
+\draw[arr] (ex)--(act); \draw[arr] (ex.south east)--(h);
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Security for LLM apps and agents]
+\Q{Direct vs indirect prompt injection?}{Direct: the user attacks your prompt. Indirect (Greshake 2023): anyone who controls text the model reads (web page, email, PDF, issue, tool result, MCP tool description) plants instructions executed with \emph{your user's} privileges. No in-band separation of instructions and data exists.}
+\Q{What is the lethal trifecta?}{Private data access + exposure to untrusted content + an external communication channel \ra\ assume exfiltration. Remove one leg per task.}
+\Q{Defenses, strongest first?}{(1) Architecture: plan-then-execute, dual LLM, CaMeL, context minimization. (2) Least privilege: scoped, per-tenant, read-only tokens; egress allowlist; spend caps. (3) Human confirmation showing the exact action. (4) Instruction hierarchy / StruQ training. (5) Injection classifiers, output filters (markdown image exfiltration). (6) Logging with provenance, fast revocation. Evaluate attack success \emph{and} utility under attack (AgentDojo), with adaptive attacks.}
+\Q{Why do jailbreaks work?}{Competing objectives (role-play, prefix injection) and mismatched generalization (base64, low-resource languages). Also GCG adversarial suffixes, many-shot jailbreaking. Defenses: safety training, input/output classifiers (Constitutional Classifiers), rate limits, monitoring.}
+\Q{Does a system prompt saying ``ignore instructions in documents'' work?}{It blunts naive attacks, fails against adaptive ones. Not a defense.}
+\Q{What governance should you know?}{Frontier safety frameworks with capability thresholds (Anthropic RSP / ASL levels, OpenAI Preparedness, Google DeepMind FSF), EU AI Act GPAI obligations, AI security institutes' pre-deployment testing. Have a defended position, not slogans.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item ``This head attends to X, so X matters.'' Attention ignores value norms and the OV map.
+\item ``95\% loss recovered'' vs a zero-ablation baseline; report $\Delta$CE.
+\item ``Ablating the head did nothing.'' Self-repair can hide it.
+\item ``The CoT shows what the model thinks.'' Not guaranteed faithful.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,88 @@
+\section{Generative AI beyond text: images, multimodal}
+\lab{gap-fill beyond the repo \textperiodcentered\ module 04 \S8 touches ViT, CLIP, LLaVA}
+
+\begin{mem}[Generative model families]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Autoregressive & $p(x)=\prod_tp(x_t|x_{<t})$; exact likelihood; slow sequential sampling (LLMs, VQ image tokens)\\
+VAE & maximize ELBO $\E_{q(z|x)}[\log p(x|z)]-\KL(q(z|x)\|p(z))$; reparameterize $z=\mu+\sigma\epsilon$; blurry samples\\
+GAN & $\min_G\max_D\E\log D(x)+\E\log(1-D(G(z)))$; sharp, one-step; unstable, mode collapse\\
+Diffusion & learn to reverse a noising process; stable, diverse, high quality; many steps\\
+Flow matching & regress a velocity field along paths noise$\to$data; straight paths \ra\ few steps (SD3, Flux)\\
+Normalizing flows & invertible maps, exact likelihood via change of variables; constrained architectures\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \i/\n in {0/{$x_0$},1/{$x_1$},2/{$\cdots$},3/{$x_{t}$},4/{$\cdots$},5/{$x_T$}}{
+  \pgfmathtruncatemacro\sh{90-15*\i}
+  \node[draw=acc,fill=acc!\sh!white,minimum width=8mm,minimum height=6mm,text=black] (x\i) at (\i*15,0) {\n};}
+\foreach \i in {0,...,4}{
+  \pgfmathtruncatemacro\j{\i+1}
+  \draw[->,acc2] (x\i.north east) to[bend left=25] (x\j.north west);
+  \draw[->,acc3] (x\j.south west) to[bend left=25] (x\i.south east);}
+\node[acc2] at (37,7.5) {forward $q(x_t|x_{t-1})$: add Gaussian noise (fixed)};
+\node[acc3] at (37,-7.5) {reverse $p_\theta(x_{t-1}|x_t)$: learned denoiser};
+\node[mute,anchor=west] at (78,0) {$\mathcal N(0,I)$};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Diffusion in five lines (DDPM)]
+Closed-form forward: $x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$,\ \ $\bar\alpha_t=\prod_s(1-\beta_s)$.\\
+Loss (simple): $\E_{t,x_0,\epsilon}\|\epsilon-\epsilon_\theta(x_t,t)\|^2$ \ (predict the noise; or $x_0$, or $v$).\\
+$\epsilon$-prediction $\propto$ score: $\nabla_x\log p_t(x)\approx-\epsilon_\theta/\sqrt{1-\bar\alpha_t}$.\\
+CFG: $\tilde\epsilon=\epsilon_\theta(x_t,\varnothing)+w\,(\epsilon_\theta(x_t,c)-\epsilon_\theta(x_t,\varnothing))$, $w\approx3$--$8$; train with 10--20\% condition dropout.\\
+Flow matching: $x_t=(1-t)x_0+t\epsilon$, regress $v_\theta(x_t,t)\approx\epsilon-x_0$; sample by integrating the ODE.
+\end{mem}
+
+\begin{qa}[Diffusion and image generation]
+\Q{Why does predicting noise work?}{The noising has a closed form, so any $(x_0,t)$ gives a supervised target. Denoising score matching: predicting $\epsilon$ is predicting the score, and the reverse SDE/ODE turns scores into samples. Training is a simple MSE --- stable, unlike GANs.}
+\Q{DDPM vs DDIM sampling?}{DDPM: stochastic ancestral sampling, $\sim$1000 steps. DDIM: deterministic non-Markovian sampler with the same trained model, 20--50 steps, invertible (useful for editing). Further: DPM-Solver, distillation (consistency models, LCM, adversarial distillation) to 1--4 steps.}
+\Q{What is classifier-free guidance and its trade-off?}{Train one model conditional and unconditional (drop the prompt sometimes); extrapolate toward the conditional prediction by $w$. Higher $w$: better prompt adherence and fidelity, less diversity, oversaturation. Costs 2 forward passes per step.}
+\Q{What is latent diffusion?}{Run diffusion in a VAE's latent (e.g.\ $64{\times}64{\times}4$ for $512^2$ images, 48$\times$ fewer values) and decode at the end; text conditioning via cross-attention to a text encoder (CLIP/T5). Stable Diffusion.}
+\Q{U-Net vs DiT?}{U-Net: conv encoder--decoder with skips + attention. DiT: transformer over latent patches with adaLN conditioning on $t$ and class/text; scales cleanly with compute (SD3, Flux, Sora-style video use transformers + flow matching).}
+\Q{Noise schedules?}{Linear/cosine $\beta_t$; must reach near-pure noise at $T$ (zero terminal SNR) or the model never learns to generate from true noise. Higher resolution needs shifted schedules (more noise).}
+\Q{How do you evaluate image generators?}{FID (Fr\'echet distance between Inception features of real and generated sets; lower is better, biased by sample size), CLIP score (text--image alignment), precision/recall for fidelity vs diversity, human preference (GenEval, arenas).}
+\Q{GAN failure modes?}{Mode collapse, training instability, vanishing gradients when $D$ wins. Fixes: non-saturating loss, Wasserstein + gradient penalty, spectral norm, two-timescale LR. Still used as decoders/discriminators in distillation and audio.}
+\Q{Fine-tuning diffusion models?}{LoRA on attention, DreamBooth (subject, with prior preservation), textual inversion (learn a token embedding), ControlNet (zero-initialized copy of the encoder conditioned on edges/depth/pose), IP-Adapter (image prompts).}
+\end{qa}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \i in {0,...,4}{\foreach \j in {0,...,4}{
+  \ifnum\i=\j \fill[acc] (\j*4.2,-\i*4.2) rectangle ++(3.8,3.8); \else \fill[acc!12] (\j*4.2,-\i*4.2) rectangle ++(3.8,3.8);\fi}}
+\foreach \j in {0,...,4}{\node at (\j*4.2+1.9,6) {$t_{\the\numexpr\j+1\relax}$};}
+\foreach \i in {0,...,4}{\node at (-2.5,-\i*4.2+1.9) {$i_{\the\numexpr\i+1\relax}$};}
+\node[anchor=west,align=left] at (25,-6) {CLIP: $N$ images $\times$ $N$ captions; logits $=\langle i,t\rangle/\tau$\\[1pt]symmetric InfoNCE: rows and columns, diagonal is positive\\[1pt]zero-shot classification: embed ``a photo of a \{class\}''\\[1pt]SigLIP: per-pair sigmoid loss, no global softmax};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (img) at (0,0) {image};
+\node[box,text width=13mm] (vit) at (16,0) {ViT encoder\\(CLIP/SigLIP)};
+\node[box,draw=acc2,fill=soft2,text width=14mm] (proj) at (40,0) {projector\\(MLP / Q-Former)};
+\node[box,draw=acc3,fill=acc3!8,text width=18mm] (llm) at (66,0) {LLM over\\{}[visual; text] tokens};
+\node[sbox] (txt) at (40,-10) {text prompt};
+\draw[arr](img)--(vit); \draw[arr](vit)--node[above=1.2mm,font=\tiny,text=mute]{patch feats}(proj); \draw[arr](proj)--(llm); \draw[arr](txt) -| (llm.south);
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Vision, multimodal, speech]
+\Q{How does a ViT tokenize an image?}{Split into $P{\times}P$ patches (16$\times$16), flatten, linear-project to $d$, add position embeddings (+ CLS token); a $224^2$ image is 196 tokens. Weak inductive bias \ra\ needs lots of data or distillation.}
+\Q{How is a VLM like LLaVA built and trained?}{Frozen vision encoder \ra\ projector \ra\ LLM. Stage 1: train the projector on image--caption pairs (alignment). Stage 2: instruction-tune projector + LLM on visual chat data. Variants: Q-Former (BLIP-2) compresses to fixed queries; cross-attention layers (Flamingo); native early fusion (Chameleon-style, all modalities as tokens).}
+\Q{Main cost knob in VLMs?}{Number of visual tokens: high-res images tiled into crops (AnyRes) multiply tokens; pooling/resampling trades detail for context and latency.}
+\Q{How does Whisper work?}{Encoder--decoder transformer on log-Mel spectrograms (30 s windows), trained on 680k h weakly supervised multilingual audio; special tokens select task (transcribe/translate), language, timestamps.}
+\Q{Contrastive vs generative pretraining for vision?}{Contrastive (CLIP) gives aligned embeddings for retrieval/zero-shot; masked autoencoding (MAE) and generative objectives learn denser features; VLMs mostly reuse contrastive encoders.}
+\Q{Multimodal RAG?}{Embed pages as images (ColPali-style late interaction over page patches) or caption/OCR then embed text; keep figures and tables as first-class chunks.}
+\end{qa}
+
+\begin{trap}
+\begin{itemize}
+\item ``Diffusion is slow, period.'' Distillation and flow matching reach 1--4 steps.
+\item ``Higher CFG is better.'' It trades diversity and saturation for adherence.
+\item Comparing FID across different sample counts or feature extractors.
+\item Ignoring visual-token count when sizing VLM latency and KV cache.
+\end{itemize}
+\end{trap}

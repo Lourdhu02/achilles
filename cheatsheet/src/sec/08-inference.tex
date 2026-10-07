@@ -1,0 +1,140 @@
+\section{Inference and serving}\label{sec:inf}
+\lab{module 07 \textperiodcentered\ labs 06 kernels, 07 KV cache + sampling, 13 quantization, 14 speculative decoding}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\draw[->,mute] (0,0) -- (86,0) node[below left]{time};
+\fill[acc2!70] (2,1) rectangle (22,6); \node[white] at (12,3.5) {\textbf{prefill} $P$ tokens};
+\foreach \i in {0,...,11}{ \fill[acc!60] (24+\i*5,1) rectangle ++(4,5); }
+\node[acc] at (54,8.5) {\textbf{decode}: one token per step, reads all weights + KV};
+\draw[mute,|-|] (2,-2.5) -- (24,-2.5) node[midway,below]{TTFT};
+\draw[mute,|-|] (24,-2.5) -- (29,-2.5) node[midway,below]{TPOT};
+\node[align=left,anchor=west] at (2,-9) {prefill: $I\approx P$, \textbf{compute-bound}\quad decode: $I\approx B$, \textbf{memory-bound}};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Serving metrics and the step-time model]
+TTFT = queue + prefill. TPOT/ITL = decode step. E2E $=$ TTFT $+(n_\text{out}-1)\cdot$TPOT. Goodput = throughput meeting SLOs.\\[2pt]
+{\centering $t_\text{step}\approx\max\Big(\dfrac{2NB}{F_\text{peak}},\ \dfrac{2N+B\,n_\text{ctx}\,s_\text{kv}}{\text{BW}}\Big)+t_\text{overhead}$\par}
+Llama-3-8B, H100: batch-1 decode 4.8 ms ($\le$210 tok/s). Batch 64 @ 2k ctx: KV 17.2 GB $>$ weights 16 GB; step $\approx$9.9 ms, $\approx$6{,}500 tok/s. Prefill 1k tokens: 16 TFLOP $\approx$ 16 ms at peak.\\[2pt]
+\begin{tabularx}{\linewidth}{@{}lrrL@{}}
+\toprule
+model (bf16) & KV/token & 32k ctx & shape\\\midrule
+Qwen2.5-0.5B & 12 KiB & 0.4 GiB & 24L, 2 kv $\times$ 64\\
+Llama-3-8B & 128 KiB & 4 GiB & 32L, 8 kv $\times$ 128\\
+Llama-3-70B & 320 KiB & 10 GiB & 80L, 8 kv $\times$ 128\\\bottomrule
+\end{tabularx}
+For any serving question write three numbers first: weight bytes, KV bytes/token, HBM per GPU.
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[font=\scriptsize\bfseries,acc] at (17,13.5) {static batching};
+\node[font=\scriptsize\bfseries,acc] at (62,13.5) {continuous batching};
+\foreach \row/\nm in {0/A,1/B,2/C}{
+  \node at (-2.5,9.5-\row*4) {\nm};
+  \node at (42.5,9.5-\row*4) {\nm};
+  \foreach \c in {0,...,7}{\draw[draw=mute,fill=white] (\c*4.2,8-\row*4) rectangle ++(3.6,3);}
+}
+\foreach \c in {0,...,7}{ \fill[acc!60] (\c*4.2,8) rectangle ++(3.6,3);}
+\foreach \c in {0,1}{ \fill[acc!60] (\c*4.2,4) rectangle ++(3.6,3);}
+\foreach \c in {0,1,2}{ \fill[acc!60] (\c*4.2,0) rectangle ++(3.6,3);}
+\node[mute] at (20,5.5) {idle slots};
+\foreach \row in {0,1,2}{ \foreach \c in {0,...,7}{ \draw[draw=mute,fill=acc!60] (45+\c*4.2,8-\row*4) rectangle ++(3.6,3);}}
+\foreach \c/\l in {2/D,3/D,4/D,5/E,6/E,7/E}{\fill[acc2!60] (45+\c*4.2,4) rectangle ++(3.6,3); \node at (45+\c*4.2+1.8,5.5){\l};}
+\foreach \c/\l in {3/F,4/F,5/F,6/F,7/G}{\fill[acc2!60] (45+\c*4.2,0) rectangle ++(3.6,3); \node at (45+\c*4.2+1.8,1.5){\l};}
+\node[mute] at (62,-3) {new requests join at every step (Orca)};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Serving systems]
+\Q{Why is decode slow?}{Not because it is sequential: each step reads every weight and the whole KV cache to make one token per sequence ($I\approx1$). The fix is batching across \emph{users}.}
+\Q{Continuous batching?}{Re-form the batch every decode step: finished sequences leave, waiting ones join (Orca). Needs ragged/paged kernels and a per-step scheduler deciding what fits in memory.}
+\Q{PagedAttention?}{KV in fixed blocks (16 tokens in vLLM) + per-sequence block table, like virtual memory. Waste $\le$ one partial block per sequence (vs 60--80\% before, $<$4\% after) \ra\ bigger batches. Copy-on-write sharing for parallel samples; preempt by recompute or swap.}
+\Q{Prefix caching --- and the timestamp trap?}{Hash full KV blocks by their tokens + everything before (vLLM APC) or keep a radix tree (SGLang RadixAttention). Put stable parts first (system prompt, tools, docs); one timestamp at the top makes every request a miss. Route same-prefix requests to the same replica.}
+\Q{Chunked prefill vs disaggregation?}{Chunked (Sarathi): fixed per-step token budget, decode tokens first then a prefill chunk --- no stalls, prefill piggybacks on idle FLOPs. Disaggregated (DistServe, Mooncake): separate prefill and decode pools, ship KV over RDMA (70B: 320 KiB/token \ra\ 330 GB/s at $10^6$ tok/s). Disaggregate at scale with strict TTFT and TPOT SLOs.}
+\Q{TP for serving?}{Cuts per-token latency (each GPU streams 1/TP of weights) at the cost of 2 all-reduces per layer; use the smallest TP that fits weights + KV for your batch. Replicas (DP) for throughput.}
+\Q{What do CUDA graphs fix?}{CPU launch overhead: hundreds of tiny kernels per small-batch decode step. Record once, replay; one graph per batch-size bucket (pad up). Big win at batch 1--8.}
+\Q{``Temperature 0 is deterministic''?}{Not across runs: batch composition changes reduction orders. Needs batch-invariant kernels.}
+\Q{How does grammar-constrained decoding work?}{Compile JSON schema/regex to an automaton over the vocab; mask disallowed logits each step; overlap mask computation with the forward. Guarantees it \emph{parses}, not that it is correct.}
+\end{qa}
+
+\begin{mem}[Sampling]
+logits $/T$ \ra\ top-$k$ (keep $k$ best) \ra\ top-$p$ (smallest set with mass $\ge p$) \ra\ min-$p$ (keep $p_i\ge p_\text{min}\cdot p_\text{max}$) \ra\ sample. $T\to0$: greedy. Repetition/frequency/presence penalties edit logits of seen tokens. Beam search: high-likelihood, bland text; fine for translation/ASR, bad for open-ended chat.
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[sbox] (pre) at (0,0) {prefix};
+\node[box,draw=acc3,fill=acc3!8,text width=15mm] (dr) at (20,0) {drafter $q$\\proposes $x_1..x_k$};
+\node[box,draw=acc2,fill=soft2,text width=17mm] (ver) at (44,0) {target $p$: one pass\\scores $k{+}1$ positions};
+\node[box,text width=20mm] (acc) at (66,0) {accept each $x_i$\\w.p.\ $\min(1,p/q)$};
+\node[box,text width=26mm] (rej) at (62,-12) {resample from\\$\mathrm{norm}(\max(0,p{-}q))$, stop};
+\node[box,text width=24mm] (bon) at (24,-12) {append accepted,\\$+1$ bonus token from $p$};
+\draw[arr] (pre)--(dr); \draw[arr] (dr)--(ver); \draw[arr] (ver)--(acc);
+\draw[arr] (acc.south) -- (acc.south |- rej.north) node[pos=0.5,right,font=\tiny,text=mute]{reject}; \draw[arr] (acc.south) |- ++(0,-3) -| (bon.north) node[pos=0.25,above,font=\tiny,text=mute]{all accepted};
+\draw[darr] (bon.west) -| (pre.south) node[pos=0.75,left,font=\tiny,text=mute]{append, repeat};
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Speculative decoding]
+Exact: $q(x)\min(1,\tfrac{p}{q})+(1-\alpha)\tfrac{\max(0,p-q)}{1-\alpha}=\min(p,q)+\max(0,p-q)=p(x)$.\\
+$\E[\text{tokens/round}]=\frac{1-\alpha^{k+1}}{1-\alpha}$;\ \ speedup $=\frac{1-\alpha^{k+1}}{(1-\alpha)(kc+1)}$, $c$ = draft/target cost.\\
+$\alpha{=}0.8,k{=}4,c{=}0.05$: 3.36 tokens/round, \textbf{2.8$\times$}. $\alpha$ matters more than $c$.\\
+Drafters: small same-family model, Medusa heads, EAGLE-1/2/3 (feature-level, highest acceptance), MTP modules (DeepSeek-V3), n-gram / prompt lookup (free for RAG, code edits), lookahead decoding.
+\end{mem}
+
+\begin{qa}[Speculative decoding and kernels]
+\Q{Why is speculative decoding lossless?}{The accept/resample rule makes every emitted token distributed exactly as $p$ (identity above); rejected positions end the round. The greedy-match shortcut is exact only for greedy decoding. Bitwise equality is not promised (different kernels).}
+\Q{When does it hurt?}{Large batches: decode nears the compute roof, verifying $k{+}1$ tokens is no longer free and rejected drafts waste FLOPs; drafter KV and memory; low-acceptance content (creative text). Engines reduce $k$ or disable under load.}
+\Q{Why does FlashAttention win?}{IO: naive attention writes/reads $S$ and $P$ ($T{\times}T$) through HBM (128 MiB/head at 8k). FA tiles $Q,K,V$ in SRAM with \textbf{online softmax}, never materializing $S$/$P$: HBM traffic $\Theta(T^2d^2/M)$, extra memory $O(T)$. It adds FLOPs (recompute $P$ in backward) and is faster.}
+\Q{Online softmax?}{Per row keep running max $m$, sum $\ell$, accumulator $o$. New tile: $m'=\max(m,\max s)$; $\ell\leftarrow e^{m-m'}\ell+\sum e^{s-m'}$; $o\leftarrow e^{m-m'}o+e^{s-m'}V$; divide by $\ell$ at the end. Save $\mathrm{LSE}=m+\log\ell$ for backward.}
+\Q{FA-2 vs FA-3?}{FA-2: fewer non-matmul FLOPs (normalize once), parallelize over sequence, better warp split. FA-3 (Hopper): warp specialization with TMA producers, softmax/matmul overlap, FP8 with Hadamard incoherent processing.}
+\Q{FlashDecoding?}{At batch 1 one block per (seq, head) leaves most SMs idle; split the KV length into chunks across blocks, each yields partial $(m,\ell,o)$, merge with a tiny kernel.}
+\Q{What else gets fused in decode?}{RMSNorm + residual add, RoPE on Q/K, SwiGLU, dequant inside GEMM, sampling --- each fusion removes an HBM round trip and a launch.}
+\end{qa}
+
+\begin{mem}[Quantization: $q=\mathrm{clamp}(\mathrm{round}(w/s)+z)$, $\hat w=s(q-z)$]
+Symmetric $s=\max|w|/(2^{b-1}-1)$; MSE $\approx s^2/12$; one outlier sets $s$ for its whole group. INT4 with a 16-bit scale per 128 weights $=4.125$ bits.\\[2pt]
+\begin{tabularx}{\linewidth}{@{}lllL@{}}
+\toprule
+method & what & bits & outlier trick\\\midrule
+RTN & W & 8/4 & finer groups only\\
+LLM.int8() & W+A & 8 & outlier dims in fp16\\
+GPTQ & W & 4/3 & column-wise, error to later cols via $H^{-1}$, $H=2X^\top X$\\
+AWQ & W & 4 & scale up $\sim$1\% salient channels by act.\ magnitude\\
+SmoothQuant & W8A8 & 8 & $s_j=\frac{\max|X_j|^\alpha}{\max|W_j|^{1-\alpha}}$ moves scale A$\to$W\\
+FP8 e4m3 & W+A+KV & 8 & per-tensor/channel/block scales\\
+NF4 & W store & 4 & normal-quantile levels, block 64\\
+QuaRot/SpinQuant & W+A+KV & 4 & Hadamard/learned rotations spread outliers\\
+MX/NVFP4 & W+A & 4 & block scales (32 pow2 / 16 fp8)\\
+KIVI & KV & 2 & keys per-channel, values per-token\\
+GGUF k-quants & W & 2--8 & super-blocks (llama.cpp)\\\bottomrule
+\end{tabularx}
+Memory: 8B \ra\ 16 / 8 / 4.1 GB (bf16 / 8-bit / INT4); 70B \ra\ 141 / 71 / 36 GB.
+\end{mem}
+
+\begin{qa}[Quantization]
+\Q{Which phase does weight-only INT4 speed up?}{Memory-bound decode (4$\times$ fewer weight bytes, close to that speedup at small batch). Not compute-bound prefill (dequant even costs a bit); gain shrinks at large batch. W8A8/FP8/FP4 run the matmul in low precision and speed prefill too.}
+\Q{Why are activations harder than weights?}{Weights are static and near-Gaussian; LLM activations have a few channels with huge magnitude (emerging around 6.7B, Dettmers), which wreck shared scales.}
+\Q{How do you evaluate a quantized model?}{On your task, paired, with CIs --- perplexity hides damage in long-context, math, code, non-English. Compare against a bf16 model of the \emph{same memory}. Check which layers stayed high precision, group size, calibration data.}
+\Q{Why quantize the KV cache?}{More sequences / longer context in the same HBM and fewer bytes per long-context decode step; FP8 KV is standard.}
+\end{qa}
+
+\begin{qa}[Capacity planning: the classic question]
+\Q{Serve Llama-3-70B at 1{,}000 req/s, 1{,}000 in / 300 out, p95 TTFT $<$1 s, H100s. How many GPUs?}{\textbf{Model:} 141 GB bf16; KV 320 KiB/token; 141 GFLOP/token. \textbf{Load:} prefill $10^6$ tok/s, decode $3\!\cdot\!10^5$ tok/s. \textbf{Prefill} (compute): 141 PFLOP/s $\div$ 495 TF/s (50\% MFU) $\approx$ 285 GPUs, $\sim$360 at 80\% utilization; one prompt on TP8 = 36 ms, so TTFT is queueing. \textbf{Decode} (memory): TP8 replica has $\sim$435 GB for KV; batch 256 \ra\ $\sim$12 ms TPOT, 21k tok/s/replica \ra\ 15 replicas $\approx$ 150 GPUs. \textbf{Total} $\approx$ 510 H100s; at an assumed \$2.5/GPU-h $\approx$ \$1.2 per M output tokens. \textbf{Levers:} FP8 roughly halves the fleet; prefix caching cuts prefill by hit rate. \textbf{Risks:} long-prompt bursts, p95 output tails, KV transfer fabric, stragglers.}
+\Q{Same method on an 8 GB laptop GPU?}{Qwen2.5-1.5B bf16 = 3.1 GB, $\sim$3.5 GB left for KV at 28 KiB/token $\approx$ 130k tokens (64 chats of 2k). Batch-1 bound $3.1/0.448\approx6.9$ ms/token.}
+\end{qa}
+
+\begin{mem}[Engines (Oct 2026)]
+\textbf{vLLM}: PagedAttention, broad support, APC, spec decode, disagg; default OSS server + RL rollouts. \textbf{SGLang}: RadixAttention, fast structured output, agents. \textbf{TensorRT-LLM} (+ Dynamo): NVIDIA kernels, FP8/FP4. \textbf{llama.cpp}/Ollama: GGUF, CPU/Apple/consumer. \textbf{MLC}: phones, WebGPU.
+\end{mem}
+
+\begin{trap}
+\begin{itemize}
+\item ``INT4 makes everything 4$\times$ faster.'' Decode only, small batch.
+\item ``FlashAttention reduces FLOPs.'' It reduces HBM traffic and memory.
+\item ``More GPUs per replica = more throughput.'' TP adds all-reduces; more, smaller replicas often win per GPU.
+\item ``KV is small next to weights.'' Llama-3-8B, batch 64 @ 2k: KV 17 GB $>$ weights 16 GB.
+\end{itemize}
+\end{trap}

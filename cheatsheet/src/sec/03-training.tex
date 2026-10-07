@@ -1,0 +1,105 @@
+\section{Deep learning that matters at scale}\label{sec:train}
+\lab{module 03 \textperiodcentered\ labs 01, 02}
+
+\begin{mem}[Defaults you must be able to derive]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Kaiming (ReLU) & $\mathrm{Var}(W)=2/n_\text{in}$; LeCun (linear/tanh) $1/n_\text{in}$; Xavier $2/(n_\text{in}{+}n_\text{out})$\\
+Residual init & scale out-projections by $1/\sqrt{2L}$ (GPT-2: $0.02/\sqrt{24}=0.0041$)\\
+AdamW (LLM) & $\beta{=}(0.9,0.95)$, wd 0.1 (not norms/biases), clip 1.0, $\epsilon{=}10^{-8}$\\
+Adam bias corr. & $\hat m_t=m_t/(1-\beta_1^t)$; first step $=\eta\,\mathrm{sign}(g)$\\
+Warmup & 1--2\% of steps (or a few thousand)\\
+Cosine & decay to $\sim$10\% of peak; needs total steps up front\\
+WSD & warmup--stable--decay over last 10--20\%\\
+Healthy update/weight & $\sim10^{-3}$ per step\\
+Init loss & $\ln V$\\
+Optimizer state & SGD 0, SGD+mom 4, AdamW 8, Muon/Lion 4, 8-bit Adam $\sim$2 B/param\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.98\columnwidth,height=3.1cm,xmin=0,xmax=100,ymin=0,ymax=1.12,
+  axis lines=left,xtick=\empty,ytick={0.1,1},yticklabels={min,peak},
+  tick label style={font=\tiny},xlabel={training step},label style={font=\scriptsize},
+  legend style={font=\tiny,draw=none,fill=none,at={(0.99,0.98)},anchor=north east},legend cell align=left]
+\addplot[acc,line width=0.9pt,domain=0:100,samples=120]{x<3 ? x/3 : 0.1+0.9*0.5*(1+cos(180*(x-3)/97))};
+\addlegendentry{cosine}
+\addplot[acc2,line width=0.9pt,domain=0:100,samples=120]{x<3 ? x/3 : (x<82 ? 1 : 1-0.9*(x-82)/18)};
+\addlegendentry{WSD}
+\draw[mute,decorate,decoration={brace,mirror,amplitude=2pt}] (axis cs:0,-0.02) -- (axis cs:3,-0.02);
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[Initialization and normalization]
+\Q{Derive Kaiming init.}{$\mathrm{Var}(y_i)=n_\text{in}\mathrm{Var}(W)\E[x^2]$; with $x=\mathrm{ReLU}(z)$ and symmetric $z$, $\E[x^2]=\mathrm{Var}(z)/2$. Stability needs $n_\text{in}\mathrm{Var}(W)/2=1$. 30 ReLU layers of width 256: $N(0,1)$ init explodes to $10^{31}$, $N(0,0.01^2)$ vanishes to $10^{-29}$, Kaiming stays $O(1)$.}
+\Q{Why scale residual branches by $1/\sqrt{2L}$?}{The stream is a sum of $2L$ branch outputs (attn + MLP per layer); variance grows as $2Lv$. Scaling each branch std by $1/\sqrt{2L}$ makes total added variance depth-independent.}
+\Q{Pre-norm vs post-norm?}{Pre-norm ($x+f(\mathrm{norm}(x))$) keeps an identity gradient path, trains deep stacks without delicate warmup; needs a final norm before the head and the stream norm grows with depth. Post-norm (2017) can be slightly better when it trains but is fragile and needs long warmup.}
+\Q{LayerNorm vs RMSNorm?}{RMSNorm drops centering and bias: $x/\sqrt{\mathrm{mean}(x^2)+\epsilon}\cdot g$. Cheaper, equally good; Llama, Qwen, Mistral use it.}
+\Q{What is $\mu$P and why do labs use it?}{Width-dependent init and per-layer LR (hidden matrices: Adam LR $\propto1/\text{fan\_in}$; output logits $\times1/\text{width}$; attention $1/d_h$ instead of $1/\sqrt{d_h}$) so hyperparameters tuned on a narrow proxy transfer to the wide model.}
+\Q{How can weight decay act as an LR increase?}{Weights feeding a norm are scale-invariant; gradient $\propto1/\|W\|$, so the angular step is $\approx\eta/\|W\|^2$. Decay shrinks $\|W\|$ \ra\ larger effective step; training settles at an equilibrium norm.}
+\end{qa}
+
+\begin{qa}[Optimizers and schedules]
+\Q{Show the first Adam step has magnitude $\eta$.}{$m_1=(1-\beta_1)g$, $v_1=(1-\beta_2)g^2$; corrected $\hat m_1=g$, $\hat v_1=g^2$ \ra\ update $\eta g/|g|=\eta\,\mathrm{sign}(g)$, independent of gradient scale.}
+\Q{Does bias correction make early steps bigger or smaller?}{Depends on betas. Uncorrected with $(0.9,0.999)$: step 1 is $3.16\times$ \emph{too large} (correction shrinks it). With $(0.9,0.95)$: $0.45\times$ (correction enlarges it).}
+\Q{Why $\beta_2=0.95$ for LLMs?}{$v$ averages $\approx1/(1-\beta_2)$ steps: 20 vs 1{,}000. After a 10$\times$ gradient spike in steady state: $\beta_2{=}0.999$ gives update 1.81 (amplified); $\beta_2{=}0.95$ gives 0.78 (damped).}
+\Q{Adam + L2 vs AdamW?}{L2 adds $\lambda\theta$ to the gradient, then divides by $\sqrt{\hat v}$ --- params with large gradient history get barely regularized. AdamW decouples: $\theta\leftarrow\theta(1-\eta\lambda)-\eta\hat m/(\sqrt{\hat v}+\epsilon)$.}
+\Q{What is Muon?}{Momentum on each 2-D hidden matrix, orthogonalized by Newton--Schulz ($USV^\top\to UV^\top$) so every singular direction moves equally; embeddings, head, norms stay on AdamW. 4 B/param state.}
+\Q{Why warmup?}{Early curvature is high and Adam's $\hat v$ is a noisy estimate (RAdam's analysis); full steps can throw the model somewhere unrecoverable.}
+\Q{When WSD over cosine?}{Unknown final step count, want to continue later, or need several checkpoints at different token budgets from one run (scaling-law sweeps). Branched cooldowns match cosine.}
+\Q{How do you scale LR with batch?}{SGD: linearly (up to a point). Adam: $\approx\sqrt k$ for a $k\times$ batch as a start, re-tune near the critical batch.}
+\end{qa}
+
+\begin{qa}[Mixed precision and autodiff]
+\Q{Describe a bf16 mixed-precision step.}{Matmuls in bf16 on tensor cores; softmax, norms, losses, reductions in fp32; fp32 master weights and optimizer states. No scaler needed.}
+\Q{fp16 loss scaling procedure?}{Multiply loss by $S$ ($2^{16}$) before backward; \textbf{unscale before clipping}; on inf/NaN skip the step and halve $S$; double after $\sim$2{,}000 good steps.}
+\Q{What does \texttt{loss.backward()} actually do?}{Walks the define-by-run DAG in reverse topological order applying each \texttt{grad\_fn}'s VJP, \emph{summing} where paths merge, \emph{accumulating} into leaf \texttt{.grad} (hence \texttt{zero\_grad}), freeing saved tensors (second backward needs \texttt{retain\_graph}). In-place edits to saved tensors bump a version counter and error.}
+\Q{Gradient accumulation normalization?}{Divide by total valid tokens across all micro-batches, not by micro-batch count, or short sequences get over-weighted.}
+\Q{Activation checkpointing trade-off?}{Store every $k$-th layer input, recompute the rest: $k\approx\sqrt L$ gives $O(\sqrt L)$ memory for one extra forward ($\approx$+33\% compute). Selective recompute only redoes the cheap-FLOP, big-memory attention parts.}
+\end{qa}
+
+\subsection*{Debugging a run from its curves}
+\begin{center}
+\begin{tikzpicture}[node distance=2.2mm and 3mm,every node/.style={font=\tiny}]
+\node[sbox] (a) {loss curve wrong};
+\node[hbox,below=of a,xshift=-17mm] (b) {NaN/inf?};
+\node[box,below=of b,text width=24mm] (b1) {fp16 w/o scaler, log 0, exp overflow, LR too high, bad batch $\to$ find first bad step};
+\node[hbox,below=of a,xshift=17mm] (c) {flat from step 0?};
+\node[box,below=of c,text width=24mm] (c1) {detached graph, LR=0, params not in optimizer, all targets masked};
+\node[hbox,below=2mm of b1] (d) {spikes?};
+\node[box,below=of d,text width=24mm] (d1) {pre-clip grad norm, max attn logit, batch ids; QK-norm, z-loss, lower LR};
+\node[hbox,below=2mm of c1] (e) {plateau high?};
+\node[box,below=of e,text width=24mm] (e1) {LR schedule, init scale, data quality, capacity; diff vs known-good config};
+\draw[arr] (a) -| (b); \draw[arr] (a) -| (c);
+\draw[arr] (b)--(b1); \draw[arr] (c)--(c1); \draw[arr] (d)--(d1); \draw[arr] (e)--(e1);
+\end{tikzpicture}
+\end{center}
+
+\begin{mem}[Symptom $\to$ cause]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+init loss $\gg\ln V$ & LM head too large, no final norm, $\mu$P multiplier inverted\\
+init loss $\ll\ln V$ & label leakage: targets not shifted, causal mask missing\\
+stuck at exactly $\ln V$ & output independent of input: detached graph, wrong targets\\
+falls then slowly rises & LR too high late, no decay; train/eval mismatch\\
+spikes at same step across seeds & bad data shard at a fixed position\\
+random growing spikes & attention/output-logit growth \ra\ QK-norm, z-loss\\
+drop at each epoch & memorizing repeated data\\
+val $<$ train & dropout only in train, leaked/easier eval\\
+tokens/s decays & loader starvation, leaks, fragmentation\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{trap}
+\begin{itemize}
+\item Tuning hyperparameters before you can \textbf{overfit one batch}. Most bugs are data bugs: decode a batch back to text.
+\item ``Kaiming is $1/n_\text{in}$.'' That is LeCun; ReLU needs $2/n_\text{in}$.
+\item ``Checkpointing halves memory for free.'' +33\% compute, activations only.
+\item Clipping before unscaling in fp16: clipping fires every step and the real update is $65{,}536\times$ too small.
+\item ``Adam's $\epsilon$ is irrelevant.'' It floors the denominator when gradients are tiny (bf16, big models).
+\end{itemize}
+\end{trap}

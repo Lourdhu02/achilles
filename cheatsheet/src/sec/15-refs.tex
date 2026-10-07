@@ -1,0 +1,92 @@
+\section{References: the canon, by section}
+{\small\raggedright
+\newcommand{\rf}[2]{\par\noindent\hangindent=1em\hangafter=1 #1 {\color{mute}\ttfamily\scriptsize #2}\par}
+
+\paragraph{Math, optimization (1, 3)}
+\rf{Parr \& Howard, \emph{The Matrix Calculus You Need for Deep Learning}.}{explained.ai}
+\rf{Kingma \& Ba 2014, \emph{Adam}.}{1412.6980}
+\rf{Loshchilov \& Hutter 2019, \emph{Decoupled Weight Decay} (AdamW).}{1711.05101}
+\rf{McCandlish et al.\ 2018, \emph{Empirical Model of Large-Batch Training}.}{1812.06162}
+\rf{Yang et al.\ 2022, \emph{Tensor Programs V} ($\mu$P).}{2203.03466}
+\rf{Wortsman et al.\ 2023, \emph{Small-scale proxies for large-scale instabilities}.}{2309.14322}
+\rf{H\"agele et al.\ 2024, \emph{Scaling laws beyond fixed durations} (WSD).}{2405.18392}
+
+\paragraph{Hardware (2)}
+\rf{He, \emph{Making Deep Learning Go Brrrr}; DeepMind, \emph{How to Scale Your Model}; HF \emph{Ultra-Scale Playbook}.}{blogs}
+\rf{Korthikanti et al.\ 2022, \emph{Reducing Activation Recomputation}.}{2205.05198}
+
+\paragraph{Transformers, tokenizers (4, 5)}
+\rf{Vaswani et al.\ 2017, \emph{Attention Is All You Need}.}{1706.03762}
+\rf{Sennrich et al.\ 2016, \emph{BPE for NMT}; Kudo 2018, \emph{SentencePiece}.}{1508.07909, 1808.06226}
+\rf{Su et al.\ 2021, \emph{RoFormer} (RoPE).}{2104.09864}
+\rf{Shazeer 2019, MQA; Ainslie et al.\ 2023, GQA.}{1911.02150, 2305.13245}
+\rf{Shazeer 2020, \emph{GLU Variants}; Zhang \& Sennrich 2019, RMSNorm.}{2002.05202, 1910.07467}
+\rf{Xiong et al.\ 2020, \emph{On LayerNorm in the Transformer} (pre-LN).}{2002.04745}
+\rf{Chen et al.\ 2023, PI; Peng et al.\ 2023, YaRN.}{2306.15595, 2309.00071}
+\rf{Fedus et al.\ 2021, \emph{Switch Transformers}.}{2101.03961}
+\rf{DeepSeek-V2 (MLA) and DeepSeek-V3 reports.}{2405.04434, 2412.19437}
+\rf{Llama Team 2024, \emph{The Llama 3 Herd of Models}.}{2407.21783}
+\rf{Gu \& Dao 2023, \emph{Mamba}.}{2312.00752}
+
+\paragraph{Pretraining (6)}
+\rf{Kaplan et al.\ 2020; Hoffmann et al.\ 2022 (Chinchilla); Besiroglu et al.\ 2024 (replication).}{2001.08361, 2203.15556, 2404.10102}
+\rf{Sardana et al.\ 2023, \emph{Beyond Chinchilla-Optimal}.}{2401.00448}
+\rf{Penedo et al.\ 2024, \emph{FineWeb}; Li et al.\ 2024, \emph{DCLM}.}{2406.17557, 2406.11794}
+\rf{Lee et al.\ 2021, \emph{Deduplicating Training Data}; Muennighoff et al.\ 2023, \emph{Data-Constrained Scaling}.}{2107.06499, 2305.16264}
+\rf{Rajbhandari et al.\ 2020, \emph{ZeRO}; Zhao et al.\ 2023, \emph{FSDP}.}{1910.02054, 2304.11277}
+\rf{Shoeybi et al.\ 2019, Megatron-LM; Narayanan et al.\ 2021, PTD-P.}{1909.08053, 2104.04473}
+\rf{Liu et al.\ 2023, \emph{Ring Attention}.}{2310.01889}
+
+\paragraph{Post-training (7)}
+\rf{Ouyang et al.\ 2022, InstructGPT; Christiano et al.\ 2017, RLHF.}{2203.02155, 1706.03741}
+\rf{Schulman et al.\ 2017, PPO; 2015, GAE.}{1707.06347, 1506.02438}
+\rf{Rafailov et al.\ 2023, DPO; Azar et al.\ IPO; Ethayarajh et al.\ KTO; Meng et al.\ SimPO.}{2305.18290, 2310.12036, 2402.01306, 2405.14734}
+\rf{Shao et al.\ 2024, DeepSeekMath (GRPO); DeepSeek-R1 2025.}{2402.03300, 2501.12948}
+\rf{Yu et al.\ 2025, DAPO; Liu et al.\ 2025, Dr.\,GRPO; Zheng et al.\ 2025, GSPO.}{2503.14476, 2503.20783, 2507.18071}
+\rf{Hu et al.\ 2021, LoRA; Dettmers et al.\ 2023, QLoRA.}{2106.09685, 2305.14314}
+\rf{Gao et al.\ 2022, \emph{RM Overoptimization}; Bai et al.\ 2022, \emph{Constitutional AI}.}{2210.10760, 2212.08073}
+\rf{Lightman et al.\ 2023, \emph{Let's Verify Step by Step}; Snell et al.\ 2024, test-time compute.}{2305.20050, 2408.03314}
+\rf{Wei et al.\ 2022, CoT; Wang et al.\ 2022, self-consistency.}{2201.11903, 2203.11171}
+\rf{Hinton et al.\ 2015, distillation; Agarwal et al.\ 2024, on-policy distillation (GKD).}{1503.02531, 2306.13649}
+
+\paragraph{Inference (8)}
+\rf{Pope et al.\ 2022, \emph{Efficiently Scaling Transformer Inference}.}{2211.05102}
+\rf{Dao et al.\ 2022 FlashAttention; Dao 2023 FA-2; Shah et al.\ 2024 FA-3.}{2205.14135, 2307.08691, 2407.08608}
+\rf{Kwon et al.\ 2023, PagedAttention (vLLM); Zheng et al.\ 2024, SGLang.}{2309.06180, 2312.07104}
+\rf{Agrawal et al.\ 2024, Sarathi-Serve; Zhong et al.\ 2024, DistServe.}{2403.02310, 2401.09670}
+\rf{Leviathan et al.\ 2023; Chen et al.\ 2023, speculative sampling; Medusa; EAGLE.}{2211.17192, 2302.01318, 2401.10774, 2401.15077}
+\rf{Frantar et al.\ GPTQ; Lin et al.\ AWQ; Xiao et al.\ SmoothQuant; Dettmers et al.\ LLM.int8().}{2210.17323, 2306.00978, 2211.10438, 2208.07339}
+
+\paragraph{Evaluation (9)}
+\rf{Miller 2024, \emph{Adding Error Bars to Evals}.}{2411.00640}
+\rf{Chen et al.\ 2021, Codex / pass@$k$; Zheng et al.\ 2023, LLM-as-a-Judge.}{2107.03374, 2306.05685}
+\rf{Biderman et al.\ 2024, \emph{Reproducible Evaluation}; Oren et al.\ 2023, contamination.}{2405.14782, 2310.17623}
+\rf{Yao et al.\ 2024, $\tau$-bench; Jimenez et al.\ SWE-bench; Kwa et al.\ 2025, METR horizons.}{2406.12045, 2310.06770, 2503.14499}
+
+\paragraph{Interpretability and safety (10)}
+\rf{Elhage et al.\ 2021, \emph{Mathematical Framework for Transformer Circuits}.}{transformer-circuits.pub}
+\rf{Olsson et al.\ 2022, \emph{Induction Heads}; Elhage et al.\ 2022, \emph{Toy Models of Superposition}.}{2209.11895, 2209.10652}
+\rf{Bricken et al.\ 2023, \emph{Towards Monosemanticity}; Gao et al.\ 2024, TopK SAEs.}{t-c.pub, 2406.04093}
+\rf{Wang et al.\ 2022, IOI circuit; Arditi et al.\ 2024, refusal direction.}{2211.00593, 2406.11717}
+\rf{Greshake et al.\ 2023, indirect prompt injection; Hubinger et al.\ 2024, Sleeper Agents.}{2302.12173, 2401.05566}
+\rf{Greenblatt et al.\ 2024, \emph{Alignment Faking}; Greenblatt et al.\ 2023, \emph{AI Control}.}{2412.14093, 2312.06942}
+
+\paragraph{RAG, agents (11)}
+\rf{Lewis et al.\ 2020, RAG; Karpukhin et al.\ 2020, DPR; Khattab \& Zaharia 2020, ColBERT.}{2005.11401, 2004.04906, 2004.12832}
+\rf{Malkov \& Yashunin 2016, HNSW; Cormack et al.\ 2009, RRF.}{1603.09320, SIGIR'09}
+\rf{Liu et al.\ 2023, \emph{Lost in the Middle}; Gao et al.\ 2022, HyDE.}{2307.03172, 2212.10496}
+\rf{Yao et al.\ 2022, ReAct; Shinn et al.\ 2023, Reflexion; Anthropic, \emph{Building Effective Agents}.}{2210.03629, 2303.11366}
+\rf{Kusupati et al.\ 2022, Matryoshka embeddings; Anthropic, \emph{Contextual Retrieval}.}{2205.13147}
+
+\paragraph{Generative models (12)}
+\rf{Kingma \& Welling 2013, VAE; Goodfellow et al.\ 2014, GAN.}{1312.6114, 1406.2661}
+\rf{Ho et al.\ 2020, DDPM; Song et al.\ 2020, DDIM; Song et al.\ 2021, score SDEs.}{2006.11239, 2010.02502, 2011.13456}
+\rf{Ho \& Salimans 2022, classifier-free guidance; Rombach et al.\ 2022, latent diffusion.}{2207.12598, 2112.10752}
+\rf{Peebles \& Xie 2023, DiT; Lipman et al.\ 2023, flow matching; Esser et al.\ 2024, SD3.}{2212.09748, 2210.02747, 2403.03206}
+\rf{Dosovitskiy et al.\ 2020, ViT; Radford et al.\ 2021, CLIP; Zhai et al.\ 2023, SigLIP.}{2010.11929, 2103.00020, 2303.15343}
+\rf{Liu et al.\ 2023, LLaVA; Li et al.\ 2023, BLIP-2; Radford et al.\ 2022, Whisper.}{2304.08485, 2301.12597, 2212.04356}
+
+\paragraph{Courses and books}
+\rf{Karpathy, \emph{Zero to Hero} + nanoGPT; Stanford CS336 (LMs from scratch), CS224N; Raschka, \emph{Build a LLM from Scratch}; Jurafsky \& Martin, \emph{SLP3}; Bishop, \emph{Deep Learning}; Chip Huyen, \emph{AI Engineering}; Achilles labs 01--18.}{}
+}
+

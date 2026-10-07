@@ -1,0 +1,32 @@
+\section{Worked napkin problems}
+\lab{lab 03 napkin math \textperiodcentered\ question bank \S14 \textperiodcentered\ two minutes each, assumptions out loud}
+
+\begin{mem}[The recipe]
+\textbf{1} write the formula (FLOPs $=2N$ per token forward, $6N$ train; bytes $=$ params $\times$ bytes/param; KV $=2LH_{kv}d_h\cdot$bytes per token). \textbf{2} plug round numbers (H100: 989 TF/s bf16, 3.35 TB/s, 80 GB). \textbf{3} take the max of compute time and memory time. \textbf{4} apply a utilization (MFU 40--50\% train, 50--70\% of bandwidth decode). \textbf{5} sanity-check against a known number.
+\end{mem}
+
+\begin{qa}[Training]
+\Q{Compute-optimal model for $10^{21}$ FLOPs?}{$C=6ND$, $D=20N$ \ra\ $C=120N^2$, $N=\sqrt{10^{21}/120}\approx2.9$B params, $D\approx58$B tokens. If it will serve $10^{12}$ tokens, inference ($2N$ per token) dominates: train a smaller model on more tokens.}
+\Q{70B on 15T tokens on 16{,}384 H100s at 40\% MFU?}{$6\cdot7{\cdot}10^{10}\cdot1.5{\cdot}10^{13}=6.3{\cdot}10^{24}$ FLOPs; cluster $16384\cdot989{\cdot}10^{12}\cdot0.4=6.5{\cdot}10^{18}$ FLOP/s \ra\ $9.7{\cdot}10^5$\,s $\approx$ 11 days (plus restarts, so plan 2--3 weeks).}
+\Q{Full FT of 7B on one 80 GB GPU? LoRA? QLoRA on 8 GB?}{Full: $16\times7$B $=112$ GB, no (without 8-bit Adam / offload). LoRA on a bf16 base: 14 GB weights + small adapter state + activations, yes. QLoRA: $\approx$4 GB weights, fits 8 GB only with short sequences, micro-batch 1 and checkpointing.}
+\Q{LoRA $r=16$ on all linear layers of Llama-3-8B: trainable params?}{Per layer $r(d_\text{in}+d_\text{out})$: q,o $16\cdot8192$; k,v $16\cdot5120$; gate, up, down $16\cdot18432$ \ra\ 1.31M per layer $\times32$ $=$ 42M $\approx$ 0.5\% of 8B. Adapter file $\approx$ 84 MB in bf16.}
+\Q{How big is a 15T-token pretraining set on disk?}{$\sim$4 bytes of text per token \ra\ $\approx$60 TB raw UTF-8. Tokenized: a 128k vocab needs 17 bits, so stored as uint32 \ra\ also $\approx$60 TB (uint16 works only for vocab $\le$65{,}536). Compressed text is $\sim$3--4$\times$ smaller.}
+\Q{Data-parallel all-reduce time per step for a 7B model on 400 Gb/s IB?}{bf16 grads $=14$ GB; ring sends $\approx2\times14=28$ GB per GPU; at 50 GB/s $\approx$0.56\,s. Must overlap with backward (bucketed all-reduce) or use FSDP/ZeRO with larger per-GPU batches to amortize.}
+\end{qa}
+
+\begin{qa}[Serving]
+\Q{How many concurrent 8k-token requests fit for Llama-3-8B on one H100?}{KV per token $=2\cdot32\cdot8\cdot128\cdot2$ B $=128$ KiB. Memory for KV $\approx 72-16=56$ GB (90\% util, bf16 weights) \ra\ $56{\cdot}10^9/131{,}072\approx427$k tokens $\approx$ 52 sequences at 8k. FP8 KV doubles it.}
+\Q{Decode throughput, 8B bf16, batch 64, 2k context each?}{Per step read weights 16 GB + KV $64\cdot2048\cdot128$ KiB $\approx17$ GB $=33$ GB \ra\ $\approx10$\,ms at 3.35 TB/s. Compute $2\cdot8{\cdot}10^9\cdot64\approx10^{12}$ FLOPs $\approx1$\,ms: memory-bound. $\approx$6{,}400 tok/s total, $\sim$100 tok/s per user.}
+\Q{Batch-1 ceiling: 70B FP8 with TP$=$4?}{17.5 GB per GPU / 3.35 TB/s $\approx5.2$\,ms; 160 all-reduces at $\sim$10\,$\mu$s $\approx1.6$\,ms \ra\ $\approx7$\,ms/token, $\approx$140 tok/s before KV reads. TP$=$8 halves weight time but not comm.}
+\Q{Prefill 100k tokens on a 70B model, 8 H100 at 50\%?}{Weights $2\cdot7{\cdot}10^{10}\cdot10^5=1.4{\cdot}10^{16}$; attention $2\cdot L\cdot T^2\cdot d=2\cdot80\cdot10^{10}\cdot8192\approx1.3{\cdot}10^{16}$; total $2.7{\cdot}10^{16}$ over $4{\cdot}10^{15}$ FLOP/s $\approx7$\,s. KV $=320$ KiB $\times10^5\approx31$ GiB.}
+\Q{Speculative decoding: $\alpha=0.8$, $k=4$, draft costs 5\% of target per token. Speedup?}{Tokens per round $(1-\alpha^{k+1})/(1-\alpha)=(1-0.328)/0.2=3.36$. Cost per round $4\cdot0.05+1=1.2$ target steps \ra\ $\approx2.8\times$ (if verification of 5 tokens costs about one decode step, true when memory-bound).}
+\Q{Cost per 1M output tokens, 8B on an H100 at \$2/h, 5{,}000 tok/s?}{$18$M tok/h \ra\ \$0.11/M at 100\% utilization; at 30\% average utilization \$0.37/M. Utilization is the number that moves the answer most.}
+\Q{GPUs for 1M DAU $\times$ 10 requests $\times$ 500 output tokens?}{$5{\cdot}10^9$ tok/day $=58$k tok/s average; peak $\approx3\times$ \ra\ 175k tok/s; at 5k tok/s per GPU (8B, within latency SLO) $\approx35$ GPUs at peak, plus headroom and prefill capacity.}
+\Q{Vector index memory: 50M chunks, 768-d?}{fp32 $50{\cdot}10^6\cdot768\cdot4=154$ GB; fp16 77 GB; PQ 96 bytes/vector $\approx4.8$ GB + HNSW links ($\sim$64--128 B/vec). Shard or quantize; rerank top-100 with full vectors.}
+\end{qa}
+
+\begin{qa}[Evaluation]
+\Q{Model A 72\%, B 70\% on 500 items. Significant?}{SE per model $\sqrt{0.7\cdot0.3/500}\approx2.0$ pts; unpaired difference SE $\approx2.9$ \ra\ 95\% CI $\pm5.7$: no. Paired analysis (same items, McNemar or paired bootstrap) is tighter because per-item difficulty cancels; for a 2-point effect you typically need thousands of items.}
+\Q{How many items to detect a 3-point gain at 80\% power?}{$n\approx\frac{(z_{\alpha/2}+z_\beta)^2\cdot2p(1-p)}{\delta^2}=\frac{(1.96+0.84)^2\cdot0.42}{0.0009}\approx3{,}660$ per arm unpaired; paired needs fewer depending on discordance.}
+\Q{Judge with 90\% agreement on a task with 80\% true pass rate. Bias?}{If errors are symmetric (10\% flips), observed pass rate $=0.8\cdot0.9+0.2\cdot0.1=0.74$: a 6-point underestimate. Correct with the confusion matrix estimated on human labels.}
+\end{qa}

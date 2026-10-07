@@ -1,0 +1,72 @@
+\section{GPU and TPU programming}
+\lab{lab 06 attention kernels \textperiodcentered\ NVIDIA and Google loops \textperiodcentered\ question bank \S10}
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[box,text width=13mm] (th) at (0,0) {thread\\registers};
+\node[box,text width=13mm] (wp) at (18,0) {warp = 32\\lockstep (SIMT)};
+\node[box,text width=15mm,draw=acc2,fill=soft2] (bl) at (37,0) {block (CTA)\\shared mem, sync};
+\node[box,text width=13mm] (sm) at (56,0) {runs on 1 SM\\never migrates};
+\node[box,text width=12mm,draw=acc3,fill=acc3!8] (gr) at (74,0) {grid\\HBM, L2};
+\draw[arr] (th)--(wp); \draw[arr] (wp)--(bl); \draw[arr] (bl)--(sm); \draw[arr] (sm)--(gr);
+\node[lab] at (37,-6) {H100 SXM: 132 SMs \textperiodcentered\ 64K regs/SM \textperiodcentered\ up to 228 KB smem/SM \textperiodcentered\ 50 MB L2 \textperiodcentered\ 80 GB HBM3 @ 3.35 TB/s};
+\end{tikzpicture}
+\end{center}
+
+\begin{qa}[CUDA execution model]
+\Q{What is memory coalescing?}{A warp's 32 loads are merged into as few 32-byte sectors as possible. 32 consecutive fp32 values = 128 B = 4 sectors (ideal). Stride-32 access touches 32 sectors for the same useful bytes: $8\times$ less effective bandwidth. Make the fastest-varying thread index walk the contiguous dimension.}
+\Q{Shared-memory bank conflicts?}{32 banks, 4 B wide. Threads reading a column of \texttt{float t[32][32]} all hit one bank (32-way conflict, serialized). Pad to \texttt{t[32][33]} so column elements fall in different banks. Broadcast (same address) is free.}
+\Q{Compute occupancy for 128 registers/thread.}{$65{,}536/128=512$ threads $=16$ warps per SM, out of a max of 64 warps (25\%). Smem per block and block count limits also apply. More occupancy hides latency but is not the goal: GEMMs trade occupancy for big register tiles (reuse).}
+\Q{Warp divergence?}{Threads of one warp taking different branches execute both paths with masks. Make branches uniform per warp (e.g.\ branch on \texttt{warp\_id}, not \texttt{thread\_id\%2}).}
+\Q{Arithmetic intensity of a tiled GEMM?}{Per $K$-step a block loads $(B_M+B_N)B_K$ elements and does $2B_MB_NB_K$ FLOPs: $I=\frac{2B_MB_N}{(B_M+B_N)\cdot\text{bytes}}$. $128{\times}128$ bf16: 64 FLOP/B; $32{\times}32$ fp32: 8. Ridge on H100 $\approx$ 295, so bigger tiles + L2 reuse are what make GEMMs compute-bound. One $128{\times}128$, $B_K{=}32$ bf16 stage $=16$ KB smem; 3 pipeline stages $=48$ KB.}
+\Q{What do tensor cores need?}{Matrix fragments (e.g.\ $16{\times}8{\times}16$ for bf16 \texttt{mma}), dimensions that are multiples of 8/16 (pad vocab to 128), and for FP8/FP4 per-tensor or per-block scales. Hopper adds \texttt{wgmma} (warpgroup = 4 warps) and TMA async copies; Blackwell adds FP4 and tensor memory.}
+\Q{\texttt{\_\_syncthreads()} semantics and pitfalls?}{Barrier for all threads of a \emph{block} (not the grid). Inside a divergent branch it deadlocks or is undefined. Grid-wide sync needs a new kernel launch or cooperative groups.}
+\Q{Streams, events, async copies?}{Kernels in different streams may overlap; events time and order them. \texttt{cp.async}/TMA copy global$\to$smem without registers so loads for tile $k{+}1$ overlap compute on tile $k$ (software pipelining, \texttt{num\_stages}).}
+\Q{Why does a fused softmax beat three kernels?}{Unfused: max, exp-sum, normalize each read/write the row from HBM. Fused keeps the row in registers/smem: one read, one write. All memory-bound ops in a chain should be fused (bias+act+residual+norm).}
+\Q{Nsight Compute says memory 90\%, compute 20\%. Next?}{It's memory-bound: raise reuse (tiling, fusion), cut bytes (lower precision, avoid re-reads), check coalescing and L2 hit rate. Compute 90\%/memory 20\%: you are at the compute roof, so only fewer FLOPs or tensor cores help.}
+\Q{What are CUDA graphs for?}{Record a sequence of launches once, replay with one CPU call: removes per-kernel launch overhead ($\sim$5--10\,$\mu$s each), crucial for small-batch decode. Requires static shapes and addresses (hence padded batch buckets).}
+\Q{How does NCCL all-reduce scale?}{Ring: each GPU sends $2(n-1)/n\cdot S$ bytes, so time $\approx 2S/\text{BW}$ independent of $n$ (bandwidth-optimal) plus $2(n-1)$ latency hops. Trees for small messages; NVLink/NVSwitch inside a node, IB/RoCE across.}
+\end{qa}
+
+\begin{mem}[Triton in eight lines (fused row softmax)]
+\begin{lstlisting}
+@triton.jit
+def softmax_k(X, Y, stride, n, BLOCK: tl.constexpr):
+    row = tl.program_id(0)                 # one program per row
+    cols = tl.arange(0, BLOCK); mask = cols < n
+    x = tl.load(X+row*stride+cols, mask=mask, other=-1e30)
+    x = x - tl.max(x, 0); e = tl.exp(x)
+    tl.store(Y + row*stride + cols, e / tl.sum(e, 0), mask=mask)
+# launch: softmax_k[(rows,)](x, y, x.stride(0), n, BLOCK=1024)
+\end{lstlisting}
+{\scriptsize You write a program per \emph{tile}; the compiler maps threads, smem, coalescing and tensor-core ops. \texttt{@triton.autotune} benchmarks block sizes, \texttt{num\_warps}, \texttt{num\_stages} per shape key.}
+\end{mem}
+
+\begin{mem}[TPU napkin numbers (verify against Cloud TPU docs)]
+\begin{tabularx}{\linewidth}{@{}lrrrL@{}}
+\toprule
+chip & HBM & HBM BW & bf16 FLOP/s & ridge (FLOP/B)\\\midrule
+v5e & 16 GB & 0.82 TB/s & 197 T & $\approx$240\\
+v5p & 96 GB & 2.8 TB/s & 459 T & $\approx$164\\
+v6e (Trillium) & 32 GB & 1.6 TB/s & 920 T & $\approx$575\\\bottomrule
+\end{tabularx}\par\smallskip
+{\scriptsize $[B,D]\times[D,F]$ matmul intensity $\frac{2BDF}{2BD+2DF+2BF}\approx B$ for $B\ll D,F$: compute-bound only when the per-replica token batch exceeds the ridge (240 tokens on v5e). Sharding scales FLOPs and bandwidth together, so the threshold is per replica. TPUs: systolic MXUs (128$\times$128 or 256$\times$256), ICI torus links, XLA compiles everything.}
+\end{mem}
+
+\begin{mem}[PyTorch habit to JAX equivalent]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+\texttt{loss.backward()} & \texttt{jax.grad(f)(params, batch)} returns a new pytree\\
+eager / \texttt{torch.compile} & \texttt{jax.jit}: traces once per shape/dtype; side effects run at trace time only\\
+manual batch dim & \texttt{jax.vmap}\\
+global RNG & explicit keys, \texttt{jax.random.split(key)}\\
+DDP / FSDP & \texttt{Mesh} + \texttt{NamedSharding} + \texttt{jit} (GSPMD); \texttt{shard\_map} for manual collectives\\
+Triton & Pallas (TPU and GPU)\\
+\texttt{nn.Module}, \texttt{optim} & Flax (NNX), Optax\\
+in-place updates & functional: \texttt{x.at[i].set(v)}; \texttt{jax.lax.scan} for loops\\\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{trap}[Classic JAX bugs]
+Recompiling on every new sequence length (bucket or pad shapes); Python \texttt{if} on traced values (use \texttt{jnp.where} / \texttt{lax.cond}); reusing a PRNG key; printing inside \texttt{jit} (use \texttt{jax.debug.print}); forgetting \texttt{block\_until\_ready()} when timing (async dispatch).
+\end{trap}
