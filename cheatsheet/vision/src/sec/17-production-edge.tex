@@ -1,0 +1,85 @@
+\section{Production Vision, Optimization \& Edge Deployment}\label{sec:prod}
+\lab{Preprocessing \textperiodcentered\ Conv-BN fusion \textperiodcentered\ TensorRT \textperiodcentered\ INT8 PTQ \textperiodcentered\ Edge latency budgets \textperiodcentered\ ByteTrack}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (c) {Conv2D ($W, b$)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of c] (bn) {BatchNorm ($\gamma, \beta, \mu, \sigma^2$)};
+\node[bx,above=1.5mm of bn] (r) {ReLU};
+\draw[arr] (c)--(bn); \draw[arr] (bn)--(r);
+\node[box,draw=acc3,fill=acc3!8,right=3mm of bn] (f) {Fused Kernel\\$W_{\text{fused}}, b_{\text{fused}}$};
+\draw[arr,acc3,thick] (bn.east) -- (f.west);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Zero-Cost Fusion.} BatchNorm parameters are linear and static at test time.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Folding into Weights}:
+$W_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2+\epsilon}} W,\quad b_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2+\epsilon}}(b-\mu) + \beta$\\[2pt]
+{\color{acc2}$\blacktriangleright$} Eliminates $2\times$ memory roundtrips to GPU DRAM per convolution block.
+\end{minipage}
+
+\begin{mem}[Edge Inference Latency Budgets (Target: Real-Time)]
+\begin{tabularx}{\linewidth}{@{}p{22mm} c X@{}}
+\toprule
+\textbf{Application} & \textbf{Budget} & \textbf{Recommended Model Architecture}\\
+\midrule
+\textbf{Robotics / Drones} & $16.6\text{ ms}$ & YOLOv8-Nano / MobileNetV4 / TensorRT INT8\\
+\textbf{Auto Driving} & $33.3\text{ ms}$ & RegNet / ConvNeXt-T / BEVDet on NVIDIA Orin\\
+\textbf{AR / VR} & $11.1\text{ ms}$ & 3D Gaussian Splatting with Metal/Vulkan\\
+\textbf{Mobile Phone} & $33.3\text{ ms}$ & Apple CoreML Neural Engine / INT8 VLM\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Production Pipeline Dynamics \& Optimizations]
+\Q{Derive the exact mathematical equations for fusing Conv2D and BatchNorm.}{
+A Conv2D layer computes $x_{\text{conv}} = W x + b$.
+BatchNorm normalizes and scales: $y = \gamma \frac{x_{\text{conv}} - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta$.
+Substituting $x_{\text{conv}}$ directly into the BatchNorm formula:
+\begin{align*}
+y &= \gamma \frac{(W x + b) - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta\\
+&= \left( \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} W \right) x + \left( \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} (b - \mu) + \beta \right)
+\end{align*}
+Define fused weights and bias:
+\begin{align*}
+W_{\text{fused}} &= \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} W\\
+b_{\text{fused}} &= \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} (b - \mu) + \beta
+\end{align*}
+$W_{\text{fused}}$ is a standard $C_{\text{out}} \times C_{\text{in}} \times K \times K$ tensor and $b_{\text{fused}}$ is a $C_{\text{out}}$ vector. The BatchNorm operation and its memory allocation are completely eliminated at test time.}
+\Q{Why does BGR vs RGB channel order cause a 30-point accuracy drop, and how is it audited?}{
+OpenCV reads image buffers from disk or webcam in \textbf{BGR} format by default. PyTorch and Torchvision backbones (ResNet, ViT, CLIP) are trained exclusively on \textbf{RGB} arrays.
+Feeding BGR images into an RGB-trained model swaps the red and blue channels:
+skin tones become bright cyan/blue; blue skies become reddish-orange.
+\textbf{Auditing Rule}: Always assert channel ordering at pipeline entry:
+\lstinline|img = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)|.
+Add a static unit test asserting that average red channel intensity of an Apple image exceeds blue intensity.}
+\Q{Walk through INT8 Post-Training Quantization (PTQ) with KL Calibration.}{
+FP32 weights and activations are mapped to 8-bit integers $[-128, 127]$ via scaling factor $S$: $x_{\text{int8}} = \text{clip}\left(\text{round}(x / S), -128, 127\right)$.
+For activations with long-tail outlier distributions, clipping at the maximum absolute value wastes precision on rare extremes.
+\textbf{NVIDIA TensorRT KL Calibration}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item Collect activation histograms over a calibration dataset ($\sim 500$ representative images).
+\item For candidate clipping thresholds $T$: compute quantized and reconstructed distribution $P$ and $Q$.
+\item Choose threshold $T^*$ minimizing Kullback-Leibler divergence:
+$$T^* = \arg\min_T D_{\text{KL}}(P \parallel Q) = \sum_{i} P(i) \log \frac{P(i)}{Q(i)}$$
+\end{enumerate}
+Retains $99.5\%$ of FP32 accuracy while cutting memory bandwidth by $4\times$ and doubling compute throughput on Tensor Cores.}
+\Q{How does ByteTrack track multi-object targets across occlusions in real time?}{
+Traditional tracking-by-detection algorithms (SORT, DeepSORT) discard low-confidence detections ($s < 0.6$), losing targets during occlusions.
+\textbf{ByteTrack (Zhang et al., 2022)}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item First Association: Matches high-score detections ($s \ge 0.6$) with existing tracklets using Kalman filter motion predictions and bounding box IoU.
+\item Second Association: Takes the unmatched tracklets and matches them with \textbf{low-score detections} ($0.1 \le s < 0.6$).
+\end{enumerate}
+Low-confidence detections typically represent partially occluded or blurred objects. Re-associating them preserves target identity across obstacles at $>60\text{ FPS}$ with zero neural network re-evaluation.}
+\end{qa}
+
+\begin{trap}[Deployment Traps]
+\begin{itemize}
+\item \textbf{Letterboxing vs Stretching}: Resizing non-square camera feeds ($1920\times 1080$) to $640\times 640$ via simple stretching warps aspect ratios, corrupting bounding box regression and object detection confidence. Letterbox with symmetric grey borders (\texttt{114, 114, 114}).
+\item \textbf{Synchronous video loops}: Calling \lstinline|cap.read()| synchronously inside the inference loop blocks GPU execution waiting for camera USB/MIPI driver I/O. Use a double-buffered background thread for frame acquisition.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,79 @@
+\section{Image \& Video Segmentation: U-Net to SAM 2}\label{sec:seg}
+\lab{U-Net \textperiodcentered\ DeepLab ASPP \textperiodcentered\ Mask R-CNN \textperiodcentered\ Mask2Former \textperiodcentered\ SAM \textperiodcentered\ SAM 2}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (img) {Image};
+\node[bx,draw=acc,above=1.5mm of img] (enc) {ViT-H Image Encoder (632M)\\\emph{Run once per image}};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of enc] (dec) {Two-Way Mask Decoder\\\emph{Lightweight, $<50\text{ ms}$}};
+\node[bx,draw=mute,left=2mm of dec] (pr) {Prompts\\(point/box)};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of dec] (mask) {3 Multi-scale Masks + IoU};
+\draw[arr] (img)--(enc); \draw[arr] (enc)--(dec); \draw[arr] (pr)--(dec); \draw[arr] (dec)--(mask);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The SAM Architecture.} Splits heavy perception from interactive decoding.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Asymmetric design}: The heavy ViT image encoder produces a $64\times 64 \times 256$ spatial embedding once. Interactive clicks/prompts run purely through the sub-50ms decoder in real time.\\
+{\color{acc2}$\blacktriangleright$} \textbf{Ambiguity awareness}: Predicts 3 valid hierarchy masks (whole, part, subpart) to handle ambiguous single-point clicks.
+\end{minipage}
+
+\begin{mem}[Segmentation Paradigms Compared]
+\begin{tabularx}{\linewidth}{@{}p{17mm} X X@{}}
+\toprule
+\textbf{Task} & \textbf{Target Output} & \textbf{Canonical Benchmark}\\
+\midrule
+\textbf{Semantic} & Every pixel assigned class $c \in \{1,\dots,C\}$; no individual object separation. & ADE20K (mIoU), Cityscapes\\
+\textbf{Instance} & Pixels grouped into discrete instance masks for "thing" categories (people, cars). & COCO Mask AP ($\text{AP}_{\text{mask}}$)\\
+\textbf{Panoptic} & Unified: Instance masks for countable "things" $+$ semantic masks for amorphous "stuff" (sky, grass). & COCO Panoptic Quality ($\text{PQ} = \text{SQ} \times \text{RQ}$)\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Segmentation Mechanics \& Modern Foundation Models]
+\Q{Why are U-Net skip connections necessary for precise biomedical and boundary segmentation?}{
+Successive pooling and strided convolutions downsample feature maps to capture high-level semantic context, destroying fine spatial details and precise pixel locations.
+\textbf{U-Net skip connections} concatenate shallow encoder features directly with decoder feature maps at the matching scale:
+Decoder receives both:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item Low-frequency semantic abstractions from the bottleneck.
+\item High-frequency boundary and edge signals directly from the early encoder.
+\end{enumerate}
+Enables exact boundary localization without requiring dilated convolutions.}
+\Q{How does DeepLabv3+ use Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale context?}{
+Chen et al. address the trade-off between receptive field and feature resolution using atrous/dilated convolutions with rate $r$: $K' = K + (K-1)(r-1)$.
+\textbf{ASPP Architecture}:
+Processes incoming feature map $x$ in parallel through 5 branches:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item One $1\times 1$ convolution (preserves local details).
+\item Three $3\times 3$ atrous convolutions with rates $r = [6, 12, 18]$ (samples distant context without reducing resolution).
+\item Image-level Global Average Pooling followed by $1\times 1$ conv and bilinear upsampling (captures global image prior).
+\end{enumerate}
+All branches are concatenated along channels and projected through a $1\times 1$ conv to produce multi-scale context representation.}
+\Q{How does Mask2Former unify semantic, instance, and panoptic segmentation?}{
+Cheng et al. discard task-specific heads (RoIAlign, FCN) in favor of \textbf{Masked-Attention Transformers}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item Employs $N$ object queries that predict binary mask logits $m_i \in [0, 1]^{H\times W}$ and class distribution $p_i$.
+\item \textbf{Masked Attention}: Modulates decoder cross-attention to attend \emph{only} within the foreground area predicted by the previous layer's mask:
+$$\mathcal{M}_{l-1}(x, y) = \begin{cases} 0 & \text{if } m_{l-1}(x, y) > 0.5 \\ -\infty & \text{otherwise} \end{cases}$$
+Focuses attention on relevant localized object features, dramatically accelerating convergence and outperforming specialized models across all 3 tasks.
+\end{enumerate}}
+\Q{How does SAM 2 extend promptable segmentation to video in real time?}{
+Video segmentation suffers from occlusion, drift, and deformation across frames.
+SAM 2 introduces a \textbf{Streaming Memory Architecture}:
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Memory Encoder}: Encodes the predicted frame mask and image embedding into a compact visual memory token.
+\item \textbf{Memory Bank}: Maintains a FIFO queue of recent frame features plus prompted keyframe memories.
+\item \textbf{Memory Attention}: Uses cross-attention in the mask decoder conditioned on past memory bank states to track targets continuously across thousands of frames.
+\end{itemize}
+Processes 1080p video at $44\text{ FPS}$ with zero pipeline stalls.}
+\end{qa}
+
+\begin{trap}[Segmentation Metrics]
+\begin{itemize}
+\item \textbf{mIoU vs Pixel Accuracy}: Pixel accuracy is easily distorted by background dominance (predicting background on $95\%$ of pixels gives $95\%$ accuracy but near-zero mIoU). Always optimize and report mean Intersection-over-Union: $\text{mIoU} = \frac{1}{C} \sum_{c} \frac{TP_c}{TP_c + FP_c + FN_c}$.
+\item \textbf{Dice Loss gradient near empty masks}: $\text{Dice} = \frac{2 |X \cap Y| + \epsilon}{|X| + |Y| + \epsilon}$. If $\epsilon$ is too small ($< 10^{-7}$), division by tiny denominator when both prediction and ground truth are empty yields numerical instability.
+\end{itemize}
+\end{trap}

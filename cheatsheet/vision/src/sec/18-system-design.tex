@@ -1,0 +1,75 @@
+\section{Vision System Design: Autonomous Driving to Visual RAG}\label{sec:sys}
+\lab{System design framework \textperiodcentered\ BEV driving perception \textperiodcentered\ Visual Document RAG \textperiodcentered\ Sub-second GenAI API \textperiodcentered\ ColPali}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (cam) {6 Surround Cameras};
+\node[bx,draw=acc,above=1.5mm of cam] (bb) {Shared Backbone (ConvNeXt)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of bb] (bev) {BEV Transform (Lift-Splat)};
+\node[bx,above=1.5mm of bev] (temp) {Temporal BEV Fusion ($t{-}1, t$)};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of temp] (heads) {3D Boxes, Lanes \& Occ};
+\draw[arr] (cam)--(bb); \draw[arr] (bb)--(bev); \draw[arr] (bev)--(temp); \draw[arr] (temp)--(heads);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The 6-Step System Design Recipe.}
+\textbf{1.} Clarify SLOs (latency, FPS, compute tier, accuracy).\\
+\textbf{2.} Data engine (collection, active learning, auto-labeling).\\
+\textbf{3.} Architecture (backbone, 2D-to-3D projection, heads).\\
+\textbf{4.} Training setup (loss balance, distributed recipe).\\
+\textbf{5.} Serving (compilation, INT8 PTQ, pipelined batching).\\
+\textbf{6.} Telemetry \& OOD drift detection.
+\end{minipage}
+
+\begin{mem}[Frontier System Architectures]
+\begin{tabularx}{\linewidth}{@{}p{20mm} X X@{}}
+\toprule
+\textbf{System} & \textbf{Core Bottleneck} & \textbf{Winning Architectural Decision}\\
+\midrule
+\textbf{Autonomous Driving} & Multi-camera occlusion; 3D spatial alignment & \textbf{Bird's-Eye-View (BEVFormer)}: 2D feature maps lifted to unified 3D/BEV coordinate grid via deformable cross-attention; fused temporally across past frames.\\
+\textbf{Visual Doc RAG} & Dense OCR charts, table layouts, tiny fonts & \textbf{ColPali / Dynamic VLM}: Replaces lossy text OCR pipelines with late-interaction patch embeddings; computes token-to-patch max-sim directly over document images.\\
+\textbf{Sub-Second Diffusion} & Iterative multi-step sampling latency & \textbf{Step Distillation (ADD / LCM) $+$ TensorRT}: Distills 50-step diffusion to 4-step rectified flow; FP8 engine executes in $<400\text{ ms}$ on single L40S.\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Architecture Deep-Dives]
+\Q{Design an end-to-end multi-camera 3D perception system for an autonomous vehicle.}{
+\textbf{Requirements}: 6 surround cameras ($1920\times 1080$), 30 FPS, latency budget $\le 33\text{ ms}$ on an automotive SoC (e.g., NVIDIA DRIVE Orin, 275 TOPS). Output: 3D bounding boxes $(x,y,z,w,l,h,\theta)$, velocity vectors $(v_x, v_y)$, lane topologies.
+\textbf{Pipeline Architecture}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Image Backbone}: ConvNeXt-Tiny with shared weights across all 6 views at half resolution ($960\times 540$), outputting multi-scale feature maps.
+\item \textbf{View Transformation}: \textbf{BEVFormer} maintains a persistent 2D BEV grid $(200\times 200 \times 1\text{m})$. Uses spatial cross-attention: 3D grid points project to 2D image coordinates via camera extrinsics $[R|t]$ and intrinsics $K$; deformable attention queries sample image features.
+\item \textbf{Temporal Recurrence}: Warps past BEV features ($t-1$) into current frame coordinate system using ego-motion odometry; concatenates along channels.
+\item \textbf{Task Heads}: Anchor-free query detectors (DETR-style 3D boxes) and semantic occupancy grid heads.
+\item \textbf{Inference Engine}: Exported to TensorRT with FP16/INT8 mixed precision, operating in $28\text{ ms}$.
+\end{enumerate}}
+\Q{Design a visual document understanding system (Visual RAG) for unstructured invoices and financial charts.}{
+\textbf{Failure of Traditional OCR}: Standard Tesseract/Textract extracts raw text strings, destroying table column alignments, multi-column reading orders, and visual diagrams.
+\textbf{Modern Vision-Centric Solution}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Page Indexing}: Render PDF pages directly as $150\text{ DPI}$ images.
+\item \textbf{Retrieval Engine (ColPali)}: Feed document images into a vision backbone (SigLIP / PaliGemma); retain all patch tokens ($32\times 32 = 1024$ tokens/page). Store in multi-vector index. User text queries compute Late Interaction:
+$$S(q, d) = \sum_{i=1}^{|q|} \max_{j=1}^{|d|} \left( \mathbf{q}_i^\top \mathbf{d}_j \right)$$
+achieving $94\%$ retrieval recall across dense diagrams and financial tables.
+\item \textbf{Reader / Reasoner}: Selected top-3 document page images are fed into a high-resolution VLM (Qwen2-VL) with native dynamic resolution, generating structured JSON with source bounding box coordinates.
+\end{enumerate}}
+\Q{How does Adversarial Diffusion Distillation (ADD) compress 50-step diffusion into 1 to 4 steps?}{
+Sauer et al. combine score distillation with an adversarial objective to train a student network $G_\theta$:
+$$\mathcal{L}_{\text{ADD}} = \mathcal{L}_{\text{adv}}(G_\theta, D_\phi) + \lambda_{\text{score}} \mathcal{L}_{\text{score}}(G_\theta, \text{Teacher})$$
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Adversarial Loss}: Discriminator $D_\phi$ forces single-step generated images to lie strictly on the manifold of natural images, avoiding blurriness.
+\item \textbf{Score Distillation Loss}: Uses a frozen pretrained SDXL model as teacher; computes gradients in diffusion latent space to align outputs with the text prompt.
+\end{itemize}
+Enables real-time text-to-image synthesis at $4\text{ steps}$ ($<400\text{ ms}$ per megapixel frame).}
+\end{qa}
+
+\begin{trap}[System Design Pitfalls]
+\begin{itemize}
+\item \textbf{Ignoring sensor synchronization}: Driving systems where front and side cameras are not hardware genlocked (frame timestamp delta $>5\text{ ms}$) produce double-vision artifacts and phantom obstacles in BEV space.
+\item \textbf{Cold start VLM latency}: High-resolution VLM prefill takes up to $500\text{ ms}$ for large document images. Mitigate with visual token caching (caching vision encoder outputs across repeated queries on the same document).
+\end{itemize}
+\end{trap}

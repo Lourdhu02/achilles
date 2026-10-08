@@ -1,0 +1,73 @@
+\section{Self-Supervised Vision: Contrastive, MAE \& DINOv2}\label{sec:ssl}
+\lab{SimCLR \textperiodcentered\ MoCo v1-v3 \textperiodcentered\ BYOL \textperiodcentered\ MAE \textperiodcentered\ DINO \textperiodcentered\ DINOv2 \textperiodcentered\ KoLeo}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (img) {Image ($75\%\text{ masked}$)};
+\node[bx,draw=acc,above=1.5mm of img] (enc) {ViT Encoder ($25\%\text{ visible}$)};
+\node[bx,above=1.5mm of enc] (cat) {Concat Mask Tokens};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of cat] (dec) {Lightweight ViT Decoder};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of dec] (loss) {MSE on Masked Pixels};
+\draw[arr] (img)--(enc); \draw[arr] (enc)--(cat); \draw[arr] (cat)--(dec); \draw[arr] (dec)--(loss);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The MAE Paradigm.} Exploits heavy 2D pixel redundancy.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Asymmetric architecture}: Only the $25\%$ unmasked patches pass through the heavy encoder. The shallow decoder reconstructs normalized pixels.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Speedup}: $4\times$ compute reduction and memory savings during pretraining compared to standard ViT.
+\end{minipage}
+
+\begin{mem}[SSL Vision Paradigms Comparison]
+\begin{tabularx}{\linewidth}{@{}p{18mm} X X@{}}
+\toprule
+\textbf{Method} & \textbf{Core Loss / Objective} & \textbf{Collapse Prevention Mechanism}\\
+\midrule
+\textbf{SimCLR} & InfoNCE with negative pairs across batch & Massive batch size ($B=4096$) + non-linear projection head.\\
+\textbf{MoCo v1--v3} & InfoNCE over persistent memory queue & Momentum-updated key encoder ($\theta_k \leftarrow m\theta_k + (1-m)\theta_q$).\\
+\textbf{BYOL / SimSiam} & MSE between online predictor and target & \textbf{Stop-gradient} ($\text{sg}[\cdot]$) on target branch + asymmetric predictor MLP.\\
+\textbf{MAE} & Pixel MSE on masked patches & Reconstruction task (no negative pairs; cannot collapse to constant).\\
+\textbf{DINO / DINOv2} & Cross-entropy student vs momentum teacher & Logit \textbf{centering} (prevents 1-class mode) $+$ \textbf{sharpening} (prevents uniform mode).\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Self-Supervised Mechanics \& Representation Geometry]
+\Q{Derive why InfoNCE minimizes the lower bound on Mutual Information $I(X; Y)$.}{
+Let $(x, y)$ be positive pairs and $\{y_k^-\}_{k=1}^K$ be $K$ negative samples drawn from marginal $p(y)$.
+The InfoNCE loss is:
+$$\mathcal{L}_{\text{InfoNCE}} = -\mathbb{E}\left[ \log \frac{e^{f(x, y)}}{\sum_{k=1}^K e^{f(x, y_k)}} \right]$$
+By Jensen's inequality and properties of Bayes' rule:
+\begin{align*}
+\mathcal{L}_{\text{InfoNCE}} &\ge \mathbb{E}\left[ \log \left( 1 + (K-1) \frac{p(y)}{p(y|x)} \right) \right]\\
+&\approx \log(K) - I(X; Y) \implies I(X; Y) \ge \log(K) - \mathcal{L}_{\text{InfoNCE}}
+\end{align*}
+Minimizing InfoNCE maximizes the mutual information lower bound between augmented views. Larger batch/queue size $K$ directly tightens the bound $\log(K)$.}
+\Q{Why does MAE mask 75\% of visual patches, whereas BERT masks only 15\% of words?}{
+\textbf{Information Density}: Language is human-generated, highly symbolic, and dense with semantics: masking more than $15\%$ destroys grammar and syntactic recoverability.
+Images are natural signals with extreme spatial correlation: adjacent pixels and patches share nearly identical color, lighting, and texture.
+Masking only $15-20\%$ allows the network to interpolate masked patches trivially from neighboring borders without understanding high-level 3D structure or semantics.
+A $75-80\%$ mask removes entire objects and context, forcing the encoder to learn holistic geometric representations.}
+\Q{How does DINO produce emergent semantic segmentation without annotations?}{
+Caron et al. train a ViT student to match a momentum teacher over multi-crop views.
+Because the objective maximizes agreement between global crops (full image) and local crops (sub-regions), and because self-attention in transformers connects all spatial tokens without local receptive field restrictions:
+The \texttt{[CLS]} and patch tokens learn to cluster around distinct foreground objects to maximize mutual information across varied scales.
+Attention maps from the last layer of DINO explicitly outline foreground objects without any segmentation labels or bounding boxes.}
+\Q{What makes DINOv2 the gold-standard frozen vision feature extractor?}{
+Oquab et al. scale self-distillation to 1B parameters (ViT-g):
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Curated LVD-142M Data Pipeline}: De-duplicates, filters, and balances 142M images using nearest-neighbor embedding retrieval against ImageNet-22k.
+\item \textbf{Joint iBOT Objective}: Applies token-level masked image modeling simultaneously with view-level DINO self-distillation.
+\item \textbf{KoLeo Regularizer}: Adds Kozachenko-Leonenko differential entropy estimator minimizing $-\sum_{i} \log \min_{j \ne i} \|z_i - z_j\|_2$, forcing visual feature embeddings to spread uniformly over the unit hypersphere.
+\end{enumerate}
+Freezing DINOv2 features outperforms weakly supervised models on zero-shot classification, monocular depth estimation, and dense feature matching.}
+\end{qa}
+
+\begin{trap}[SSL Pretraining Traps]
+\begin{itemize}
+\item \textbf{Discarding the projection head}: In SimCLR, MoCo, and BYOL, downstream evaluation must use the encoder representation $h = f(x)$, \textbf{not} the projection head output $z = g(h)$. The projection head discards information (e.g., color, orientation) irrelevant to the contrastive objective that is vital for downstream tasks.
+\item \textbf{Patch norm in MAE}: Reconstructing raw RGB pixels directly causes the model to focus on low-frequency lighting shifts. Computing target pixel values normalized by the mean and variance of each patch ($y = (x - \mu) / \sigma$) gains $+1.5\%$ top-1 accuracy.
+\end{itemize}
+\end{trap}

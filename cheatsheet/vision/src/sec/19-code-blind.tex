@@ -1,0 +1,149 @@
+\section{Implement from Scratch: Vision Code You Write Blind}\label{sec:code}
+\lab{Conv2D im2col \textperiodcentered\ ResNet Bottleneck \textperiodcentered\ PatchEmbed \textperiodcentered\ 2D RoPE \textperiodcentered\ CLIP InfoNCE \textperiodcentered\ IoU \& NMS \textperiodcentered\ UNet Block \textperiodcentered\ Flow Matching}
+
+{\small Minimal, tested PyTorch snippets. Shapes in comments. Interviewers look for: dimensions, channel positions, broadcasting, and numerical stability.}
+
+\newcommand{\VCH}[1]{\par\needspace{6\baselineskip}\smallskip\noindent{\sffamily\bfseries\small\color{acc}#1}\par\nopagebreak}
+
+\VCH{1. Conv2D via Unfold (im2col formulation)}
+\begin{lstlisting}
+def conv2d_im2col(x, W, b=None, stride=1, padding=0):
+    # x: (B, Cin, H, W) ; W: (Cout, Cin, K, K)
+    B, Cin, H, W = x.shape; Cout, _, K, _ = W.shape
+    H_out = (H - K + 2 * padding) // stride + 1
+    W_out = (W - K + 2 * padding) // stride + 1
+    x_col = F.unfold(x, kernel_size=K, padding=padding, stride=stride) # B, Cin*K*K, L
+    W_flat = W.view(Cout, -1)                                           # Cout, Cin*K*K
+    out = (W_flat @ x_col).view(B, Cout, H_out, W_out)
+    return out if b is None else out + b.view(1, Cout, 1, 1)
+\end{lstlisting}
+
+\VCH{2. ResNet Bottleneck Block with Shortcut}
+\begin{lstlisting}
+class Bottleneck(nn.Module):
+    def __init__(self, in_c, mid_c, out_c, stride=1):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_c, mid_c, 1, bias=False)
+        self.bn1 = nn.BatchNorm2d(mid_c)
+        self.conv2 = nn.Conv2d(mid_c, mid_c, 3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(mid_c)
+        self.conv3 = nn.Conv2d(mid_c, out_c, 1, bias=False)
+        self.bn3 = nn.BatchNorm2d(out_c)
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(in_c, out_c, 1, stride=stride, bias=False),
+            nn.BatchNorm2d(out_c)
+        ) if (stride != 1 or in_c != out_c) else nn.Identity()
+
+    def forward(self, x):
+        res = self.shortcut(x)
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.bn3(self.conv3(out))
+        return F.relu(out + res)
+\end{lstlisting}
+
+\VCH{3. ViT Patch Partition \& Linear Projection}
+\begin{lstlisting}
+class PatchEmbed(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_c=3, embed_dim=768):
+        super().__init__()
+        self.n_patches = (img_size // patch_size) ** 2
+        self.proj = nn.Conv2d(in_c, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+    def forward(self, x):
+        # x: (B, 3, H, W) -> (B, embed_dim, H/P, W/P) -> (B, N, embed_dim)
+        return self.proj(x).flatten(2).transpose(1, 2)
+\end{lstlisting}
+
+\VCH{4. 2D Rotary Position Embeddings (2D RoPE)}
+\begin{lstlisting}
+def apply_2d_rope(x, pos_h, pos_w, dim=64, base=10000.0):
+    # x: (B, N, H_heads, D) ; pos_h: (N,) ; pos_w: (N,)
+    half_d = dim // 2
+    inv_freq = base ** (-torch.arange(0, half_d, 2).float() / half_d).to(x.device)
+    sin_h = (pos_h[:, None] * inv_freq[None]).sin() # (N, dim/4)
+    cos_h = (pos_h[:, None] * inv_freq[None]).cos()
+    sin_w = (pos_w[:, None] * inv_freq[None]).sin()
+    cos_w = (pos_w[:, None] * inv_freq[None]).cos()
+    sin_2d = torch.cat([sin_h, sin_w], dim=-1)[:, None, :]     # (N, 1, dim/2)
+    cos_2d = torch.cat([cos_h, cos_w], dim=-1)[:, None, :]
+    x1, x2 = x[..., :dim:2], x[..., 1:dim:2]
+    rot = torch.stack([x1*cos_2d - x2*sin_2d, x1*sin_2d + x2*cos_2d], dim=-1).flatten(-2)
+    return torch.cat([rot, x[..., dim:]], dim=-1)
+\end{lstlisting}
+
+\VCH{5. Symmetric InfoNCE Loss (CLIP Dual-Encoder)}
+\begin{lstlisting}
+def clip_infonce_loss(image_emb, text_emb, logit_scale):
+    # image_emb: (B, D) ; text_emb: (B, D)
+    I = F.normalize(image_emb, p=2, dim=-1)
+    T = F.normalize(text_emb,  p=2, dim=-1)
+    sim = (I @ T.T) * logit_scale.exp().clamp(max=100.0)  # (B, B)
+    labels = torch.arange(len(I), device=I.device)
+    loss_i2t = F.cross_entropy(sim, labels)
+    loss_t2i = F.cross_entropy(sim.T, labels)
+    return 0.5 * (loss_i2t + loss_t2i)
+\end{lstlisting}
+
+\VCH{6. Vectorized Bounding Box IoU \& Greedy NMS}
+\begin{lstlisting}
+def box_iou(b1, b2): # b1: (N, 4), b2: (M, 4) in (x1, y1, x2, y2)
+    tl = torch.max(b1[:, None, :2], b2[None, :, :2])
+    br = torch.min(b1[:, None, 2:], b2[None, :, 2:])
+    inter = (br - tl).clamp(min=0).prod(dim=-1)
+    area1 = (b1[:, 2] - b1[:, 0]) * (b1[:, 3] - b1[:, 1])
+    area2 = (b2[:, 2] - b2[:, 0]) * (b2[:, 3] - b2[:, 1])
+    return inter / (area1[:, None] + area2[None, :] - inter + 1e-7)
+
+def greedy_nms(boxes, scores, iou_thresh=0.5):
+    order = scores.argsort(descending=True)
+    keep = []
+    while len(order) > 0:
+        i = order[0].item()
+        keep.append(i)
+        if len(order) == 1: break
+        ious = box_iou(boxes[i:i+1], boxes[order[1:]])[0]
+        order = order[1:][ious <= iou_thresh]
+    return torch.tensor(keep, dtype=torch.long)
+\end{lstlisting}
+
+\VCH{7. UNet Double-Convolution Block with Skip Connection}
+\begin{lstlisting}
+class UNetBlock(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_c, out_c, 3, padding=1, bias=False),
+            nn.BatchNorm2d(out_c), nn.ReLU(inplace=True),
+            nn.Conv2d(out_c, out_c, 3, padding=1, bias=False),
+            nn.BatchNorm2d(out_c), nn.ReLU(inplace=True)
+        )
+    def forward(self, x, skip=None):
+        if skip is not None:
+            diff_h = skip.size(2) - x.size(2)
+            diff_w = skip.size(3) - x.size(3)
+            x = F.pad(x, [diff_w//2, diff_w - diff_w//2, diff_h//2, diff_h - diff_h//2])
+            x = torch.cat([skip, x], dim=1)
+        return self.conv(x)
+\end{lstlisting}
+
+\VCH{8. Rectified Flow Matching Loss \& Euler Step}
+\begin{lstlisting}
+def flow_matching_loss(model, x_1): # x_1: target data (B, C, H, W)
+    x_0 = torch.randn_like(x_1)      # x_0: source noise
+    t = torch.rand(len(x_1), 1, 1, 1, device=x_1.device)
+    x_t = (1.0 - t) * x_0 + t * x_1   # straight interpolation path
+    target_v = x_1 - x_0             # constant velocity target
+    pred_v = model(x_t, t.squeeze())
+    return F.mse_loss(pred_v, target_v)
+
+@torch.no_grad()
+def sample_flow_euler(model, shape, n_steps=10, device='cuda'):
+    x = torch.randn(shape, device=device) # start at noise (t=0)
+    dt = 1.0 / n_steps
+    for step in range(n_steps):
+        t = torch.full((shape[0],), step * dt, device=device)
+        v = model(x, t)
+        x = x + dt * v                    # linear Euler update
+    return x                              # final data at t=1
+\end{lstlisting}

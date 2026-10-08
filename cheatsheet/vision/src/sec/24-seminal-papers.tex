@@ -1,0 +1,35 @@
+\section{30 Seminal Vision Papers}\label{sec:papers}
+\lab{Foundational papers \textperiodcentered\ Authors \& Year \textperiodcentered\ Breakthroughs \textperiodcentered\ Paradigms}
+
+\begin{enumerate}[leftmargin=*,itemsep=0.5pt,topsep=1pt]
+\item \textbf{AlexNet} (Krizhevsky et al., 2012): Deep convolutional network with ReLU, Dropout, and GPU parallelization; shattered ImageNet error from 26\% to 16\%, launching deep learning.
+\item \textbf{VGG} (Simonyan \& Zisserman, 2014): Proved that deep stacks of small $3\times 3$ convs outperform wide filters ($7\times 7$), establishing modern homogeneous ConvNet architecture.
+\item \textbf{ResNet} (He et al., 2015): Residual identity shortcuts solving vanishing gradients up to 152 layers ($\mathcal{H}(x) = \mathcal{F}(x) + x$), winner of ImageNet, COCO, and ILSVRC 2015.
+\item \textbf{U-Net} (Ronneberger et al., 2015): Symmetric encoder-decoder architecture with cross-skip concatenation preserving spatial details for dense pixel-level medical segmentation.
+\item \textbf{Faster R-CNN} (Ren et al., 2015): First end-to-end deep detector; introduced Region Proposal Networks (RPN) sharing convolutional features with Fast R-CNN detector.
+\item \textbf{Mask R-CNN} (He et al., 2017): RoIAlign with bilinear interpolation eliminating sub-pixel quantization; parallel FCN branch adding instance segmentation to object detection.
+\item \textbf{RetinaNet} (Lin et al., 2017): Focal loss solving extreme 1000:1 foreground-background class imbalance, enabling single-stage detectors to match two-stage accuracy.
+\item \textbf{MobileNetV2} (Sandler et al., 2018): Inverted residuals and linear bottlenecks preserving manifold capacity in low-dimensional space for mobile inference.
+\item \textbf{YOLO Family} (Redmon 2016 / Jocher 2023): Real-time single-stage detection evolving from grid regression (v1) to CSPNet (v5) and anchor-free TAL + DFL heads (v8/v11).
+\item \textbf{DETR} (Carion et al., 2020): Reformulated object detection as direct set prediction using Transformers and Hungarian bipartite matching, completely eliminating hand-crafted NMS.
+\item \textbf{ViT} (Dosovitskiy et al., 2020): Proved standard Transformer applied directly to sequences of $16\times 16$ image patches attains SOTA ImageNet accuracy when pretrained on large data (JFT-300M).
+\item \textbf{Deformable DETR} (Zhu et al., 2020): Replaced global attention with multi-scale deformable attention sampling $K=4$ sparse points per query, accelerating convergence by $10\times$.
+\item \textbf{Swin Transformer} (Liu et al., 2021): Shifted Window self-attention achieving linear computational complexity $\mathcal{O}(N)$ and hierarchical multi-scale representations for dense vision.
+\item \textbf{SimCLR} (Chen et al., 2020): Contrastive self-supervised learning with normalized InfoNCE loss, stochastic data augmentations, and non-linear projection MLP heads.
+\item \textbf{MAE} (He et al., 2021): Masked Autoencoders masking $75\%$ of visual patches with an asymmetric encoder-decoder, demonstrating that autoencoding is scalable self-supervision for vision.
+\item \textbf{DINO / DINOv2} (Caron 2021 / Oquab 2023): Self-distillation without labels via centering and sharpening; produces emergent semantic part segmentations and foundation visual representations.
+\item \textbf{CLIP} (Radford et al., 2021): Contrastive Language-Image Pretraining on 400M web image-text pairs; enables zero-shot classification via natural language prompting.
+\item \textbf{SigLIP} (Zhai et al., 2023): Sigmoid pairwise loss eliminating all-gather softmax normalization across distributed GPUs, scaling dual-encoder training to million-scale batch sizes.
+\item \textbf{ConvNeXt-V2} (Woo et al., 2023): Modernized pure ConvNet with 7x7 depthwise kernels and Global Response Normalization (GRN), outperforming Swin on ImageNet and COCO.
+\item \textbf{DDPM} (Ho et al., 2020): Denoising Diffusion Probabilistic Models establishing connection between diffusion probabilistic models and score-based denoising score matching.
+\item \textbf{Latent Diffusion / Stable Diffusion} (Rombach et al., 2022): Moved diffusion into perceptual $f=8$ latent space of a pretrained VAE, reducing compute by orders of magnitude.
+\item \textbf{DiT} (Peebles \& Xie, 2023): Diffusion Transformer replacing U-Net with ViT and adaLN-Zero modulation, establishing compute scaling laws for visual generative models.
+\item \textbf{Flow Matching / Rectified Flow} (Lipman 2022 / Liu 2022): Straight continuous probability trajectories predicting constant velocity $v_t = x_1 - x_0$, enabling 1--4 step generation.
+\item \textbf{SAM / SAM 2} (Kirillov 2023 / Ravi 2024): Foundation promptable segmentation models; SA-1B dataset; streaming memory bank for real-time video object segmentation.
+\item \textbf{NeRF} (Mildenhall et al., 2020): Neural Radiance Fields synthesizing photorealistic novel views via 5D coordinate MLPs and differentiable volumetric rendering.
+\item \textbf{3D Gaussian Splatting} (Kerbl et al., 2023): Replaced coordinate MLPs with explicit 3D Gaussians and tile-based rasterization, achieving photorealistic novel-view synthesis at $>100$ FPS.
+\item \textbf{LLaVA / LLaVA-NeXT} (Liu 2023 / Liu 2024): Visual instruction tuning using CLIP and LLaMA backbones; AnyRes dynamic grid slicing for high-resolution document parsing.
+\item \textbf{Qwen2-VL} (Wang et al., 2024): Native dynamic resolution VLM with 2D/3D visual RoPE, eliminating aspect ratio distortion and fixed grid constraints.
+\item \textbf{Flux.1} (Black Forest Labs, 2024): 12B parameter Flow Matching generative model with rectified flow ODEs and multimodal double-stream transformer blocks.
+\item \textbf{Sora} (OpenAI, 2024): Spacetime diffusion transformer operating on 3D video patches, scaling video generation across diverse durations, resolutions, and aspect ratios.
+\end{enumerate}

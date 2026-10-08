@@ -1,0 +1,66 @@
+\section{Video Foundation Models: Spatio-Temporal DiT}\label{sec:vid}
+\lab{Factorized attention \textperiodcentered\ 3D VAE \textperiodcentered\ Space-Time DiT \textperiodcentered\ Sora mechanics \textperiodcentered\ Causal masking \textperiodcentered\ VBench}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\foreach \t in {0,4,8} {
+  \draw[draw=acc,fill=soft,opacity=0.8] (\t,\t) rectangle (\t+14,\t+14);
+}
+\node[acc,above] at (15,22) {$T \times H \times W \times C$};
+\draw[arr,acc2,thick] (18,12) -- (28,12) node[midway,above] {3D VAE};
+\node[box,draw=acc3,fill=acc3!8] at (38,12) {Latent Volume\\$\frac{T}{4} \times \frac{H}{8} \times \frac{W}{8}$};
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Spatio-Temporal Explosion.} Naive full 3D self-attention over video tensor $\mathbb{R}^{B \times C \times T \times H \times W}$ scales as $\mathcal{O}((T \cdot H \cdot W)^2)$, causing immediate out-of-memory crashes on GPU.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Factorized Attention}: Decouples spatial attention (within frame) from temporal attention (across time) $\to \mathcal{O}(T(HW)^2 + (HW)T^2)$.
+\end{minipage}
+
+\begin{mem}[Video Representation Paradigms]
+\begin{tabularx}{\linewidth}{@{}p{18mm} X X@{}}
+\toprule
+\textbf{Architecture} & \textbf{Mechanism} & \textbf{Trade-off}\\
+\midrule
+\textbf{3D Conv (I3D)} & Inflates $2\text{D } K^2 \to 3\text{D } K^3$; repeats weights divided by $K$ & Rigid temporal receptive field; high parameter overhead.\\
+\textbf{Factorized ViT} (ViViT) & Alternates Spatial Self-Attn ($HW$ tokens) and Temporal ($T$ tokens) & Linear in $T$; enables training on $32-64$ frames on consumer clusters.\\
+\textbf{3D DiT} (Sora) & Spatio-temporal 3D VAE ($8\times 8$ space, $4\times$ time) $+$ 3D DiT & Monotonic scaling; high fidelity; requires heavy compute clusters.\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Video Diffusion, 3D VAE \& Evaluation]
+\Q{How does a 3D Spatio-Temporal VAE compress video, and why is temporal downsampling tricky?}{
+A 10-second 1080p video at 24 FPS contains 240 frames $\approx 1.5\times 10^9$ raw values.
+A \textbf{3D Causal VAE} compresses data along all 3 dimensions:
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item Spatial: $8\times 8$ downsampling ($H/8, W/8$).
+\item Temporal: $4\times$ downsampling ($T/4 \implies 60$ latent frames).
+\end{itemize}
+\textbf{The Challenge}: Pure 3D convolutions look into future frames, destroying causal streaming generation.
+Modern video VAEs enforce \textbf{causal temporal convolutions} (padding only on past frames), ensuring that encoding/decoding frame $t$ never requires future frames $t+1$.}
+\Q{How do modern video models (e.g. Sora, Movie Gen) achieve variable duration and aspect ratios?}{
+Following the NaViT/Patch n' Pack paradigm:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Spacetime Patches}: Video latents are partitioned into 3D spacetime cubes of size $p_t \times p_h \times p_w$ (e.g., $1 \times 2 \times 2$).
+\item \textbf{Flattened Sequence}: Any video clip—regardless of resolution or duration—flattens into a 1D token sequence of length $N = \frac{T}{p_t} \cdot \frac{H}{p_h} \cdot \frac{W}{p_w}$.
+\item \textbf{3D RoPE}: Position embeddings are decomposed into 3 rotary frequency components $(R_{\text{time}}, R_{\text{height}}, R_{\text{width}})$.
+\end{enumerate}
+Allows training on mixed datasets of vertical TikTok videos, widescreen 4K film clips, and images ($T=1$) in the same training batches without cropping or padding.}
+\Q{Why is Fréchet Video Distance (FVD) flawed, and how does VBench fix it?}{
+\textbf{Flaws of FVD}: FVD computes Fréchet distance on features from an I3D model pretrained on Kinetics-400. It is heavily biased toward low-resolution action recognition features, ignores temporal consistency (adjacent flickering frames can still produce identical average feature distributions), and penalizes stylistic artistic videos.
+\textbf{VBench (Huang et al., 2024)}: Comprehensive evaluation decomposed into 16 distinct sub-benchmarks:
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Temporal Quality}: Temporal flickering, motion smoothness, dynamic degree, subject consistency, background consistency.
+\item \textbf{Video-Text Alignment}: Action accuracy, scene transitions, multiple objects, spatial relationships.
+\end{itemize}
+Evaluates using fine-tuned specialized vision models and tracking algorithms, providing granular diagnosis of video failure modes.}
+\end{qa}
+
+\begin{trap}[Video Generation Traps]
+\begin{itemize}
+\item \textbf{Flicker / Temporal Incoherence}: Training video diffusion without causal frame attention or 3D temporal discriminator losses causes adjacent frames to sample diverging textures ("boiling" noise artifacts).
+\item \textbf{Autoregressive drift}: Extending video length by feeding the last generated frame as prompt for the next chunk suffers from error compounding; latents blur or explode after $10-15$ seconds without noise re-injection.
+\end{itemize}
+\end{trap}

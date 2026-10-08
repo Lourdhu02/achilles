@@ -1,0 +1,72 @@
+\section{CNN Foundations, ResNet \& Modern Convolutions}\label{sec:cnn}
+\lab{receptive field \textperiodcentered\ residual learning \textperiodcentered\ depthwise separable \textperiodcentered\ ConvNeXt \textperiodcentered\ BatchNorm}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (in) {$x$ (input)};
+\node[bx,draw=acc2,fill=soft2,above=2mm of in] (c1) {$1\times 1\text{ conv, } C/4$};
+\node[bx,draw=acc,above=of c1] (c2) {$3\times 3\text{ conv, } C/4$};
+\node[bx,draw=acc2,fill=soft2,above=of c2] (c3) {$1\times 1\text{ conv, } C$};
+\node[circle,draw=acc,inner sep=0pt,minimum size=2.6mm,above=2mm of c3] (add) {$+$};
+\node[bx,above=2mm of add] (out) {$\text{ReLU}(x + \mathcal{F}(x))$};
+\draw[arr] (in)--(c1); \draw[arr] (c1)--(c2); \draw[arr] (c2)--(c3); \draw[arr] (c3)--(add); \draw[arr] (add)--(out);
+\draw[arr,acc2,thick] (in.east) -- ++(3mm,0) |- (add.east);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The ResNet Bottleneck.} Stacks $1\times 1$ compress $\to 3\times 3$ spatial $\to 1\times 1$ expand. The skip connection carries the identity signal directly, preventing gradient vanishing:\\[2pt]
+$\frac{\partial \mathcal{E}}{\partial x_l} = \frac{\partial \mathcal{E}}{\partial x_L} \left( \mathbf{I} + \frac{\partial}{\partial x_l} \sum_{i=l}^{L-1} \mathcal{F}_i(x_i) \right)$\\[2pt]
+Even if gradients through $\mathcal{F}$ vanish ($\approx 0$), the identity $\mathbf{I}$ guarantees non-zero backpropagation back to layer $l$.
+\end{minipage}
+
+\begin{mem}[Convolution Arithmetic Formulas]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+$O = \lfloor \frac{I - K + 2P}{S} \rfloor + 1$ & Output spatial dimension (Input $I$, Kernel $K$, Pad $P$, Stride $S$)\\
+$\text{FLOPs} = 2 C_{\text{in}} C_{\text{out}} K^2 H_o W_o$ & Exact multiply-adds ($2\times$ MACs) for standard Conv2D\\
+$RF_l = RF_{l-1} + (K_l - 1) J_{l-1}$ & Receptive field of layer $l$; jump $J_l = J_{l-1} \cdot S_l$ ($J_0 = 1$)\\
+$\frac{1}{C_{\text{out}}} + \frac{1}{K^2}$ & Computation ratio of Depthwise-Separable conv vs Standard Conv\\
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Architecture Evolution \& Normalization Dynamics]
+\Q{Derive the backpropagation gradient of Conv2D with respect to input $X$ and weights $W$.}{
+Forward convolution: $Y_{c_{\text{out}}, i, j} = \sum_{c_{\text{in}}} \sum_{p=0}^{K-1} \sum_{q=0}^{K-1} W_{c_{\text{out}}, c_{\text{in}}, p, q} \cdot X_{c_{\text{in}}, i\cdot s + p, j\cdot s + q}$.
+\begin{itemize}
+\item \textbf{Gradient w.r.t Weights}: By chain rule:
+$$\frac{\partial \mathcal{L}}{\partial W_{c_{\text{out}}, c_{\text{in}}, p, q}} = \sum_{i, j} \frac{\partial \mathcal{L}}{\partial Y_{c_{\text{out}}, i, j}} \cdot X_{c_{\text{in}}, i\cdot s + p, j\cdot s + q}$$
+This is equivalent to a cross-correlation between the input activation $X$ and the upstream gradient $\frac{\partial \mathcal{L}}{\partial Y}$.
+\item \textbf{Gradient w.r.t Input}:
+$$\frac{\partial \mathcal{L}}{\partial X_{c_{\text{in}}, m, n}} = \sum_{c_{\text{out}}} \sum_{p, q} \frac{\partial \mathcal{L}}{\partial Y_{c_{\text{out}}, m - p, n - q}} \cdot W_{c_{\text{out}}, c_{\text{in}}, p, q}$$
+This is equivalent to a full convolution of the upstream gradient with the \textbf{180-degree spatially flipped} kernel $W^{\text{rot180}}$ (padding with $K-1$).
+\end{itemize}}
+\Q{Why did VGG stack multiple $3\times 3$ convolutions instead of one $7\times 7$?}{
+Three $3\times 3$ convolutions stacked with stride 1 have an effective receptive field of $1 + 3\times (3-1) = 7$, matching a single $7\times 7$ kernel.
+\textbf{Parameter reduction}: $3 \cdot (3^2 C^2) = 27 C^2$ vs $1 \cdot (7^2 C^2) = 49 C^2$ ($45\%$ fewer weights).
+\textbf{Expressivity}: Inserts three non-linear activation functions (ReLUs) rather than one, allowing more expressive discriminative functions.}
+\Q{Why does BatchNorm fail on small batch sizes, and why is GroupNorm or SyncBN used?}{
+BatchNorm normalizes across batch dimension $\mathcal{B}$: $\hat{x} = \frac{x - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}}$.
+In object detection and segmentation, high image resolutions restrict batch size per GPU to $B \in [2, 4]$.
+At $B=2$, mini-batch mean $\mu_{\mathcal{B}}$ and variance $\sigma_{\mathcal{B}}^2$ exhibit extreme stochastic noise: batch statistics fluctuate wildly from step to step, corrupting training convergence and degrading test accuracy by $>5\%$.
+\textbf{Solutions}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{SyncBatchNorm}: Synchronizes mean and variance across all GPUs in distributed training via all-reduce, effectively restoring large virtual batch size ($B_{\text{effective}} = B_{\text{local}} \times N_{\text{GPUs}}$).
+\item \textbf{GroupNorm (Wu \& He, 2018)}: Divides channels into $G=32$ groups and normalizes purely across channels and spatial pixels $(C/G, H, W)$. Independent of batch size $B$, ensuring stable training even at $B=1$.
+\end{enumerate}}
+\Q{What architectural innovations transform ResNet into ConvNeXt and ConvNeXt-V2?}{
+Liu et al. modernize ResNet-50 by incorporating Vision Transformer design choices:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Patchify Stem}: Replaces $7\times 7$ stride-2 conv $+$ max pooling with a non-overlapping $4\times 4$ stride-4 patchifying conv.
+\item \textbf{Depthwise Inverted Bottleneck}: Uses $7\times 7$ depthwise convs placed \emph{before} $1\times 1$ pointwise convs, mimicking inverted residuals and Swin local window attention.
+\item \textbf{Micro-Design}: Replaces BatchNorm with LayerNorm; replaces ReLU with GELU; reduces activation/normalization layers to one per block.
+\item \textbf{ConvNeXt-V2 (Global Response Normalization)}: When trained with Masked Autoencoders (FCMAE), depthwise convs suffer from feature collapse where channels become redundant. ConvNeXt-V2 introduces \textbf{GRN} (Global Response Normalization) which scales channels by their L2 norm across spatial pixels, restoring feature diversity.
+\end{enumerate}
+Outperforms Swin Transformers across ImageNet, COCO, and ADE20K with purely convolutional operations.}
+\end{qa}
+
+\begin{trap}[Convolutional Gotchas]
+\begin{itemize}
+\item \textbf{Dilation Receptive Field}: Atrous/dilated conv with rate $r$ has effective kernel $K' = K + (K-1)(r-1)$. For $3\times 3$ with $r=2$, $K'=5$, growing receptive field without extra parameters.
+\item \textbf{Gridding artifacts}: Stacking consecutive atrous convolutions with identical dilation rate $r$ creates "checkerboard" sampling holes. Fix: use hybrid dilated convolution (HDC) with coprime rates (e.g., $r=[1, 2, 5]$).
+\end{itemize}
+\end{trap}

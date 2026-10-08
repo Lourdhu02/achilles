@@ -1,0 +1,63 @@
+\section{Worked Napkin Problems in Vision}\label{sec:napkin}
+\lab{Conv FLOPs \textperiodcentered\ ViT attention scaling \textperiodcentered\ VLM token budgets \textperiodcentered\ 3DGS VRAM \textperiodcentered\ Edge latency \textperiodcentered\ ImageNet cluster math}
+
+\begin{mem}[The Vision Napkin Recipe]
+\textbf{1} Write down dimensions ($H, W, C, P$).
+\textbf{2} Conv FLOPs $= 2 \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2 \cdot H_o W_o$.
+\textbf{3} ViT tokens $N = (H/P)(W/P)$; Self-Attention FLOPs $= 4ND^2 + 2N^2D$.
+\textbf{4} Compare against hardware roofline (compute vs bandwidth).
+\end{mem}
+
+\begin{qa}[Convolution \& Transformer Sizing]
+\Q{Calculate exact FLOPs for a $3\times 3$ Conv2D layer with $C_{\text{in}}=256, C_{\text{out}}=512$, input $28\times 28$, stride 1, pad 1.}{
+Output spatial size: $H_o = W_o = 28$.
+\begin{align*}
+\text{FLOPs} &= 2 \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2 \cdot H_o \cdot W_o\\
+&= 2 \cdot 256 \cdot 512 \cdot 9 \cdot 784 \approx \mathbf{1.85\text{ GFLOPs}}
+\end{align*}
+If replaced with Depthwise-Separable conv:
+Depthwise: $2 \cdot 256 \cdot 1 \cdot 9 \cdot 784 \approx 3.6\text{ MFLOPs}$.
+Pointwise: $2 \cdot 256 \cdot 512 \cdot 1 \cdot 784 \approx 205\text{ MFLOPs}$.
+Total $\approx 209\text{ MFLOPs}$ ($8.8\times$ reduction).}
+\Q{ViT-Base ($D=768$): How do Self-Attention FLOPs scale from $224\times 224$ to $448\times 448$ ($P=16$)?}{
+At $224^2$: $N_1 = (224/16)^2 = 14^2 = 196$ tokens.
+At $448^2$: $N_2 = (448/16)^2 = 28^2 = 784$ tokens ($4\times$ increase in tokens).
+Projections cost ($4ND^2$): grows linearly with tokens ($4\times$).
+Score matmul cost ($2N^2 D$): grows quadratically ($4^2 = \mathbf{16\times}$).
+For $N=196$: $2N^2 D = 2(196^2)(768) \approx 59\text{ MFLOPs}$.
+For $N=784$: $2N^2 D = 2(784^2)(768) \approx 944\text{ MFLOPs}$.}
+\Q{What is the cumulative Receptive Field of 4 conv layers with kernels $[3, 3, 3, 3]$ and strides $[1, 2, 1, 2]$?}{
+$J_0 = 1, RF_0 = 1$.
+Layer 1 ($K=3, S=1$): $RF_1 = 1 + (3-1)\cdot 1 = 3$; $J_1 = 1\cdot 1 = 1$.
+Layer 2 ($K=3, S=2$): $RF_2 = 3 + (3-1)\cdot 1 = 5$; $J_2 = 1\cdot 2 = 2$.
+Layer 3 ($K=3, S=1$): $RF_3 = 5 + (3-1)\cdot 2 = 9$; $J_3 = 2\cdot 1 = 2$.
+Layer 4 ($K=3, S=2$): $RF_4 = 9 + (3-1)\cdot 2 = \mathbf{13}$; $J_4 = 2\cdot 2 = 4$.
+Final receptive field is $13\times 13$ pixels.}
+\end{qa}
+
+\begin{qa}[Multimodal, 3D \& Edge Math]
+\Q{A VLM processes a high-res image with AnyRes ($4\times 336^2$ crops $+$ 1 thumbnail). Token budget?}{
+Base ViT patch size is $P=14$.
+Each $336\times 336$ tile yields $(336/14)^2 = 24\times 24 = 576$ patch tokens.
+Total tiles $= 4 \text{ crops} + 1 \text{ thumbnail} = 5$ images.
+Total raw visual tokens $= 5 \times 576 = \mathbf{2{,}880\text{ tokens}}$.
+With $2\times 2$ pixel-shuffle downsampling: $2{,}880 / 4 = \mathbf{720\text{ tokens}}$ in LLM context.}
+\Q{VRAM footprint of a 3D Gaussian Splatting scene with 3,000,000 Gaussians?}{
+Each Gaussian requires 59 FP32 values ($236\text{ bytes}$):
+$$\text{Weights} = 3{,}000{,}000 \times 236\text{ bytes} \approx \mathbf{708\text{ MB}}$$
+Rasterizer tile buffers and sorting indices add $\approx 250\text{ MB}$.
+Easily fits on an 8 GB consumer GPU or mobile phone memory.}
+\Q{Uncompressed 1080p60 camera stream bandwidth vs H.264 vs VAE latents?}{
+Raw RGB: $1920 \times 1080 \times 3\text{ bytes} \times 60\text{ FPS} \approx \mathbf{373\text{ MB/s}}$ ($2.98\text{ Gbps}$).
+H.264 stream ($15\text{ Mbps}$): $\approx \mathbf{1.87\text{ MB/s}}$ ($200\times$ compression).
+Spatial VAE ($f=8$, 4 channels, fp16): $\frac{1920}{8} \times \frac{1080}{8} \times 4 \times 2\text{ bytes} \times 60 \approx \mathbf{15.5\text{ MB/s}}$.}
+\Q{How long does it take to train ResNet-50 for 90 epochs on ImageNet-1K on 8x A100s?}{
+ImageNet-1K contains $1.28\times 10^6$ training images.
+ResNet-50 costs $\approx 4.1\text{ GFLOPs}$ forward $\implies \approx 12.3\text{ GFLOPs}$ forward+backward per image.
+Total training compute for 90 epochs:
+$$\text{Compute} \approx 90 \times (1.28\cdot 10^6) \times (12.3\cdot 10^9) \approx \mathbf{1.42\text{ ExaFLOPs}}$$
+One A100 provides $312\text{ TFLOP/s}$ FP16 Tensor Core compute. At $40\%$ MFU:
+$8 \times (312\times 10^{12}) \times 0.40 \approx 1.0\times 10^{15}\text{ FLOP/s} = 1\text{ PFLOP/s}$.
+$$\text{Training Time} = \frac{1.42\times 10^{18}}{1.0\times 10^{15}} \approx 1{,}420\text{ seconds} \approx \mathbf{23.6\text{ minutes}}$$
+Matches modern high-throughput distributed training benchmarks.}
+\end{qa}

@@ -1,0 +1,70 @@
+\section{Object Detection: Two-Stage, Single-Stage \& YOLOv11}\label{sec:det}
+\lab{Faster R-CNN \textperiodcentered\ RoIAlign \textperiodcentered\ FPN \textperiodcentered\ YOLO family \textperiodcentered\ CIoU Loss \textperiodcentered\ Focal Loss \textperiodcentered\ TAL}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (img) {Image $H\times W$};
+\node[bx,above=1.5mm of img] (bb) {Backbone (ResNet/ConvNeXt)};
+\node[bx,above=1.5mm of bb] (fpn) {Feature Pyramid Network (FPN)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of fpn] (rpn) {RPN (Anchors $\to$ Proposals)};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of rpn] (align) {RoIAlign ($7\times 7$ bilinear)};
+\node[bx,above=1.5mm of align] (fc) {Decoupled Heads (Cls + Reg)};
+\draw[arr] (img)--(bb); \draw[arr] (bb)--(fpn); \draw[arr] (fpn)--(rpn); \draw[arr] (rpn)--(align); \draw[arr] (align)--(fc);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Object Detection Paradigm.} Predicts class label $c \in \{1,\dots,K\}$ and coordinates $\mathbf{b} = [x_1, y_1, x_2, y_2]$ for all instances.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{FPN}: Combines semantic richness of deep layers with high spatial resolution of shallow layers via top-down pathways and lateral $1\times 1$ conv additions.\\
+{\color{acc2}$\blacktriangleright$} \textbf{Decoupled Head}: Separate conv branches for classification (invariant to translation) and regression (sensitive to translation).
+\end{minipage}
+
+\begin{mem}[RoI Operations: Pool vs Align]
+\begin{tabularx}{\linewidth}{@{}lLL@{}}
+\toprule
+\textbf{Operation} & \textbf{Coordinate Handling} & \textbf{Consequence}\\
+\midrule
+\textbf{RoIPool} (Fast R-CNN) & Rounds continuous RoI coordinates to feature stride ($x/16$), then rounds sub-cell bins. & Quantization error introduces severe sub-pixel spatial shifts; destroys mask AP.\\
+\textbf{RoIAlign} (Mask R-CNN) & No quantization. Uses exact floating coordinates; samples 4 points per bin via \textbf{bilinear interpolation}. & Eliminates coordinate misalignment; gains $+3.0$ box AP and enables pixel-precise instance masks.\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Detection Mechanics, Losses \& YOLO Evolution]
+\Q{State the Complete IoU (CIoU) loss formulation and explain why it outperforms GIoU.}{
+Standard GIoU penalizes empty area inside the smallest enclosing convex hull $C$: $\text{GIoU} = \text{IoU} - \frac{|C \setminus (A \cup B)|}{|C|}$. When one box is completely inside another, GIoU degenerates to standard IoU.
+\textbf{CIoU (Zheng et al., 2020)} incorporates 3 geometric factors simultaneously:
+$$\mathcal{L}_{\text{CIoU}} = 1 - \text{IoU} + \frac{\rho^2(\mathbf{b}, \mathbf{b}^{\text{gt}})}{c^2} + \alpha v$$
+\begin{itemize}
+\item $\frac{\rho^2(\mathbf{b}, \mathbf{b}^{\text{gt}})}{c^2}$: Normalized Euclidean distance between box center points, where $c$ is diagonal length of the smallest enclosing box.
+\item $v = \frac{4}{\pi^2} \left( \arctan \frac{w^{\text{gt}}}{h^{\text{gt}}} - \arctan \frac{w}{h} \right)^2$: Measures aspect ratio consistency.
+\item $\alpha = \frac{v}{(1 - \text{IoU}) + v}$: Non-overlapping balance parameter giving high priority to aspect ratio when IoU is high.
+\end{itemize}
+Accelerates convergence and improves localization accuracy across tight multi-scale boxes.}
+\Q{Why is Focal Loss essential for dense single-stage detectors like RetinaNet?}{
+Dense single-stage detectors evaluate $\sim 100{,}000$ candidate anchor locations per image, where $<100$ contain ground-truth objects ($1000:1$ background:foreground ratio).
+Standard cross-entropy loss sums over all locations: even though background examples have small individual loss ($p_t \approx 0.99 \implies -\log(0.99) \approx 0.01$), their sheer volume overwhelms the gradient from rare foreground objects.
+\textbf{Focal Loss} modulates CE with focusing parameter $\gamma$ ($\gamma=2$):
+$$\text{FL}(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t)$$
+For well-classified easy negatives ($p_t = 0.99$), $(1-0.99)^2 = 0.0001$, scaling down their loss contribution by $10{,}000\times$, directing gradients purely toward hard foreground candidates.}
+\Q{Walk through the YOLO architectural evolution from YOLOv1 to YOLOv11.}{
+\begin{itemize}
+\item \textbf{YOLOv1--v3}: $S\times S$ grid cells with FC heads $\to$ Darknet-19 with k-means anchor clustering $\to$ Darknet-53 with 3-scale FPN residual connections.
+\item \textbf{YOLOv4--v7}: CSPDarknet cross-stage partial connections, PANet path aggregation, Mosaic data augmentation, and E-ELAN extended efficient layer aggregation.
+\item \textbf{YOLOv8}: Shifts to \textbf{Anchor-Free} detection; replaces coupled heads with decoupled classification and regression heads; introduces \textbf{Distribution Focal Loss (DFL)} predicting continuous coordinate distributions rather than single scalar offsets.
+\item \textbf{YOLOv11 (2024)}: Introduces \textbf{C3k2 blocks} (smaller kernel cross-stage blocks) and \textbf{SPPF} (Spatial Pyramid Pooling Fast), fusing depthwise separable convolutions to maximize edge NPU inference speed while retaining high mAP.
+\end{itemize}}
+\Q{How does the Task-Aligned Assigner (TAL) eliminate heuristic IoU thresholds?}{
+Traditional detectors use static IoU thresholds (e.g., anchor assigned positive if $\text{IoU} > 0.5$) regardless of classification confidence.
+\textbf{Task-Aligned Assigner}: Computes dynamic alignment metric $t$ for each anchor:
+$$t = s^\alpha \times \text{IoU}^\beta \quad (\alpha=0.5, \beta=6.0)$$
+where $s$ is predicted classification score and $\text{IoU}$ is bounding box overlap.
+Selects top-$k$ anchors with highest alignment $t$ as positive targets. Dynamically encourages anchors that excel at \emph{both} classification and spatial localization simultaneously.}
+\end{qa}
+
+\begin{trap}[Detection Metric Traps]
+\begin{itemize}
+\item \textbf{COCO mAP vs VOC AP}: VOC 2007 measures AP at a single threshold $\text{IoU} = 0.50$ ($\text{mAP}_{50}$). COCO reports average AP over 10 thresholds: $[0.50:0.05:0.95]$ ($\text{mAP}_{50:95}$). A model can achieve $85\%$ on $\text{mAP}_{50}$ but drop to $55\%$ on $\text{mAP}_{50:95}$ due to loose box boundary localization.
+\item \textbf{Bounding box parametrization}: $(x, y, w, h)$ center vs $(x_1, y_1, x_2, y_2)$ corner format. Mixing them up produces negative width/height in regression branches.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,66 @@
+\section{Query-Based Detection: DETR, Deformable DETR \& RT-DETR}\label{sec:detr}
+\lab{DETR \textperiodcentered\ Hungarian matching \textperiodcentered\ bipartite set loss \textperiodcentered\ Deformable Attention \textperiodcentered\ DINO-DETR \textperiodcentered\ RT-DETR}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (bb) {Backbone Features};
+\node[bx,draw=acc,above=1.5mm of bb] (enc) {Transformer Encoder};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of enc] (dec) {Transformer Decoder};
+\node[bx,draw=mute,left=2mm of dec] (q) {$N$ Object Queries};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of dec] (ffn) {Prediction Heads};
+\node[bx,above=1.5mm of ffn] (hung) {Hungarian Matching $\hat{\sigma}$};
+\draw[arr] (bb)--(enc); \draw[arr] (enc)--(dec); \draw[arr] (q)--(dec); \draw[arr] (dec)--(ffn); \draw[arr] (ffn)--(hung);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{Direct Set Prediction.} Bypasses hand-designed anchor boxes and greedy NMS entirely. Formulates detection as predicting an unordered set of $N$ bounding boxes (e.g., $N=300$).\\[2pt]
+{\color{acc2}$\blacktriangleright$} One-to-one matching enforces that each ground-truth object is assigned to exactly \textbf{one} query.\\
+{\color{acc2}$\blacktriangleright$} No duplicate predictions $\implies$ zero NMS post-processing needed.
+\end{minipage}
+
+\begin{mem}[Bipartite Matching Loss Formulation]
+Ground-truth objects padded with "no object" $\varnothing$ to size $N$: $y = (c_i, b_i)_{i=1}^N$.
+Predictions: $\hat{y} = (\hat{p}_{\sigma(i)}(c), \hat{b}_{\sigma(i)})_{i=1}^N$.
+\begin{enumerate}
+\item \textbf{Hungarian Matcher}: Finds optimal permutation $\hat{\sigma} \in \mathfrak{S}_N$ minimizing pairwise cost:
+$$\hat{\sigma} = \arg\min_{\sigma \in \mathfrak{S}_N} \sum_{i=1}^N \mathcal{L}_{\text{match}}(y_i, \hat{y}_{\sigma(i)})$$
+where $\mathcal{L}_{\text{match}} = -\mathbf{1}_{\{c_i \neq \varnothing\}} \hat{p}_{\sigma(i)}(c_i) + \mathbf{1}_{\{c_i \neq \varnothing\}} \big( \lambda_{\text{L1}} \|b_i - \hat{b}_{\sigma(i)}\|_1 + \lambda_{\text{giou}} \mathcal{L}_{\text{giou}}(b_i, \hat{b}_{\sigma(i)}) \big)$.
+\item \textbf{Set Loss}: Computes cross-entropy and box regression loss along the optimal matching $\hat{\sigma}$.
+\end{enumerate}
+\end{mem}
+
+\begin{qa}[DETR Dynamics, Deformable Attention \& Real-Time Variants]
+\Q{Why did original DETR require 500 epochs to train, and how did Deformable DETR solve it?}{
+\textbf{The Bottleneck}: Vanilla transformer attention computes dense softmax over all $HW$ spatial tokens for every query. Early in training, attention weights are nearly uniform across the entire image: queries do not know where to look, making bipartite matching assignments unstable and erratic from step to step.
+\textbf{Deformable Attention}: Constrains attention to only $K$ sampling points ($K=4$) per head around a predicted 2D reference point $p_q = (p_{qx}, p_{qy}) \in [0, 1]^2$:
+$$\text{DeformAttn}(z_q, p_q, x) = \sum_{m=1}^M W_m \left[ \sum_{k=1}^K A_{mqk} \cdot W'_m x(p_q + \Delta p_{mqk}) \right]$$
+where $\Delta p_{mqk}$ are 2D offsets predicted from query $z_q$, and $x(\cdot)$ samples features via bilinear interpolation.
+Reduces complexity from $\mathcal{O}((HW)^2)$ to $\mathcal{O}(N_q \cdot K)$, enables multi-scale feature maps ($C_3, C_4, C_5$), and converges in \textbf{50 epochs} ($10\times$ faster).}
+\Q{What is Denoising Training in DINO-DETR?}{
+Bipartite matching exhibits instability because small parameter updates flip which query is matched to which ground truth.
+DINO-DETR introduces \textbf{Contrastive Denoising (CDN)}:
+\begin{itemize}
+\item Adds noise to ground truth boxes: positive noisy boxes (small jitter within GT) and negative noisy boxes (large jitter).
+\item Feeds noisy boxes directly as queries into the decoder with an attention mask preventing information leak to normal learned queries.
+\item Forces the decoder to reconstruct the original box for positives and predict "background" for negatives.
+\end{itemize}
+Acts as anchor priors during early training, bypassing matching instability and pushing detection performance to $63.3\text{ mAP}$ on COCO.}
+\Q{How does RT-DETR achieve real-time latency matching YOLOv8 on GPU?}{
+Lv et al. identify that the multi-scale transformer encoder consumes $49\%$ of FLOPs in Deformable DETR.
+\textbf{RT-DETR (Real-Time DETR)}:
+\begin{enumerate}
+\item \textbf{Efficient Hybrid Encoder}: Decouples multi-scale feature interaction. Cross-scale feature fusion is handled purely by an efficient convolutional CSPRepLayer path; self-attention is applied \emph{only} on the highest-level feature map ($S_5$), reducing encoder compute by $70\%$.
+\item \textbf{Uncertainty-Minimal Query Selection}: Selects top-$N$ queries based on classification confidence weighted by IoU scores, providing higher quality initial queries to the decoder.
+\end{enumerate}
+Achieves $53.1\text{ mAP}$ at $114\text{ FPS}$ on an NVIDIA T4, surpassing YOLOv8-X in both speed and accuracy.}
+\end{qa}
+
+\begin{trap}[Hungarian Matching Pitfalls]
+\begin{itemize}
+\item \textbf{Classification cost without probabilities}: In $\mathcal{L}_{\text{match}}$, using raw logits instead of probabilities $\hat{p}(c)$ creates scale imbalance against the bounded GIoU loss ($[-1, 1]$), causing matcher collapse.
+\item \textbf{Gradients through matcher}: The Hungarian algorithm permutation $\hat{\sigma}$ is non-differentiable and solved on CPU via linear sum assignment (\lstinline|scipy.optimize.linear_sum_assignment|). Gradients flow only through the loss evaluated at the fixed indices $\hat{\sigma}$.
+\end{itemize}
+\end{trap}

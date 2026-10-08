@@ -1,0 +1,75 @@
+\section{Multimodal LLMs: Architecture, AnyRes \& Alignment}\label{sec:vlm}
+\lab{LLaVA \textperiodcentered\ Projectors \textperiodcentered\ AnyRes dynamic resolution \textperiodcentered\ 2D RoPE \textperiodcentered\ Qwen2-VL \textperiodcentered\ Hallucination \& POPE}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (img) {Image ($H\times W$)};
+\node[bx,draw=acc,above=1.5mm of img] (enc) {Vision Encoder (SigLIP)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of enc] (proj) {Projector (MLP / Pixel Shuffle)};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of proj] (llm) {Autoregressive LLM};
+\node[bx,above=1.5mm of llm] (out) {Generated Text Tokens};
+\draw[arr] (img)--(enc); \draw[arr] (enc)--(proj); \draw[arr] (proj)--(llm); \draw[arr] (llm)--(out);
+\node[bx,draw=mute,left=2mm of llm] (txt) {Text Prompt};
+\draw[arr] (txt)--(llm);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Modern VLM Pipeline.} Integrates visual tokens directly into the LLM's sequence context.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{Token budget}: A $336\times 336$ image with patch 14 produces $(336/14)^2 = 576$ visual tokens.\\
+{\color{acc2}$\blacktriangleright$} \textbf{Pixel Shuffle}: Merging $2\times 2$ adjacent patch tokens compresses sequence length by $4\times$ ($576 \to 144$ tokens), preserving LLM context budget.
+\end{minipage}
+
+\begin{mem}[Visual Connectors / Projectors]
+\begin{tabularx}{\linewidth}{@{}p{22mm} X X@{}}
+\toprule
+\textbf{Connector} & \textbf{Mechanism} & \textbf{Trade-off}\\
+\midrule
+\textbf{Linear / 2-Layer MLP} (LLaVA) & $H_v = W_2 \cdot \text{GELU}(W_1 \cdot Z_v)$ & Preserves spatial topology 1:1; high token count in LLM context.\\
+\textbf{Perceiver / Q-Former} (BLIP-2) & $K$ learned query tokens cross-attend to visual features & Compresses visual sequence to fixed size (e.g. 64); loses fine-grained dense OCR details.\\
+\textbf{Pixel Shuffle / Merge} (InternVL, Qwen2) & Reshapes $2\times 2$ spatial tokens into channels: $(H/2, W/2, 4C) \to (H/2, W/2, C_{\text{LLM}})$ & $4\times$ token reduction while maintaining 2D spatial relative geometry.\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[High-Resolution \& Alignment]
+\Q{How does the AnyRes (grid slicing) strategy handle high-resolution documents and charts?}{
+Standard ViTs downsample images to fixed small resolutions (e.g., $336\times 336$), rendering small text and chart labels unreadable.
+\textbf{AnyRes Strategy (LLaVA-NeXT)}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item Determines an optimal grid of tiles (e.g., $1\times 2, 2\times 2, 1\times 3$) based on image aspect ratio.
+\item Crops image into $N$ standard $336\times 336$ high-resolution patches, plus one downsampled global image for macro context.
+\item Feeds all $N+1$ tiles through the ViT encoder independently.
+\item Inserts special separator tokens (\texttt{<newline>}) between rows to maintain 2D layout semantics when flattened into the 1D LLM token sequence.
+\end{enumerate}
+Increases effective resolution up to $4\times$ while reusing pretrained small-resolution ViT weights.}
+\Q{How does Qwen2-VL implement native dynamic resolution with 2D Rotary Position Embeddings?}{
+Rather than slicing images into discrete artificial tiles, Qwen2-VL introduces a \textbf{Naive ViT} architecture:
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Dynamic Patchification}: An image of arbitrary resolution $(H, W)$ is directly partitioned into $\frac{H}{14} \times \frac{W}{14}$ patches without padding or interpolation.
+\item \textbf{2D RoPE (Rotary Position Embeddings)}: Query and key vectors at spatial coordinate $(x, y)$ are rotated by two independent 1D frequency angles:
+$$\mathbf{R}_{2\text{D}}(x, y) = \text{diag}\big(\mathbf{R}(x), \mathbf{R}(y)\big)$$
+Inner products $\langle \mathbf{q}_{(x_1, y_1)}, \mathbf{k}_{(x_2, y_2)} \rangle$ depend strictly on relative spatial distance $(\Delta x, \Delta y) = (x_1 - x_2, y_1 - y_2)$.
+\item \textbf{Video Unification}: Replaces 2D RoPE with 3D RoPE $(t, x, y)$ to treat images and video frames within the exact same pipeline.
+\end{itemize}
+Eliminates tile boundaries and aspect ratio distortion completely.}
+\Q{What causes object hallucination in VLMs, and how is it measured and mitigated?}{
+\textbf{Cause}: Language priors overpower visual attention. Because the LLM backbone was pretrained on trillions of text tokens, strong statistical associations (e.g., "refrigerator" co-occurring with "kitchen", or "helmet" with "motorcycle") cause the model to generate tokens regardless of visual evidence.
+\textbf{Measurement}: The \textbf{POPE (Polling-based Object Probing Evaluation)} benchmark queries whether specific objects exist in an image via binary yes/no questions under random, popular, and adversarial negative sampling.
+\textbf{Mitigations}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{DPO-V}: Direct preference optimization where hallucinated answers are marked as rejected pairs.
+\item \textbf{Visual Contrastive Decoding (VCD)}: Samples from logits conditioned on clean image vs distorted/blurred image:
+$$\text{logit}^* = (1+\alpha) \cdot \text{logit}(x) - \alpha \cdot \text{logit}(x_{\text{blurred}})$$
+suppressing pure language prior biases and improving POPE score by $+8.5$ points.
+\end{enumerate}}
+\end{qa}
+
+\begin{trap}[Multimodal Training Pitfalls]
+\begin{itemize}
+\item \textbf{Unfreezing vision encoder too early}: Unfreezing the vision encoder during Stage 1 (feature alignment) with random MLP projector weights corrupts the pretrained visual representations. Stage 1 must train \textbf{only} the projector.
+\item \textbf{Loss masking}: Next-token cross-entropy loss must be computed \textbf{only} on the assistant's generated text tokens. Labels for user prompt text and visual tokens must be masked to $-100$ (\texttt{ignore\_index}).
+\end{itemize}
+\end{trap}

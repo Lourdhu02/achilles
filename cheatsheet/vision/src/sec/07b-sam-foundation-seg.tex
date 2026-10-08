@@ -1,0 +1,70 @@
+\section{Foundation Segmentation: SAM \& SAM 2}\label{sec:sam}
+\lab{SAM ViT-H \textperiodcentered\ prompt encoder \textperiodcentered\ two-way decoder \textperiodcentered\ ambiguity resolution \textperiodcentered\ SAM 2 streaming video \textperiodcentered\ memory bank}
+
+\begin{mem}[SAM vs SAM 2 Architecture Comparison]
+\begin{tabularx}{\columnwidth}{@{}l X X@{}}
+\toprule
+\textbf{Component} & \textbf{SAM (Images, 2023)} & \textbf{SAM 2 (Images \& Videos, 2024)} \\
+\midrule
+\textbf{Image Backbone} & ViT-H/L/B (MAE pretrained, $1024\times 1024$, windowed attn) & Hiera hierarchical backbone (multiscale, faster execution) \\
+\textbf{Prompt Types} & Points (pos/neg), bounding boxes, dense masks & Points, boxes, masks across any video timestep \\
+\textbf{Decoder} & Two-way cross-attention transformer (prompt $\leftrightarrow$ image) & Two-way transformer + Occlusion prediction head \\
+\textbf{Temporal State} & None (single static frame) & Streaming Memory Bank (FIFO past frames + prompted frames) \\
+\textbf{Memory Attention} & N/A & L-layer cross-attention attending to stored memory features \\
+\textbf{Dataset} & SA-1B (11M images, 1.1B masks) & SA-V (51k videos, 600k masklets, $53\times$ more masks than prior) \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Segment Anything (SAM) Deep Dive]
+\Q{How does the SAM architecture decouple the heavy image encoder from the real-time prompt decoder?}{
+\textbf{Decoupled Design}:
+\begin{enumerate}
+\item \textbf{Image Encoder (Heavyweight)}: Uses ViT-H (632M parameters) with input resolution $1024 \times 1024$. To avoid quadratic self-attention cost across all $64 \times 64 = 4096$ patches, it uses interleaved local window attention with only 4 global attention blocks.
+Image encoding takes $\sim 450$\,ms on an A100 GPU, but runs \hl{exactly once} per image to output a spatial feature embedding $\mathbf{F} \in \mathbb{R}^{64 \times 64 \times 256}$.
+\item \textbf{Prompt Encoder (Lightweight)}:
+\begin{itemize}
+\item \textbf{Sparse prompts (Points/Boxes)}: Point $(x, y)$ is represented by 2D Fourier positional encoding plus learned embeddings indicating point type (foreground vs background). Bounding boxes are encoded as two points (top-left and bottom-right).
+\item \textbf{Dense prompts (Masks)}: Downsampled via convolutional layers and element-wise added to the image embedding.
+\end{itemize}
+\item \textbf{Mask Decoder (Real-time)}: A tiny two-way transformer ($\sim 4$\,M parameters). Prompt tokens attend to image embeddings, and image embeddings attend to prompt tokens.
+Decodes in $<50$\,ms on modern GPUs, enabling instant, fluid interactive browser annotation.
+\end{enumerate}}
+
+\Q{How does SAM solve the mathematical ambiguity of a single point prompt without collapsing training gradients?}{
+\textbf{The Ambiguity Problem}: A single click on an person's shirt could mean (1) the shirt button, (2) the shirt itself, or (3) the entire person. Training a standard network with binary cross-entropy on ground-truth masks produces blurry, averaged probabilities that attempt to satisfy all three meanings simultaneously.\\[2pt]
+\textbf{SAM Ambiguity Resolution}:
+\begin{itemize}
+\item The mask decoder always outputs \hl{3 distinct mask tokens} simultaneously, representing subpart, part, and whole object.
+\item During training, SAM calculates the loss against ground-truth for all 3 masks, but backpropagates gradients \hl{only through the single mask with the lowest loss} (minimum error backpropagation).
+\item In addition, an auxiliary MLP head predicts the IoU score for each mask.
+\item At inference, if ambiguous, SAM displays the 3 candidate masks or selects the one with the highest predicted IoU score.
+\end{itemize}}
+\end{qa}
+
+\begin{qa}[SAM 2: Video Object Segmentation \& Memory Dynamics]
+\Q{How does SAM 2 extend promptable segmentation to continuous video streams in real time?}{
+SAM 2 introduces a causal streaming architecture that processes video frame-by-frame:
+\begin{itemize}
+\item \textbf{Memory Attention Block}: When a new frame $t$ arrives, its Hiera visual features attend to previous spatial-temporal representations stored in the \textbf{Memory Bank} via stacked cross-attention layers.
+\item \textbf{Streaming Memory Bank}: Stores two distinct types of memories:
+\begin{enumerate}
+\item \textbf{Temporal FIFO}: A sliding window of features from the most recent $N$ frames (capturing immediate motion and appearance transitions).
+\item \textbf{Prompted Anchors}: Features from all frames where the user provided explicit interactive prompts (preventing catastrophic forgetting and drift over long videos).
+\end{enumerate}
+\item \textbf{Memory Encoder}: Once a mask is predicted for frame $t$, a lightweight convolutional memory encoder downsamples the mask, fuses it with image features, and writes the compact embedding into the memory bank.
+\item \textbf{Occlusion Head}: Predicts a probability $p_{\text{occ}} \in [0, 1]$ indicating whether the target object is currently visible. If occluded, the memory bank suppresses visual updates to avoid contaminating tracking with background clutter.
+\end{itemize}}
+
+\Q{Why did SAM 2 replace the ViT backbone with Hiera, and what is the latency advantage?}{
+\textbf{ViT-H limitations}: Standard ViT operates at a single fixed scale with isotropic resolution, requiring costly windowed attention and large FLOP budgets ($\sim 632$M parameters, $\sim 50$ms per frame even after caching).\\[2pt]
+\textbf{Hiera Backbone}: A hierarchical vision transformer that produces multi-scale feature maps ($4\times, 8\times, 16\times, 32\times$) with simple masked autoencoder pretraining. It removes complex operations (no shifted windows, no relative position bias tables, no multi-path branches) and relies purely on simple spatial pooling.
+Result: SAM 2 achieves \hl{$6\times$ faster runtime} ($44$ FPS on A100 vs $7$ FPS for SAM), enabling true real-time video tracking.}
+\end{qa}
+
+\begin{trap}[SAM / SAM 2 Practical Traps]
+\begin{itemize}
+\item \textbf{Semantic Class Agnosticism}: SAM predicts \emph{masks}, not semantic \emph{categories}. It outputs "where" an object is, but has zero awareness of "what" it is. For semantic segmentation, SAM must be paired with CLIP/Grounding-DINO.
+\item \textbf{Memory Bank GPU Leak in SAM 2}: In long videos ($>1000$ frames), an unbounded memory bank exhausts GPU VRAM. In production streaming, enforce strict FIFO eviction capping unprompted history to $N=8$ frames.
+\end{itemize}
+\end{trap}

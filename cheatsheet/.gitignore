@@ -4,3 +4,6 @@
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+*.log
+src/*.pdf
+*/src/*.pdf

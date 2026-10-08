@@ -1,0 +1,114 @@
+\section{Classical Vision: Keypoints, Geometry \& Flow}\label{sec:classical}
+\lab{Harris corner \textperiodcentered\ SIFT \textperiodcentered\ ORB \textperiodcentered\ RANSAC \textperiodcentered\ Essential/Fundamental \textperiodcentered\ Lucas-Kanade \textperiodcentered\ RAFT}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+% Left Camera C1
+\fill[acc] (0,0) circle (0.8mm) node[below] {$C_1$};
+% Right Camera C2
+\fill[acc] (32,0) circle (0.8mm) node[below] {$C_2$};
+\draw[mute,thick] (0,0) -- (32,0) node[midway,below] {Baseline $b$};
+% 3D Point X
+\fill[acc2] (16,22) circle (0.8mm) node[above] {$X \in \mathbb{R}^3$};
+% Rays
+\draw[arr,acc] (0,0) -- (16,22);
+\draw[arr,acc] (32,0) -- (16,22);
+% Image planes
+\draw[draw=acc,fill=soft] (3,4) -- (11,10) -- (11,3) -- (3,-3) -- cycle;
+\draw[draw=acc,fill=soft] (21,10) -- (29,4) -- (29,-3) -- (21,3) -- cycle;
+% Epipoles and projected points
+\fill[acc3] (4,0) circle (0.5mm) node[above left] {$e_1$};
+\fill[acc3] (28,0) circle (0.5mm) node[above right] {$e_2$};
+\fill[acc2] (7,6) circle (0.5mm) node[above] {$x_1$};
+\fill[acc2] (25,6) circle (0.5mm) node[above] {$x_2$};
+\draw[draw=acc2,dashed] (4,0) -- (7,6) node[midway,left] {$l_1$};
+\draw[draw=acc2,dashed] (28,0) -- (25,6) node[midway,right] {$l_2$};
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Epipolar Constraint.} $X, C_1, C_2$ define the epipolar plane.
+Baseline $b$ pierces image planes at epipoles $e_1, e_2$. Observing point $x_1$ constrains correspondence $x_2$ to lie along epipolar line $l_2 = \mathbf{F} x_1$.\\[2pt]
+{\color{acc2}$\blacktriangleright$} Calibrated: $\hat{x}_2^T \mathbf{E} \hat{x}_1 = 0$ ($5$ DoF, SVD $[\sigma, \sigma, 0]$).\\
+{\color{acc2}$\blacktriangleright$} Uncalibrated: $x_2^T \mathbf{F} x_1 = 0$ ($7$ DoF, rank 2).\\
+{\color{acc2}$\blacktriangleright$} Search: 2D correspondence reduced to 1D ray.
+\end{minipage}
+
+\begin{mem}[Keypoint Detectors \& Descriptors at a Glance]
+\begin{tabularx}{\columnwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Method} & \textbf{Detector} & \textbf{Descriptor} & \textbf{Properties \& Invariance} \\
+\midrule
+\textbf{Harris} & Structure Tensor $M$ & None & Rotation, translation; \hl{NOT} scale-invariant \\
+\textbf{SIFT} & DoG Scale-Space & 128-D L2 & Scale, rotation, illumination; compute-heavy \\
+\textbf{SURF} & Box filters & 64-D L2 & Fast scale-invariance via integral images \\
+\textbf{FAST} & 16-px circle test & None & Ultra-fast corner detector ($\sim$0.5\,ms) \\
+\textbf{ORB} & Oriented FAST & 256-bit bin & Rotation-invariant; Hamming dist (POPCNT) \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Classical Corner Detection \& Invariant Descriptors]
+\Q{Derive the Harris Corner Detector response and explain why it is rotation-invariant but not scale-invariant.}{
+The local auto-correlation function measures intensity variation under shift $(\Delta x, \Delta y)$:
+$$E(\Delta x, \Delta y) \approx [\Delta x, \Delta y] \, M \, [\Delta x, \Delta y]^T$$
+$$\text{where } M = \sum_{(x,y) \in W} w(x,y) \begin{bmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{bmatrix}$$
+Let eigenvalues of $M$ be $\lambda_1, \lambda_2$:
+\begin{itemize}
+\item \textbf{Flat region}: $\lambda_1 \approx 0, \lambda_2 \approx 0$.
+\item \textbf{Edge}: $\lambda_1 \gg \lambda_2 \approx 0$ (or vice versa).
+\item \textbf{Corner}: $\lambda_1, \lambda_2 \gg 0$ (large variation in all spatial directions).
+\end{itemize}
+Harris avoids costly SVD eigenvalue computation using trace and determinant:
+$$R = \det(M) - k \cdot (\operatorname{Tr}(M))^2 = \lambda_1 \lambda_2 - k(\lambda_1 + \lambda_2)^2$$
+with $k \in [0.04, 0.06]$.
+\textbf{Invariance}: Rotation transforms $M \to R M R^T$, preserving trace and determinant ($\det(R M R^T) = \det(M)$). However, scaling an image shrinks or expands features: a corner at fine scale becomes a smooth curve at coarse scale, breaking fixed window $W$.}
+
+\Q{How does SIFT achieve scale invariance, and why does Lowe's Ratio Test reject false matches?}{
+\textbf{Scale Invariance}: SIFT builds an octave scale space by convolving the image with Gaussians of increasing variance $\sigma$, then computes Difference-of-Gaussians (DoG):
+$$D(x, y, \sigma) = (G(x, y, k\sigma) - G(x, y, \sigma)) * I(x, y)$$
+Extrema (minima/maxima) are detected by comparing each pixel against its 8 neighbors in the current scale and $9+9=18$ neighbors in adjacent scales (26 comparisons). Sub-pixel localization fits a 3D quadratic Taylor polynomial.\\[2pt]
+\textbf{Lowe's Ratio Test}: When matching keypoint descriptor $d_A$ against target set, let $d_{B1}$ be the nearest neighbor ($L_2$ distance $r_1$) and $d_{B2}$ be the second-nearest neighbor ($L_2$ distance $r_2$).
+$$\text{Ratio} = \frac{r_1}{r_2} < \tau \quad (\tau \approx 0.75-0.80)$$
+Ambiguous/repetitive features (e.g., foliage, building windows) produce $r_1 \approx r_2 \implies \text{Ratio} \approx 1.0$ and are discarded; unique salient features yield $r_1 \ll r_2$, ensuring high-confidence matching.}
+
+\Q{Derive the RANSAC iteration formula for geometric model fitting (e.g., Homography or Epipolar).}{
+Given sample size $s$ ($s=4$ for Homography, $s=8$ for Fundamental Matrix), outlier ratio $\epsilon \in (0, 1)$, and desired probability of success $p$ (typically $0.99$):
+The probability that a random draw of $s$ points contains only inliers is $(1 - \epsilon)^s$.
+The probability that at least one of $N$ random trials draws an all-inlier set is:
+$$1 - (1 - (1 - \epsilon)^s)^N = p \implies N = \frac{\ln(1 - p)}{\ln(1 - (1 - \epsilon)^s)}$$
+\textbf{Example}: For $\epsilon = 0.5$ (50\% outliers) and Homography ($s=4$):
+$(1 - \epsilon)^4 = (0.5)^4 = 0.0625$. For $p = 0.99$: $N = \frac{\ln(0.01)}{\ln(1 - 0.0625)} \approx \frac{-4.605}{-0.0645} \approx 72\text{ iterations}$.}
+\end{qa}
+
+\begin{qa}[Epipolar Geometry \& Optical Flow]
+\Q{Differentiate between Essential Matrix $E$ and Fundamental Matrix $F$.}{
+\begin{itemize}
+\item \textbf{Essential Matrix ($E$)}: Operates on \hl{calibrated} normalized camera coordinates ($\hat{x} = K^{-1} x$). Relates two views separated by rotation $R$ and translation $t$:
+$$E = [t]_\times R, \quad \hat{x}_2^T E \hat{x}_1 = 0 \quad (\text{5 degrees of freedom})$$
+Singular values of $E$ are constrained: $\Sigma_E = \operatorname{diag}(\sigma, \sigma, 0)$.
+\item \textbf{Fundamental Matrix ($F$)}: Operates on \hl{uncalibrated} raw pixel coordinates ($x$):
+$$F = K_2^{-T} E K_1^{-1}, \quad x_2^T F x_1 = 0 \quad (\text{7 degrees of freedom, rank 2})$$
+$l_2 = F x_1$ defines the epipolar line in image 2 upon which corresponding point $x_2$ must lie.
+\end{itemize}}
+
+\Q{Explain the Brightness Constancy Assumption, the Aperture Problem, and how RAFT revolutionizes Optical Flow.}{
+\textbf{Optical Flow Constraint}: Assumes $I(x+u, y+v, t+1) = I(x, y, t)$. First-order Taylor expansion yields:
+$$I_x u + I_y v + I_t = 0 \quad \text{or} \quad \nabla I^T \mathbf{v} + I_t = 0$$
+\textbf{Aperture Problem}: One equation with two unknowns $(u, v)$. We can only measure flow parallel to image gradient $\nabla I$ (normal flow); tangential flow is invisible along a straight line edge.\\[2pt]
+\textbf{Lucas-Kanade solution}: Assumes uniform motion in local $3 \times 3$ window $W$, solving overdetermined system $(A^T A) \mathbf{v} = -A^T b$.\\[2pt]
+\textbf{RAFT (Recurrent All-Pairs Field Transforms)}:
+\begin{enumerate}
+\item Computes 4D correlation volume of all pixel pairs between feature maps $f(I_1)$ and $f(I_2)$.
+\item Constructs multi-scale correlation pyramid via pooling.
+\item Uses a recurrent GRU operator to iteratively update flow field $\mathbf{f}_{k+1} = \mathbf{f}_k + \Delta \mathbf{f}$ by looking up local correlation features, replacing coarse-to-fine pyramids that miss fast-moving small objects.
+\end{enumerate}}
+\end{qa}
+
+\begin{trap}[Classical CV Production Traps]
+\begin{itemize}
+\item \textbf{Raw 8-Point Algorithm Failure}: Unnormalized coordinates cause numerical instability ($x \sim 10^3 \implies x_1 x_2 \sim 10^6$ while constant is $1$). Always apply Hartley's normalization: translate centroid to origin and scale average distance to $\sqrt{2}$.
+\item \textbf{Hamming vs Euclidean Distance}: ORB descriptors are binary strings; using Euclidean distance ($L_2$) produces nonsense. Always use Hamming distance via hardware \texttt{POPCNT(a \^{} b)}.
+\end{itemize}
+\end{trap}

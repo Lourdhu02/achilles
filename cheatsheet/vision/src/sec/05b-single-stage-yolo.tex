@@ -1,0 +1,94 @@
+\section{Single-Stage Detectors: RetinaNet \& The YOLO Lineage}\label{sec:yolo}
+\lab{SSD \textperiodcentered\ Focal Loss \textperiodcentered\ YOLOv1--v11 evolution \textperiodcentered\ Anchor-free \textperiodcentered\ TAL assigner \textperiodcentered\ DFL \textperiodcentered\ NMS-free YOLOv10}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (feat) {FPN Feature Map $P_i$};
+\node[bx,draw=acc,above left=2mm and -2mm of feat] (cls) {Cls Head ($s \in [0, 1]$)};
+\node[bx,draw=acc2,fill=soft2,above right=2mm and -2mm of feat] (reg) {Reg Head (DFL bins)};
+\node[box,draw=acc3,fill=acc3!8,above=5mm of feat] (tal) {Task-Aligned Metric\\$t = s^\alpha \times \text{IoU}^\beta$};
+\draw[arr] (feat) -- (cls); \draw[arr] (feat) -- (reg);
+\draw[arr,acc] (cls) -- (tal); \draw[arr,acc2] (reg) -- (tal);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Decoupled Anchor-Free Head.} Modern YOLO (v8--v11) splits classification from localization.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{TAL Alignment}: Top-$k$ candidates ranked by joint metric $t = s^\alpha \times \text{IoU}^\beta$ to eliminate misalignment.\\
+{\color{acc2}$\blacktriangleright$} \textbf{DFL Head}: Predicts continuous box boundaries as probability distributions across 16 discrete distance bins.
+\end{minipage}
+
+\begin{mem}[The Full YOLO Evolution Timeline (v1 to v11)]
+\begin{tabularx}{\columnwidth}{@{}p{14mm} p{17mm} X r@{}}
+\toprule
+\textbf{Model} & \textbf{Head Type} & \textbf{Core Architectural Innovations} & \textbf{NMS / Post} \\
+\midrule
+\textbf{YOLOv1} & Coupled Grid & First real-time detector ($7\times 7$ grid, FC regression) & Grid ownership \\
+\textbf{YOLOv3} & Anchor-based & Darknet-53 + FPN multi-scale heads (P3, P4, P5) & K-means IoU \\
+\textbf{YOLOv4/5} & Anchor-based & CSPDarknet backbone + PANet neck + Mosaic augment & IoU threshold \\
+\textbf{YOLOv7} & Anchor-based & E-ELAN + RepConv structural re-parameterization & Lead assigner \\
+\textbf{YOLOv8} & Anchor-free & Decoupled head + C2f block + Distribution Focal Loss & TAL Assigner \\
+\textbf{YOLOv9} & Anchor-free & Programmable Gradient Information (PGI) + GELAN & Aux matching \\
+\textbf{YOLOv10} & Dual-head & Dual assignments: 1-to-many train, 1-to-1 infer & \hl{Zero NMS ms} \\
+\textbf{YOLOv11} & Anchor-free & C3k2 blocks + optimized depth/width scaling for NPUs & TAL + DFL \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Focal Loss \& Label Assignment Strategies]
+\Q{Derive Focal Loss and mathematically demonstrate why it prevents easy negative gradients from swamping training.}{
+Standard binary cross entropy (CE) loss is $\text{CE}(p_t) = -\log(p_t)$, where $p_t = p$ if $y=1$ and $p_t = 1-p$ if $y=0$.
+In dense single-stage detection, over $100,000$ candidate anchors exist, with $\sim 99.9\%$ being easy background negatives ($p_t \approx 0.99$).
+Although $\text{CE}(0.99) \approx 0.01$ is small, summing over $10^5$ candidates yields a gradient magnitude that completely overwhelms the few rare foreground positive targets ($p_t \approx 0.1$).\\[2pt]
+\textbf{Focal Loss Formulation}:
+$$\text{FL}(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t) \quad (\text{typically } \gamma = 2.0, \alpha = 0.25)$$
+\textbf{Gradient Dynamics}:
+The gradient with respect to logit $z$ ($p_t = \sigma(z)$) is:
+$$\frac{\partial \text{FL}}{\partial z} = \alpha_t (1 - p_t)^\gamma \left( p_t - y \right) + \gamma \alpha_t (1 - p_t)^{\gamma-1} p_t (1 - p_t) \log(p_t)$$
+For an easy background sample ($p_t = 0.99$):
+The modulating factor is $(1 - 0.99)^2 = (0.01)^2 = 0.0001$ --- a \hl{$10,000\times$ gradient suppression}!
+For a hard positive or misclassified sample ($p_t = 0.2$):
+$(1 - 0.2)^2 = 0.64$ --- virtually unaffected. The loss automatically focuses learning on hard informative candidates.}
+
+\Q{Compare Anchor-based vs Anchor-free detection: why did modern YOLO architectures abandon anchors?}{
+\begin{itemize}
+\item \textbf{Flaws of Anchor-based}: Requires manual heuristic tuning of anchor aspect ratios and scales (often dataset-specific k-means); dense spatial tiling creates hundreds of thousands of anchors, $99\%$ of which are wasted; fixed IoU thresholds (e.g., $0.5$) for positive matching fail on extreme-aspect objects.
+\item \textbf{Anchor-free Paradigm}: Predicts distance offsets from a grid point $(x, y)$ directly to the 4 box boundaries $(l, t, r, b)$, eliminating hyperparameter tuning and dramatically simplifying feature heads.
+\end{itemize}}
+
+\Q{How does Task-Aligned Assigner (TAL) in YOLOv8/v11 prevent the misalignment between classification and localization?}{
+Traditional assigners treat classification and regression independently: an anchor might have high classification score but poor IoU, or high IoU but low confidence. When Non-Maximum Suppression (NMS) ranks predictions solely by classification score, it retains boxes with poor spatial overlap and suppresses well-localized boxes.\\[2pt]
+\textbf{TAL Metric}: Computes a joint alignment metric $t$ for each candidate anchor $i$ and ground truth $j$:
+$$t = s^\alpha \times \text{IoU}^\beta \quad (\text{default: } \alpha = 0.5, \beta = 6.0)$$
+where $s$ is the predicted class probability and $\text{IoU}$ is the predicted box overlap with ground truth.
+Top-$k$ candidates with the highest alignment metric $t$ are assigned as positive samples.
+Furthermore, the classification target is dynamically scaled to $t$ rather than a binary $\{0, 1\}$, forcing high classification scores to strictly coincide with high IoU accuracy.}
+\end{qa}
+
+\begin{qa}[DFL \& NMS-Free End-to-End YOLOv10]
+\Q{What is Distribution Focal Loss (DFL) and why does it improve boundary precision?}{
+Standard detectors predict a single deterministic scalar for bounding box offsets: $y \in \mathbb{R}$. However, in complex real-world scenes with blurry or occluded edges, the true boundary is inherently uncertain.\\[2pt]
+\textbf{DFL Formulation}: Predicts a discrete probability distribution over $n$ intervals $\{y_0, y_1, \dots, y_n\}$ (e.g., $16$ bins):
+$$\hat{y} = \sum_{i=0}^n \operatorname{softmax}(S_i) \cdot y_i$$
+DFL minimizes the cross-entropy between the predicted distribution and the two discrete bins $[y_i, y_{i+1}]$ that flank the continuous ground truth $y$:
+$$\mathcal{L}_{\text{DFL}}(S_i, S_{i+1}) = - \left( (y_{i+1} - y) \log(S_i) + (y - y_i) \log(S_{i+1}) \right)$$
+This enables the network to express spatial uncertainty (sharp peak = clear edge; wide flat distribution = blurry/occluded boundary).}
+
+\Q{How does YOLOv10 eliminate NMS post-processing while maintaining high training accuracy?}{
+\textbf{The Dilemma}: One-to-one matching (Hungarian assignment) enables NMS-free inference (like DETR) but suffers from slow training convergence due to sparse supervision. One-to-many matching provides rich supervisory gradients but produces duplicate boxes requiring NMS.\\[2pt]
+\textbf{YOLOv10 Dual-Label Assignment}:
+\begin{itemize}
+\item \textbf{Training}: Evaluates two parallel heads sharing the same backbone/neck: (1) a one-to-many head (optimizing gradient flow and representation learning) and (2) a one-to-one head (optimizing direct, unique prediction).
+\item \textbf{Harmonized Matching}: Adjusts metric alignment so both heads learn mutually consistent representations.
+\item \textbf{Inference}: Discards the one-to-many head completely! Runs only the one-to-one head, yielding zero-duplicate predictions with \hl{0 ms post-processing latency}.
+\end{itemize}}
+\end{qa}
+
+\begin{trap}[YOLO Production Traps]
+\begin{itemize}
+\item \textbf{Input Resolution Aspect Ratio Distortion}: Directly resizing images of arbitrary aspect ratios (e.g. $1920 \times 1080$) to square $640 \times 640$ distorts spatial aspect ratios, degrading small object recall. Always use letterboxing with gray padding, and ensure padding is aligned to a stride multiple of 32.
+\item \textbf{NMS Confidence Threshold Tuning}: Setting NMS confidence threshold too high (e.g. $>0.5$) severely kills mAP on small objects. Standard COCO evaluation uses confidence threshold $0.001$ with NMS IoU threshold $0.65$.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,34 @@
+\section{Master Vision Formula Sheet}\label{sec:formulas}
+\lab{Convolution \textperiodcentered\ receptive field \textperiodcentered\ attention FLOPs \textperiodcentered\ geometry \textperiodcentered\ detection \textperiodcentered\ diffusion \textperiodcentered\ 3DGS}
+
+\noindent\begin{tabularx}{\linewidth}{@{}p{23mm} X@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Mathematical Formulation \& Invariants}\\
+\midrule
+\textbf{Conv2D Output} & $O = \lfloor \frac{I - K + 2P}{S} \rfloor + 1$ \quad (dilation $d \implies K' = K + (K-1)(d-1)$)\\
+\textbf{Conv2D FLOPs} & $\text{FLOPs} = 2 \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2 \cdot H_{\text{out}} \cdot W_{\text{out}}$\\
+\textbf{Receptive Field} & $RF_l = RF_{l-1} + (K_l - 1) \cdot J_{l-1}, \quad J_l = J_{l-1} \cdot S_l$\\
+\textbf{Depthwise Ratio} & $\frac{\text{FLOPs}_{\text{sep}}}{\text{FLOPs}_{\text{std}}} = \frac{1}{C_{\text{out}}} + \frac{1}{K^2} \approx \frac{1}{9} \quad (\text{for } 3\times 3, C_{\text{out}} \gg 1)$\\
+\textbf{Standard ViT Attn} & $\Omega(\text{MSA}) = 4ND^2 + 2N^2D, \quad \Omega(\text{MLP}) = 8ND^2$\\
+\textbf{Swin Window Attn} & $\Omega(\text{W-MSA}) = 4ND^2 + 2M^2ND \quad (\text{linear in } N, M=7)$\\
+\textbf{Harris Response} & $R = \det(M) - k \cdot (\operatorname{Tr}(M))^2 = \lambda_1 \lambda_2 - k(\lambda_1 + \lambda_2)^2$\\
+\textbf{Optical Flow} & $I_x u + I_y v + I_t = 0 \iff \nabla I^T \mathbf{v} + I_t = 0 \quad (\text{Aperture})$\\
+\textbf{Epipolar Line} & $x_2^T F x_1 = 0 \quad (\text{uncalibrated } F), \quad \hat{x}_2^T E \hat{x}_1 = 0 \quad (E)$\\
+\textbf{RANSAC Count} & $N = \frac{\ln(1 - p)}{\ln(1 - (1 - \epsilon)^s)} \quad (\text{sample } s, \text{ outlier ratio } \epsilon)$\\
+\textbf{Focal Loss} & $\text{FL}(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t) \quad (\gamma=2.0, \alpha_t=0.25)$\\
+\textbf{CIoU Loss} & $\mathcal{L}_{\text{CIoU}} = 1 - \text{IoU} + \frac{\rho^2(\mathbf{b}, \mathbf{b}^{\text{gt}})}{c^2} + \alpha v$\\[1pt]
+& $v = \frac{4}{\pi^2}\left(\arctan\frac{w^{\text{gt}}}{h^{\text{gt}}} - \arctan\frac{w}{h}\right)^2$\\
+\textbf{TAL Metric} & $t = s^\alpha \times \text{IoU}^\beta \quad (\alpha=0.5, \beta=6.0\text{ in YOLOv8/v11})$\\
+\textbf{CLIP InfoNCE} & $\mathcal{L} = -\frac{1}{2B}\sum_{i=1}^B \left[ \log\frac{e^{S_{ii}/\tau}}{\sum_j e^{S_{ij}/\tau}} + \log\frac{e^{S_{ii}/\tau}}{\sum_j e^{S_{ji}/\tau}} \right]$\\
+\textbf{SigLIP Loss} & $\mathcal{L} = -\frac{1}{B}\sum_{i,j} \log \sigma\left( y_{ij} (I_i^T T_j \cdot e^t + b) \right), \, y_{ij} \in \{\pm 1\}$\\
+\textbf{DDPM Noising} & $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1 - \bar{\alpha}_t} \epsilon, \quad \bar{\alpha}_t = \prod_{s=1}^t (1 - \beta_s)$\\
+\textbf{CFG Score} & $\tilde{\epsilon}_\theta(x_t, c) = \epsilon_\theta(x_t, \varnothing) + s \cdot (\epsilon_\theta(x_t, c) - \epsilon_\theta(x_t, \varnothing))$\\
+\textbf{Rectified Flow} & $x_t = (1 - t) x_0 + t x_1, \quad \frac{d x_t}{dt} = v_t = x_1 - x_0$\\
+\textbf{NeRF Quadrature} & $C(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d})\, dt$\\[1pt]
+& $T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s))\, ds\right)$\\
+\textbf{3DGS Projected Cov} & $\mathbf{\Sigma}' = \mathbf{J} \mathbf{W} \mathbf{\Sigma} \mathbf{W}^T \mathbf{J}^T + 0.3 \cdot \mathbf{I}_{2 \times 2}, \quad \mathbf{\Sigma} = \mathbf{R} \mathbf{S} \mathbf{S}^T \mathbf{R}^T$\\
+\textbf{Panoptic Quality} & $\text{PQ} = \frac{\sum_{\text{TP}} \text{IoU}}{|\text{TP}| + \frac{1}{2}|\text{FP}| + \frac{1}{2}|\text{FN}|} = \text{SQ} \times \text{RQ}$\\
+\textbf{FID Score} & $\text{FID} = \|\mu_r - \mu_g\|_2^2 + \operatorname{Tr}\left( \mathbf{\Sigma}_r + \mathbf{\Sigma}_g - 2(\mathbf{\Sigma}_r \mathbf{\Sigma}_g)^{1/2} \right)$\\
+\textbf{Conv-BN Folding} & $W_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} W, \quad b_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} (b - \mu) + \beta$\\
+\bottomrule
+\end{tabularx}

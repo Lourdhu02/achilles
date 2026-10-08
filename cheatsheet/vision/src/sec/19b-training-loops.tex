@@ -1,0 +1,89 @@
+\section{From-Scratch Vision Training Loops}\label{sec:loops}
+\lab{SimCLR loop \textperiodcentered\ Diffusion DDPM step \textperiodcentered\ Flow Matching loss \textperiodcentered\ AnyRes slicing \textperiodcentered\ Vectorized RoIAlign}
+
+{\small Minimal, tested PyTorch execution loops. Focus on loss formulation, data shapes, and clean tensor operations.}
+
+\newcommand{\VCHB}[1]{\par\needspace{5\baselineskip}\smallskip\noindent{\sffamily\bfseries\small\color{acc}#1}\par\nopagebreak}
+
+\VCHB{1. SimCLR Contrastive Self-Supervised Step}
+\begin{lstlisting}
+import torch, torch.nn as nn, torch.nn.functional as F
+
+def simclr_train_step(model, x1, x2, optimizer, tau=0.07):
+    # x1, x2: Two augmented views of shape (B, 3, H, W)
+    optimizer.zero_grad(set_to_none=True)
+    B = x1.size(0)
+    z1 = F.normalize(model(x1), dim=-1)  # (B, D)
+    z2 = F.normalize(model(x2), dim=-1)  # (B, D)
+    z = torch.cat([z1, z2], dim=0)       # (2B, D)
+    
+    # Cosine similarity matrix scaled by temperature tau
+    sim = torch.mm(z, z.t()) / tau       # (2B, 2B)
+    mask = torch.eye(2 * B, dtype=torch.bool, device=z.device)
+    sim.masked_fill_(mask, -1e9)         # Mask diagonal self-similarity
+    
+    # Positive targets: view 1 matches view 2
+    targets = torch.cat([torch.arange(B, 2*B), torch.arange(0, B)]).to(z.device)
+    loss = F.cross_entropy(sim, targets)
+    loss.backward(); optimizer.step()
+    return loss.item()
+\end{lstlisting}
+
+\VCHB{2. DDPM Noise-Prediction Training Step}
+\begin{lstlisting}
+def ddpm_train_step(net, x0, alpha_bar, optimizer):
+    # x0: clean image (B, C, H, W); alpha_bar: cumulative schedule (T,)
+    B = x0.size(0)
+    optimizer.zero_grad(set_to_none=True)
+    t = torch.randint(0, len(alpha_bar), (B,), device=x0.device)
+    eps = torch.randn_like(x0)
+    
+    a_bar_t = alpha_bar[t].view(B, 1, 1, 1)
+    xt = torch.sqrt(a_bar_t) * x0 + torch.sqrt(1.0 - a_bar_t) * eps
+    
+    eps_pred = net(xt, t)
+    loss = F.mse_loss(eps_pred, eps)
+    loss.backward(); optimizer.step()
+    return loss.item()
+\end{lstlisting}
+
+\VCHB{3. Rectified Flow Matching Step}
+\begin{lstlisting}
+def flow_matching_step(net, x1, optimizer):
+    # x1: clean data (B, C, H, W); x0: Gaussian noise prior
+    B = x1.size(0)
+    optimizer.zero_grad(set_to_none=True)
+    x0 = torch.randn_like(x1)
+    t = torch.rand(B, 1, 1, 1, device=x1.device)  # Uniform(0, 1)
+    
+    xt = (1.0 - t) * x0 + t * x1
+    target_velocity = x1 - x0
+    
+    pred_velocity = net(xt, t.squeeze())
+    loss = F.mse_loss(pred_velocity, target_velocity)
+    loss.backward(); optimizer.step()
+    return loss.item()
+\end{lstlisting}
+
+\VCHB{4. VLM AnyRes Dynamic Grid Partitioning}
+\begin{lstlisting}
+def anyres_slice(img, grid_pinpoints=[(1,1), (1,2), (2,1), (2,2)], patch_size=336):
+    W, H = img.size
+    best_grid = (1, 1); min_dist = float("inf")
+    for (gw, gh) in grid_pinpoints:
+        scale_w, scale_h = gw * patch_size / W, gh * patch_size / H
+        dist = abs(scale_w - scale_h)
+        if dist < min_dist:
+            min_dist = dist; best_grid = (gw, gh)
+            
+    gw, gh = best_grid
+    resized = img.resize((gw * patch_size, gh * patch_size))
+    patches = []
+    for y in range(gh):
+        for x in range(gw):
+            box = (x * patch_size, y * patch_size, (x+1)*patch_size, (y+1)*patch_size)
+            patches.append(resized.crop(box))
+            
+    thumbnail = img.resize((patch_size, patch_size))
+    return patches, thumbnail
+\end{lstlisting}

@@ -1,0 +1,62 @@
+\section{Latent Diffusion \& Diffusion Transformers (DiT)}\label{sec:ldm}
+\lab{LDM \textperiodcentered\ Stable Diffusion \textperiodcentered\ VAE compression \textperiodcentered\ DiT \textperiodcentered\ adaLN-Zero \textperiodcentered\ SDXL}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (img) {Pixel Image $512\times 512\times 3$};
+\node[bx,draw=acc,above=1.5mm of img] (vae) {Encoder $\mathcal{E}$ ($f{=}8$ downsample)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of vae] (lat) {Latent $z \in \mathbb{R}^{64\times 64\times 4}$};
+\node[bx,draw=acc3,fill=acc3!8,above=1.5mm of lat] (dit) {Diffusion UNet / DiT};
+\node[bx,above=1.5mm of dit] (dec) {Decoder $\mathcal{D}$ (Latent $\to$ Pixels)};
+\draw[arr] (img)--(vae); \draw[arr] (vae)--(lat); \draw[arr] (lat)--(dit); \draw[arr] (dit)--(dec);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{Perceptual vs Semantic Compression.} Pixel space diffusion wastes $>90\%$ of capacity on imperceptible high-frequency pixel noise.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{$f=8$ Compression}: $512\times 512\times 3 = 786{,}432$ values compressed to $64\times 64\times 4 = 16{,}384$ values ($48\times$ memory reduction).\\
+{\color{acc2}$\blacktriangleright$} \textbf{Cross-modal injection}: Text conditioning injected into spatial latents via cross-attention.
+\end{minipage}
+
+\begin{mem}[Latent Diffusion Models Compared]
+\begin{tabularx}{\linewidth}{@{}p{16mm} c p{22mm} X@{}}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{Text Encoders} & \textbf{Conditioning / Backbone}\\
+\midrule
+\textbf{SD 1.5} & 860M & CLIP ViT-L/14 & UNet $512^2$, Cross-attention\\
+\textbf{SD 2.1} & 865M & OpenCLIP-ViT-H & UNet $768^2$, $v$-pred, cross-attn\\
+\textbf{SDXL}   & 2.6B & CLIP-L + OpenCLIP-G & UNet $1024^2$, Dual text, crop coords\\
+\textbf{DiT-XL/2} & 675M & Class / CLIP tokens & Transformer $256^2$, adaLN-Zero\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Architecture Shifts: UNet to DiT]
+\Q{Why did modern generative vision abandon convolutional UNets for Diffusion Transformers (DiT)?}{
+\textbf{1. Scaling Laws}: Convolutional UNets plateau in generation quality as parameter counts scale past 2B due to fixed receptive fields and localized inductive biases. Transformers scale monotonically with compute and FLOPs without saturation.
+\textbf{2. Flexible sequence handling}: UNets require rigid spatial grid tensors. DiT patchifies latents into 1D token sequences, making it trivial to process arbitrary aspect ratios, variable image resolutions, and temporal video frames in a single unified architecture.
+\textbf{3. Hardware efficiency}: Standard dense matrix multiplications in Transformer self-attention achieve $>50\%$ MFU on Tensor Cores (especially with FlashAttention-2), whereas multi-scale UNet up/down convolutions suffer from high memory bandwidth overhead.}
+\Q{How does adaLN-Zero work in DiT, and why is zero-initialization necessary?}{
+Rather than injecting timestep and class embeddings via cross-attention, DiT uses \textbf{Adaptive Layer Normalization (adaLN)}:
+A projection MLP maps the sum of timestep and condition embeddings $(t + c)$ into scale, shift, and gate parameters $(\gamma_1, \beta_1, \alpha_1, \gamma_2, \beta_2, \alpha_2)$:
+\begin{align*}
+h' &= h + \alpha_1 \cdot \text{Attention}\big((1 + \gamma_1)\odot \text{LN}(h) + \beta_1\big)\\
+h_{\text{out}} &= h' + \alpha_2 \cdot \text{MLP}\big((1 + \gamma_2)\odot \text{LN}(h') + \beta_2\big)
+\end{align*}
+\textbf{Zero-Initialization}: The gating factors $\alpha_1, \alpha_2$ are initialized to \textbf{zero}.
+At initialization, every DiT block acts as an exact identity function ($h_{\text{out}} = h$). Gradients flow cleanly through arbitrarily deep networks at step 0 without exploding or vanishing.}
+\Q{How does SDXL eliminate training crop artifacts via micro-conditioning?}{
+Previous diffusion models discarded non-square images by center-cropping them to $512\times 512$, teaching the model that subjects are often cut in half at image borders.
+\textbf{SDXL Micro-Conditioning (Podell et al., 2023)}:
+During training, random crops are drawn from variable aspect-ratio images, and the exact pixel crop coordinates $(c_{\text{top}}, c_{\text{left}})$ along with original resolution $(h_{\text{orig}}, w_{\text{orig}})$ are embedded via Fourier features and injected into the UNet conditioning vector.
+At inference, setting $(c_{\text{top}}=0, c_{\text{left}}=0)$ conditions the model to generate fully uncropped, centered compositions.}
+\end{qa}
+
+\begin{trap}[Latent Diffusion Pitfalls]
+\begin{itemize}
+\item \textbf{VAE Latent Scaling Factor}: Latent representations from the VAE encoder have non-unit variance ($\sigma \ne 1$). SD scales latents by constant factor $0.18215$ (SDXL uses $0.13025$) before adding noise: $z = 0.18215 \cdot \mathcal{E}(x)$. Forgetting this scaling factor leads to complete generation failure (snow noise).
+\item \textbf{Latent VAE artifacts}: High spatial compression ($f=8$) creates artifacts on fine typography and small faces. Face restorers (CodeFormer) or lower compression ($f=4$) are required for micro-detail reconstruction.
+\end{itemize}
+\end{trap}

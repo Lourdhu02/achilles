@@ -1,0 +1,33 @@
+\section{High-Velocity Vision Interview Drill}\label{sec:rapid2}
+\lab{30 rapid-fire technical questions \textperiodcentered\ flashcards \textperiodcentered\ edge cases \textperiodcentered\ instant answers}
+
+\begin{qa}[Rapid-Fire Architecture \& Mechanics Drills]
+\RF{Why do ViTs fail when trained from scratch on small datasets without pretraining?}{ViTs lack the inductive biases of convolutions (translation equivariance and local spatial locality); they must learn spatial relationships from scratch via massive data.}
+\RF{How do you resize learned 2D positional embeddings when fine-tuning a ViT at higher resolution?}{Bicubic 2D spatial interpolation on the $(H/P) \times (W/P)$ position grid, leaving the [CLS] embedding unchanged.}
+\RF{What is the purpose of the hard distillation token in DeiT?}{It interacts with patch tokens and [CLS] via self-attention, but its loss is trained exclusively against the hard class labels predicted by a teacher ConvNet (RegNet).}
+\RF{Why does Soft-NMS outperform standard Hard-NMS in dense crowd scenes?}{Hard-NMS instantly zeros the score of overlapping boxes, destroying true overlapping objects; Soft-NMS smoothly decays the score using a Gaussian or linear penalty: $s_i \leftarrow s_i \exp(-\frac{\text{IoU}^2}{\sigma})$.}
+\RF{Why does ASPP in DeepLab use atrous (dilated) convolutions instead of pooling?}{Dilated convolutions expand the receptive field to capture multi-scale context without downsampling spatial resolution or losing fine-grained edge localization.}
+\RF{What is the Degenerate Grid trap in large atrous convolution dilation rates?}{When dilation rate $r$ approaches feature map size $W$, a $3 \times 3$ kernel samples outside bounds or only isolated pixels, degenerating into a trivial $1 \times 1$ convolution.}
+\RF{Why can't BatchNorm be used directly in Vision Transformers?}{Batch statistics fluctuate excessively across sequence lengths, and ViT token representations undergo covariate shifts along sequence dimensions; LayerNorm normalizes across feature channels per token independently.}
+\RF{What is the difference between Transposed Convolution and Bilinear Upsampling?}{Transposed convolutions learn upsampling weights but suffer from "checkerboard artifacts" when stride does not divide kernel size; Bilinear upsampling is non-parametric, smooth, and artifact-free.}
+\RF{Why does CLIP require a learned temperature parameter $\tau$?}{Unconstrained cosine similarity values lie in $[-1, 1]$, making cross-entropy probabilities too flat ($\max p \approx e^1 / e^1$); dividing by $\tau \approx 0.07$ scales logits to $[-14, 14]$, sharpening probability peaks.}
+\RF{What is the All-Gather gradient bottleneck in distributed CLIP?}{All-Gather gathers embeddings across GPUs; naive autograd gathers full backward gradients across all ranks, consuming immense network bandwidth; solution is manual local gradient scatter.}
+\RF{Why does Min-SNR $\gamma$ loss weighting improve diffusion model convergence?}{Diffusion loss at small $t$ has massive SNR and over-supervises high-frequency noise; clamping loss weight $\min(\text{SNR}(t), \gamma)$ balances gradient contributions across all timesteps.}
+\RF{What is the difference between DDPM and DDIM sampling?}{DDPM is a stochastic Markov chain requiring 1000 steps; DDIM defines an equivalent non-Markovian process whose deterministic ODE allows skipping steps in 20--50 iterations.}
+\RF{Why does Flow Matching use straight trajectories instead of curved Brownian paths?}{Straight ODE paths minimize displacement length between noise and data, resulting in velocity fields that are nearly constant in time, enabling 1-step or 4-step Euler integration.}
+\RF{Why does NeRF require Hierarchical Volume Sampling (Coarse and Fine networks)?}{Uniform ray sampling wastes $90\%$ of MLP evaluations in empty space or occluded regions; the coarse network generates a probability density function along the ray to concentrate fine samples around surfaces.}
+\RF{Why does 3DGS use Spherical Harmonics instead of a tiny MLP for color?}{Spherical Harmonics evaluate in closed form via direct polynomial multiplication ($<0.1\,\mu$s on CUDA), whereas evaluating an MLP per Gaussian would bottleneck real-time 100+ FPS rendering.}
+\RF{How does ByteTrack track occluded and low-confidence detections?}{Instead of discarding boxes with confidence $<0.5$, ByteTrack matches high-confidence boxes first, then runs a second association matching low-confidence boxes to unmatched tracklets.}
+\RF{What is the difference between Post-Training Quantization (PTQ) and QAT?}{PTQ quantizes frozen FP32 weights using a calibration dataset without backpropagation ($\sim$minutes); QAT simulates fake-quantization during retraining with straight-through estimator ($\sim$days).}
+\RF{What is the aperture problem in optical flow?}{Through a small aperture (local window), motion parallel to an edge cannot be detected; only normal motion perpendicular to the gradient is measurable.}
+\RF{Why does Mask2Former unify semantic, instance, and panoptic segmentation?}{It treats all segmentation tasks as binary mask prediction with query-based cross-attention constrained inside predicted mask regions (Masked Attention).}
+\RF{What is the difference between Epipolar Line and Epipole?}{The epipole is the projection of the other camera center onto the image plane; the epipolar line is the intersection of the epipolar plane with the image plane, upon which all matching points must lie.}
+\end{qa}
+
+\begin{trap}[Crucial Interview Traps \& Failure Modes]
+\begin{itemize}
+\item \textbf{ViT Quadratic Complexity Assumption}: Candidates often say "ViT is always $\mathcal{O}(N^2)$". In production ViTs, windowed attention (Swin), linear attention, or FlashAttention-2 tiles computation into SRAM, reducing wall-clock runtime by $4\times$.
+\item \textbf{Assuming Diffusion Directly Predicts the Clean Image $x_0$}: Predicting noise $\epsilon_t$ or velocity $v_t$ is dramatically more numerically stable than predicting clean image $x_0$, because at large $t$, $x_0$ has near-zero signal-to-noise ratio and predicting it causes blurry mean-image collapse.
+\item \textbf{Overlooking Bounding Box Coordinate Normalization}: Feeding absolute pixel coordinates $(x, y, w, h)$ into loss functions rather than normalized $[0, 1]$ coordinates breaks scale-invariance across different image sizes.
+\end{itemize}
+\end{trap}
