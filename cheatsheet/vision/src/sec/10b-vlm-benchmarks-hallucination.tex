@@ -35,8 +35,8 @@ Standard open-ended captioning metrics (CIDEr, BLEU) fail to detect hallucinatio
 \end{enumerate}
 \textbf{Visual Contrastive Decoding (VCD, Leng et al., 2024)}:
 \begin{center}
-\resizebox{0.95\columnwidth}{!}{%
-\begin{tikzpicture}[every node/.style={font=\tiny},node distance=2mm]
+\adjustbox{max width=\columnwidth}{%
+\begin{tikzpicture}[every node/.style={font=\scriptsize},node distance=2mm]
 \node[box,draw=acc,fill=soft] (clean) {Clean Image $v$};
 \node[box,draw=mute,fill=mute!10,below=2mm of clean] (noisy) {Noisy $v_{\text{corrupt}}$};
 \node[box,draw=acc2,fill=soft2,right=5mm of clean] (vlm1) {VLM Head};

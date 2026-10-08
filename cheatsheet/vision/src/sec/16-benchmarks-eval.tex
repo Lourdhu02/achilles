@@ -1,20 +1,19 @@
 \section{Vision Benchmarks, Metrics \& Evaluation}\label{sec:eval}
-\lab{ImageNet-C \textperiodcentered\ COCO mAP \textperiodcentered\ Panoptic PQ \textperiodcentered\ MMBench \& POPE \textperiodcentered\ FID 50k \textperiodcentered\ LPIPS}
+\lab{ImageNet-C \textperiodcentered\ COCO mAP \textperiodcentered\ Panoptic PQ \textperiodcentered\ FID 50k \textperiodcentered\ PSNR / SSIM / LPIPS}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \node[box,draw=acc,fill=soft] (r) at (0,10) {Real Data\\$\mathcal{N}(\mu_r, \Sigma_r)$};
 \node[box,draw=acc2,fill=soft2] (g) at (28,10) {Generated\\$\mathcal{N}(\mu_g, \Sigma_g)$};
 \draw[arr,acc3,thick] (r) to[bend left=25] node[midway,above] {Inception-v3 pool3} (g);
 \node[box,draw=acc3,fill=acc3!8] at (14,-1) {$\text{FID} = \|\mu_r - \mu_g\|^2 + \text{Tr}(\dots)$};
 \draw[arr] (14,6) -- (14,2);
 \end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Evaluation Landscape.} Visual evaluation spans categorical recognition, dense pixel geometry, perceptual fidelity, and multimodal reasoning.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{COCO $\text{mAP}$}: Evaluated across 10 IoU thresholds from $0.50$ to $0.95$ with $0.05$ step size.\\
 {\color{acc2}$\blacktriangleright$} \textbf{FID}: Measures 2-Wasserstein distance between multivariate Gaussian features in Inception space.
-\end{minipage}
+}
 
 \begin{mem}[Key Vision Benchmarks \& Thresholds]
 \begin{tabularx}{\linewidth}{@{}lLL@{}}
@@ -43,15 +42,13 @@ This is the 2-Wasserstein distance between two continuous Gaussians $\mathcal{N}
 \item \textbf{Inception Bias}: Inception-v3 was trained on ImageNet and is blind to human anatomy, facial distortion, text spelling, and high-frequency noise.
 \item \textbf{JPEG and Resizing artifacts}: Compressing images or using bilinear rather than bicubic resizing alters FID by up to $\pm 5$ points without perceptible image differences.
 \end{enumerate}}
-\Q{How does the POPE benchmark measure object hallucination in VLMs?}{
-Li et al. evaluate whether a VLM answers "Yes" or "No" to queries: \emph{"Is there a [object] in the image?"}
-Constructs negative objects across three adversarial splits:
-\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{Random}: Negatives sampled uniformly at random from dataset categories.
-\item \textbf{Popular}: Negatives sampled from the top-10 most frequent objects in COCO (e.g., person, chair, car). Tests if the model predicts frequent objects purely due to prior frequency.
-\item \textbf{Adversarial}: Negatives chosen based on highest co-occurrence with ground-truth objects (e.g., querying "spoon" when "bowl" is present). Tests if visual attention distinguishes strongly correlated co-occurring objects.
-\end{enumerate}
-Computes precision, recall, F1, and the "Yes-ratio" (a hallucinating model answers Yes to $>80\%$ of negative queries).}
+\Q{PSNR vs SSIM vs LPIPS: what does each measure, and when does each lie?}{
+\textbf{PSNR} $= 10 \log_{10}\frac{\text{MAX}^2}{\text{MSE}}$ dB. Pixel-wise; a 1-pixel shift or slight blur can cost several dB while looking identical, and blurry averages score well. $+1$ dB $\approx$ 21\% lower MSE.\\
+\textbf{SSIM} compares local means, variances and covariance (luminance, contrast, structure) in $11\times 11$ Gaussian windows:
+$$\text{SSIM} = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)}$$
+Better on structure, still insensitive to texture realism.\\
+\textbf{LPIPS}: distance between unit-normalized deep features (AlexNet/VGG) with learned per-channel weights, trained on human 2AFC judgements. Tracks perceived similarity best; lower is better.\\
+\textbf{Rule}: report all three for reconstruction (NeRF/3DGS, super-resolution, VAE); a GAN-sharpened output can lose PSNR but win LPIPS. For generation without a reference image, use FID/CLIPScore instead.}
 \Q{How is Panoptic Quality (PQ) decomposed into SQ and RQ?}{
 Kirillov et al. decompose Panoptic Quality as $\text{PQ} = \text{SQ} \times \text{RQ}$:
 $$\text{SQ} = \frac{\sum_{(p, g) \in TP} \text{IoU}(p, g)}{|TP|}, \quad \text{RQ} = \frac{|TP|}{|TP| + \frac{1}{2}|FP| + \frac{1}{2}|FN|}$$

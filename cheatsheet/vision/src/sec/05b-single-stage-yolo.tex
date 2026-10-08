@@ -1,9 +1,9 @@
 \section{Single-Stage Detectors: RetinaNet \& The YOLO Lineage}\label{sec:yolo}
 \lab{SSD \textperiodcentered\ Focal Loss \textperiodcentered\ YOLOv1--v11 evolution \textperiodcentered\ Anchor-free \textperiodcentered\ TAL assigner \textperiodcentered\ DFL \textperiodcentered\ NMS-free YOLOv10}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (feat) {FPN Feature Map $P_i$};
 \node[bx,draw=acc,above left=2mm and -2mm of feat] (cls) {Cls Head ($s \in [0, 1]$)};
@@ -13,13 +13,14 @@
 \draw[arr,acc] (cls) -- (tal); \draw[arr,acc2] (reg) -- (tal);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Decoupled Anchor-Free Head.} Modern YOLO (v8--v11) splits classification from localization.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{TAL Alignment}: Top-$k$ candidates ranked by joint metric $t = s^\alpha \times \text{IoU}^\beta$ to eliminate misalignment.\\
 {\color{acc2}$\blacktriangleright$} \textbf{DFL Head}: Predicts continuous box boundaries as probability distributions across 16 discrete distance bins.
-\end{minipage}
+}
 
+
+\needspace{36\baselineskip}
 \begin{mem}[The Full YOLO Evolution Timeline (v1 to v11)]
 \begin{tabularx}{\columnwidth}{@{}p{14mm} p{17mm} X r@{}}
 \toprule
@@ -32,11 +33,31 @@
 \textbf{YOLOv8} & Anchor-free & Decoupled head + C2f block + Distribution Focal Loss & TAL Assigner \\
 \textbf{YOLOv9} & Anchor-free & Programmable Gradient Information (PGI) + GELAN & Aux matching \\
 \textbf{YOLOv10} & Dual-head & Dual assignments: 1-to-many train, 1-to-1 infer & \hl{Zero NMS ms} \\
-\textbf{YOLOv11} & Anchor-free & C3k2 blocks + optimized depth/width scaling for NPUs & TAL + DFL \\
+\textbf{YOLOv11} & Anchor-free & C3k2 blocks + C2PSA attention; DW-conv cls head & TAL + DFL \\
 \bottomrule
 \end{tabularx}
 \end{mem}
 
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=\columnwidth,height=36mm,xmin=0,xmax=1,ymin=0,ymax=3,
+  axis lines=left,xlabel={$p_t$ (probability of the true class)},ylabel={loss},
+  tick label style={font=\tiny},label style={font=\scriptsize},
+  xlabel style={yshift=2pt},ylabel style={yshift=-4pt},
+  legend style={font=\tiny,draw=none,fill=none,at={(0.5,1.03)},anchor=south},legend columns=5,legend cell align=left,
+  samples=90,domain=0.02:1,every axis plot/.append style={line width=0.8pt}]
+\fill[acc3!9] (axis cs:0.6,0) rectangle (axis cs:1,3);
+\node[font=\tiny,acc3,anchor=south] at (axis cs:0.8,1.65) {well-classified};
+\node[font=\tiny,acc3,anchor=south] at (axis cs:0.8,1.4) {(easy negatives)};
+\addplot[mute] {-ln(x)}; \addlegendentry{$\gamma{=}0$ (CE)}
+\addplot[acc] {-(1-x)^0.5*ln(x)}; \addlegendentry{$\gamma{=}0.5$}
+\addplot[acc3] {-(1-x)*ln(x)}; \addlegendentry{$\gamma{=}1$}
+\addplot[acc2] {-(1-x)^2*ln(x)}; \addlegendentry{$\gamma{=}2$ (default)}
+\addplot[acc2,dashed] {-(1-x)^5*ln(x)}; \addlegendentry{$\gamma{=}5$}
+\end{axis}
+\end{tikzpicture}\\[-1pt]
+{\scriptsize\color{mute}Focal loss $-(1-p_t)^\gamma \log p_t$: raising $\gamma$ flattens the loss of confident predictions toward zero.}
+\end{center}
 \begin{qa}[Focal Loss \& Label Assignment Strategies]
 \Q{Derive Focal Loss and mathematically demonstrate why it prevents easy negative gradients from swamping training.}{
 Standard binary cross entropy (CE) loss is $\text{CE}(p_t) = -\log(p_t)$, where $p_t = p$ if $y=1$ and $p_t = 1-p$ if $y=0$.
@@ -45,8 +66,9 @@ Although $\text{CE}(0.99) \approx 0.01$ is small, summing over $10^5$ candidates
 \textbf{Focal Loss Formulation}:
 $$\text{FL}(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t) \quad (\text{typically } \gamma = 2.0, \alpha = 0.25)$$
 \textbf{Gradient Dynamics}:
-The gradient with respect to logit $z$ ($p_t = \sigma(z)$) is:
-$$\frac{\partial \text{FL}}{\partial z} = \alpha_t (1 - p_t)^\gamma \left( p_t - y \right) + \gamma \alpha_t (1 - p_t)^{\gamma-1} p_t (1 - p_t) \log(p_t)$$
+For a positive ($y = 1$, $p_t = p = \sigma(z)$) the gradient with respect to the logit is:
+$$\frac{\partial \text{FL}}{\partial z} = \alpha\,(1 - p_t)^\gamma \big(\gamma\, p_t \log p_t + p_t - 1\big)$$
+($\gamma = 0$ recovers the CE gradient $p_t - 1$; negatives are symmetric with $p_t = 1 - p$.)
 For an easy background sample ($p_t = 0.99$):
 The modulating factor is $(1 - 0.99)^2 = (0.01)^2 = 0.0001$ --- a \hl{$10,000\times$ gradient suppression}!
 For a hard positive or misclassified sample ($p_t = 0.2$):

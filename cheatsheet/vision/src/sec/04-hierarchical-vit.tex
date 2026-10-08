@@ -1,9 +1,9 @@
 \section{Hierarchical Vision Transformers: Swin \& Hybrids}\label{sec:swin}
 \lab{Swin Transformer \textperiodcentered\ shifted windows \textperiodcentered\ patch merging \textperiodcentered\ cyclic masking \textperiodcentered\ CoAtNet \textperiodcentered\ FastViT}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 % Layer l: regular window
 \draw[draw=acc,fill=soft,thick] (0,10) rectangle (14,24);
 \draw[mute] (7,10) -- (7,24); \draw[mute] (0,17) -- (14,17);
@@ -15,12 +15,11 @@
 \draw[arr,acc3] (14,17) -- (18,17);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{Linear Complexity Vision.} Standard global ViT self-attention scales quadratically: $\mathcal{O}(H^2 W^2)$. Swin restricts self-attention to local $M\times M$ windows ($M=7$):
 $$\Omega(\text{W-MSA}) = 4hwC^2 + 2M^2 hwC$$
 Linear in image area $hw$. To exchange cross-window information without global attention, consecutive blocks alternate between standard and \textbf{shifted} window partitions.
-\end{minipage}
+}
 
 \begin{mem}[Hierarchical Feature Pyramid (Swin vs ViT)]
 \begin{itemize}
@@ -33,7 +32,7 @@ Linear in image area $hw$. To exchange cross-window information without global a
 \begin{qa}[Dense Prediction, Window Attention \& Hybrids]
 \Q{Why can't standard ViT directly replace ResNet in Faster R-CNN or U-Net?}{
 \textbf{1. Single-scale representation}: ViT maintains constant token resolution ($\frac{H}{16} \times \frac{W}{16}$) throughout all depth. FPN and U-Net require multi-scale pyramids ($C_2, C_3, C_4, C_5$) to detect objects across small, medium, and large scales.
-\textbf{2. High-resolution memory explosion}: Object detection and segmentation require large inputs ($1024\times 1024$ or $1333\times 800$). At $P=16$, $1024^2 \implies 4096$ tokens, whose $N^2$ attention map consumes $4096^2 \times 2\text{ bytes} = 33.5\text{ MB}$ per head, overflowing GPU VRAM during training.}
+\textbf{2. High-resolution memory explosion}: Object detection and segmentation require large inputs ($1024\times 1024$ or $1333\times 800$). At $P=16$, $1024^2 \implies 4096$ tokens, whose $N^2$ attention map takes $4096^2 \times 2\text{ bytes} = 33.5\text{ MB}$ per head per layer: $\times 12$ heads $\times 24$ layers $\approx 9.6$\,GB of stored attention maps per image in training (without FlashAttention).}
 \Q{How does the Swin attention mask prevent cyclic leakage?}{
 A cyclic shift wraps border tokens from the top-left to the bottom-right of the feature map, packing multiple disconnected image patches into the same $M\times M$ window.
 The attention mask $\mathbf{M}$ assigns $-\infty$ to logit entries $(i, j)$ if tokens $i$ and $j$ originated from different sub-windows before the shift:
@@ -57,7 +56,7 @@ Balances inductive bias in shallow layers with global semantic reasoning in deep
 
 \begin{trap}[Swin Implementation Gotchas]
 \begin{itemize}
-\item \textbf{Dynamic image sizing in Swin}: If $H$ or $W$ is not a multiple of $M \cdot 2^{\text{stages}-1} = 7 \cdot 8 = 56$, inputs must be padded. Omitting pad/unpad logic creates silent spatial coordinate warping.
+\item \textbf{Dynamic image sizing in Swin}: every stage's feature map must tile into $M\times M$ windows. The last stage runs at stride 32, so clean inputs are multiples of $32 \cdot 7 = 224$; otherwise each stage pads to a window multiple and must crop back. Omitting pad/unpad logic silently shifts coordinates.
 \item \textbf{Batch dimension in Window Attention}: Folding spatial windows into batch $(B \cdot N_w, M^2, C)$ requires memory contiguity (\lstinline|.contiguous().view(...)|); failure to ensure contiguity triggers silent stride errors on CUDA.
 \end{itemize}
 \end{trap}

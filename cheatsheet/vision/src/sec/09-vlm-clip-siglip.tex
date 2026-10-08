@@ -1,9 +1,9 @@
 \section{Vision-Language Foundations: CLIP to SigLIP}\label{sec:clip}
 \lab{CLIP \textperiodcentered\ dual encoder \textperiodcentered\ InfoNCE \textperiodcentered\ SigLIP sigmoid loss \textperiodcentered\ zero-shot transfer \textperiodcentered\ all-gather}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \node[box,draw=acc,fill=soft] (img) at (0,14) {Image\\$x_i$};
 \node[box,draw=acc,fill=soft] (txt) at (30,14) {Text\\$y_j$};
 \draw[arr] (img) -- (0,6) node[midway,left] {$f(\cdot)$};
@@ -15,21 +15,20 @@
 \node[box,draw=acc3,fill=acc3!8] (sim) at (15,-9) {Cosine Similarity\\$S_{ij} = I_i^\top T_j \cdot e^t$};
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Dual-Encoder Contrastive Setup.} Embeds images and text into a shared normalized latent space $\mathbb{R}^d$ ($d=512$ or $768$).\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Zero-Shot Transfer}: Candidate class names embedded with prompt template $\to$ cosine similarity $\to$ argmax class.\\[2pt]
-{\color{acc2}$\blacktriangleright$} \textbf{Temperature clamping}: Learned log-temperature $t$ clamped to $\le \ln(100) \approx 4.605$ to prevent softmax saturation and numerical blowup.
-\end{minipage}
+{\color{acc2}$\blacktriangleright$} \textbf{Temperature}: learned log-scale $t$, initialized at $\ln(1/0.07)$ and clamped to $\le \ln 100 \approx 4.605$ to prevent training instability.
+}
 
 \begin{mem}[Loss Formulations: CLIP vs SigLIP]
 \begin{itemize}
 \item \textbf{CLIP (Symmetric InfoNCE)}: Computes cross-entropy over batch $B$:
 $$\mathcal{L}_{\text{CLIP}} = -\frac{1}{2B} \sum_{i=1}^B \left( \log \frac{e^{S_{ii}}}{\sum_{j=1}^B e^{S_{ij}}} + \log \frac{e^{S_{ii}}}{\sum_{j=1}^B e^{S_{ji}}} \right)$$
-Requires all-gather communication across all GPUs to form the global denominator; communication cost $\mathcal{O}(B^2)$ bounds maximum batch size.
+Requires an all-gather of every embedding ($\mathcal{O}(Bd)$ traffic) and a full $B\times B$ logit matrix per GPU slice to form each softmax denominator; that memory bounds the batch size.
 \item \textbf{SigLIP (Sigmoid Loss)}: Formulates language-image alignment as pairwise binary classification:
 $$\mathcal{L}_{\text{SigLIP}} = -\frac{1}{B} \sum_{i=1}^B \sum_{j=1}^B \log \sigma\left( y_{ij} (I_i^\top T_j \cdot e^t + b) \right)$$
-where $y_{ij} = +1$ if $i=j$, else $-1$. Eliminates global softmax normalization; enables chunked loss computation and seamless scaling to batch sizes $B > 1\text{M}$.
+where $y_{ij} = +1$ if $i=j$, else $-1$; init $t = \ln 10$, $b = -10$ (most pairs are negatives). No global normalization, so the loss can be computed chunk by chunk.
 \end{itemize}
 \end{mem}
 
@@ -46,9 +45,9 @@ Softmax creates competition: pushing up the positive logit suppresses all negati
 \Q{Why does SigLIP scale to $10\times$ larger batch sizes than CLIP in distributed clusters?}{
 In standard CLIP, computing $\sum_{j=1}^B e^{S_{ij}}$ requires every GPU to know the embeddings of all $B$ images and texts across the entire cluster.
 In distributed data parallel (DDP) across $N$ GPUs, this necessitates an \textbf{All-Gather} collective communication operation of all embedding tensors ($2 \times B \times d$).
-At $B=65{,}536$, the all-gather payload and quadratic attention matrix $B\times B$ saturate GPU interconnect bandwidth (NVLink/Infiniband).
+At $B = 65{,}536$ the all-gather itself is modest (Sec.~\ref{sec:napkin2}: $\sim$100\,MB), but each GPU must hold its $b \times B$ slice of logits plus activations for the backward pass.
 \textbf{SigLIP Solution}: Binary classification evaluates independent pairs $(i, j)$ without a global partition function.
-Embeddings can be sharded and evaluated in streaming pipeline chunks: each GPU computes local dot products and loss without ever gathering the global batch, enabling linear scaling up to $B=1\text{M}$ with $+1.5\%$ higher zero-shot accuracy.}
+Each GPU computes the loss on its local block, then passes its text embeddings to a neighbour in a ring ($D$ steps for $D$ devices), so only $b \times b$ logits exist at once. The paper trains up to $B = 1$M but finds gains saturate around 32k, and SigLIP beats CLIP most clearly at small batches.}
 \Q{Why is zero-shot CLIP significantly more robust to distribution shift than supervised ImageNet models?}{
 Supervised ResNet models learn shortcut features (high-frequency background textures, camera color balances, specific noise profiles) correlated with ImageNet labels.
 When tested on shifted distributions (ImageNet-A adversarial examples, ImageNet-R art/sketches, ImageNet-C corruptions), supervised accuracy drops precipitously ($\sim 40\%$ drop).

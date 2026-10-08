@@ -1,7 +1,7 @@
 \section{From-Scratch Vision Training Loops}\label{sec:loops}
-\lab{SimCLR loop \textperiodcentered\ Diffusion DDPM step \textperiodcentered\ Flow Matching loss \textperiodcentered\ AnyRes slicing \textperiodcentered\ Vectorized RoIAlign}
+\lab{SimCLR loop \textperiodcentered\ DDPM training step \textperiodcentered\ DDIM sampler \textperiodcentered\ AnyRes slicing}
 
-{\small Minimal, tested PyTorch execution loops. Focus on loss formulation, data shapes, and clean tensor operations.}
+{\small Minimal PyTorch training and sampling loops. Focus on loss formulation, data shapes, and clean tensor operations.}
 
 \newcommand{\VCHB}[1]{\par\needspace{5\baselineskip}\smallskip\noindent{\sffamily\bfseries\small\color{acc}#1}\par\nopagebreak}
 
@@ -9,7 +9,7 @@
 \begin{lstlisting}
 import torch, torch.nn as nn, torch.nn.functional as F
 
-def simclr_train_step(model, x1, x2, optimizer, tau=0.07):
+def simclr_train_step(model, x1, x2, optimizer, tau=0.1):
     # x1, x2: Two augmented views of shape (B, 3, H, W)
     optimizer.zero_grad(set_to_none=True)
     B = x1.size(0)
@@ -47,22 +47,21 @@ def ddpm_train_step(net, x0, alpha_bar, optimizer):
     return loss.item()
 \end{lstlisting}
 
-\VCHB{3. Rectified Flow Matching Step}
+\VCHB{3. Deterministic DDIM Sampler ($\eta = 0$)}
 \begin{lstlisting}
-def flow_matching_step(net, x1, optimizer):
-    # x1: clean data (B, C, H, W); x0: Gaussian noise prior
-    B = x1.size(0)
-    optimizer.zero_grad(set_to_none=True)
-    x0 = torch.randn_like(x1)
-    t = torch.rand(B, 1, 1, 1, device=x1.device)  # Uniform(0, 1)
-    
-    xt = (1.0 - t) * x0 + t * x1
-    target_velocity = x1 - x0
-    
-    pred_velocity = net(xt, t.squeeze())
-    loss = F.mse_loss(pred_velocity, target_velocity)
-    loss.backward(); optimizer.step()
-    return loss.item()
+@torch.no_grad()
+def ddim_sample(net, shape, alpha_bar, n_steps=50, device='cuda'):
+    # alpha_bar: (T,) cumulative product; net predicts eps
+    T = len(alpha_bar)
+    ts = torch.linspace(T - 1, 0, n_steps, device=device).long()
+    x = torch.randn(shape, device=device)               # x_T
+    for i, t in enumerate(ts):
+        a_t = alpha_bar[t]
+        a_prev = alpha_bar[ts[i + 1]] if i + 1 < n_steps else torch.tensor(1.0, device=device)
+        eps = net(x, t.expand(shape[0]))
+        x0 = (x - (1 - a_t).sqrt() * eps) / a_t.sqrt()  # predicted clean image
+        x = a_prev.sqrt() * x0 + (1 - a_prev).sqrt() * eps  # jump to t_prev
+    return x
 \end{lstlisting}
 
 \VCHB{4. VLM AnyRes Dynamic Grid Partitioning}

@@ -18,6 +18,7 @@
 \item \textbf{Boxes.} {\color{acc}\textbf{Blue}} = interview Q\&A. {\color{acc2}\textbf{Rust}} = numbers, formulas, and invariants to memorize. {\color{acc3}\textbf{Green}} = traps interviewers use to catch out candidates who memorize buzzwords without understanding the physics.
 \item \textbf{The five numbers of any vision model}: $H\times W$ (resolution), $C$ (channels / embedding dimension), $P$ (patch size / stride), $L$ (layers / depth), and $N_{\text{tok}}$ (visual tokens). FLOPs, receptive field, memory, and latency all follow.
 \item \textbf{Answer shape}: mechanism \ra\ number \ra\ trade-off \ra\ what you would measure and debug.
+\item \textbf{FLOPs vs MACs.} $1$ MAC $= 2$ FLOPs. Conv formulas here count FLOPs ($2\times$); transformer formulas follow the Swin/ViT papers and count MACs ($4ND^2 + 2N^2D$ per attention layer). Say which one you mean in an interview.
 \end{itemize}
 
 \begin{mem}[The 12 numbers everyone asks in Vision]
@@ -25,12 +26,12 @@
 $2 C_{\text{in}} C_{\text{out}} K^2 H W$ & FLOPs of a 2D convolution ($H, W$ output spatial size)\\
 $\frac{H W}{P^2}$ & Visual tokens for an image in ViT ($P=14 \implies 256$ for $224^2$)\\
 $25.6\text{M} / 4.1\text{G}$ & ResNet-50 parameters and FLOPs at $224\times 224$\\
-$86\text{M} / 307\text{M}$ & ViT-Base and ViT-Large parameters ($16\times 16$ patches)\\
+$86\text{M} / 307\text{M}$ & ViT-B/16 and ViT-L/16 parameters ($17.6 / 61.6$ GMACs at $224^2$)\\
 $8\times$ & Spatial compression factor of standard SD / Flux VAEs ($512^2 \to 64^2$)\\
-$\tau \approx 0.07$ & CLIP InfoNCE temperature ($1/\tau \approx 100$ maximum logit scale)\\
-$14\text{ params}$ & Memory footprint per 3D Gaussian (pos 3, quat 4, scale 3, opacity 1, SH 48 floats $\approx 236$ B)\\
+$\tau \approx 0.07$ & CLIP initial temperature ($1/\tau \approx 14$); learned logit scale clamped at $100$\\
+$59\text{ floats}$ & One 3D Gaussian: pos 3, quat 4, scale 3, opacity 1, SH 48 $= 236$ B in FP32\\
 $632\text{M}$ & SAM (Segment Anything) ViT-H image encoder parameter count\\
-$1.0$ & Flow Matching straight velocity target $v_t = x_1 - x_0$\\
+$0.18215$ & SD 1.x VAE latent scale factor (SDXL: $0.13025$); forget it and samples are grey mush\\
 $\text{IoU} \ge 0.5$ & Standard VOC/PASCAL positive detection match threshold\\
 $RF_l = RF_{l-1} + (K-1)J$ & Cumulative receptive field recurrence relation\\
 $33.3\text{ ms}$ & Real-time camera streaming latency budget at 30 FPS\\

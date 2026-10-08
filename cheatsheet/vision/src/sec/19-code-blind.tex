@@ -1,20 +1,20 @@
 \section{Implement from Scratch: Vision Code You Write Blind}\label{sec:code}
 \lab{Conv2D im2col \textperiodcentered\ ResNet Bottleneck \textperiodcentered\ PatchEmbed \textperiodcentered\ 2D RoPE \textperiodcentered\ CLIP InfoNCE \textperiodcentered\ IoU \& NMS \textperiodcentered\ UNet Block \textperiodcentered\ Flow Matching}
 
-{\small Minimal, tested PyTorch snippets. Shapes in comments. Interviewers look for: dimensions, channel positions, broadcasting, and numerical stability.}
+{\small Minimal PyTorch snippets (assume \texttt{import torch, torch.nn as nn, torch.nn.functional as F}). Shapes in comments. Interviewers look for: dimensions, channel positions, broadcasting, and numerical stability.}
 
 \newcommand{\VCH}[1]{\par\needspace{6\baselineskip}\smallskip\noindent{\sffamily\bfseries\small\color{acc}#1}\par\nopagebreak}
 
 \VCH{1. Conv2D via Unfold (im2col formulation)}
 \begin{lstlisting}
-def conv2d_im2col(x, W, b=None, stride=1, padding=0):
-    # x: (B, Cin, H, W) ; W: (Cout, Cin, K, K)
-    B, Cin, H, W = x.shape; Cout, _, K, _ = W.shape
+def conv2d_im2col(x, weight, b=None, stride=1, padding=0):
+    # x: (B, Cin, H, W) ; weight: (Cout, Cin, K, K)
+    B, Cin, H, W = x.shape; Cout, _, K, _ = weight.shape
     H_out = (H - K + 2 * padding) // stride + 1
     W_out = (W - K + 2 * padding) // stride + 1
-    x_col = F.unfold(x, kernel_size=K, padding=padding, stride=stride) # B, Cin*K*K, L
-    W_flat = W.view(Cout, -1)                                           # Cout, Cin*K*K
-    out = (W_flat @ x_col).view(B, Cout, H_out, W_out)
+    cols = F.unfold(x, K, padding=padding, stride=stride)  # (B, Cin*K*K, L)
+    out = weight.view(Cout, -1) @ cols                     # (B, Cout, L)
+    out = out.view(B, Cout, H_out, W_out)
     return out if b is None else out + b.view(1, Cout, 1, 1)
 \end{lstlisting}
 

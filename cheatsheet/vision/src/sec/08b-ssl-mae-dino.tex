@@ -66,7 +66,7 @@ Standard ViTs trained with DINO/DINOv2 exhibit severe high-norm spike artifacts 
 
 \begin{trap}[SSL Pretraining Traps]
 \begin{itemize}
-\item \textbf{Patch Pixel Normalization in MAE}: Omitting per-patch mean/variance normalization ($\frac{x - \mu}{\sigma}$) when computing MAE reconstruction loss degrades downstream linear probe accuracy by over $2.5\%$, as the model wastes capacity fitting global illumination variations rather than local structural geometry.
+\item \textbf{Patch Pixel Normalization in MAE}: Omitting per-patch mean/variance normalization ($\frac{x - \mu}{\sigma}$) when computing MAE reconstruction loss costs about 3 points of linear-probe accuracy (68.0 $\to$ 64.8 for ViT-L), as the model wastes capacity fitting global illumination variations rather than local structural geometry.
 \item \textbf{EMA Teacher Update Rate}: The teacher EMA momentum must start high ($\lambda = 0.996$) and cosine-anneal to $1.0$ at the end of training. Setting $\lambda$ too low makes the teacher track noisy student weights, destabilizing training.
 \end{itemize}
 \end{trap}

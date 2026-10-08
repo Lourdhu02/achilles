@@ -1,9 +1,9 @@
 \section{Self-Supervised Vision: Contrastive, MAE \& DINOv2}\label{sec:ssl}
 \lab{SimCLR \textperiodcentered\ MoCo v1-v3 \textperiodcentered\ BYOL \textperiodcentered\ MAE \textperiodcentered\ DINO \textperiodcentered\ DINOv2 \textperiodcentered\ KoLeo}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (img) {Image ($75\%\text{ masked}$)};
 \node[bx,draw=acc,above=1.5mm of img] (enc) {ViT Encoder ($25\%\text{ visible}$)};
@@ -13,12 +13,11 @@
 \draw[arr] (img)--(enc); \draw[arr] (enc)--(cat); \draw[arr] (cat)--(dec); \draw[arr] (dec)--(loss);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The MAE Paradigm.} Exploits heavy 2D pixel redundancy.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Asymmetric architecture}: Only the $25\%$ unmasked patches pass through the heavy encoder. The shallow decoder reconstructs normalized pixels.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Speedup}: $4\times$ compute reduction and memory savings during pretraining compared to standard ViT.
-\end{minipage}
+}
 
 \begin{mem}[SSL Vision Paradigms Comparison]
 \begin{tabularx}{\linewidth}{@{}p{18mm} X X@{}}
@@ -45,11 +44,15 @@ By Jensen's inequality and properties of Bayes' rule:
 &\approx \log(K) - I(X; Y) \implies I(X; Y) \ge \log(K) - \mathcal{L}_{\text{InfoNCE}}
 \end{align*}
 Minimizing InfoNCE maximizes the mutual information lower bound between augmented views. Larger batch/queue size $K$ directly tightens the bound $\log(K)$.}
-\Q{Why does MAE mask 75\% of visual patches, whereas BERT masks only 15\% of words?}{
-\textbf{Information Density}: Language is human-generated, highly symbolic, and dense with semantics: masking more than $15\%$ destroys grammar and syntactic recoverability.
-Images are natural signals with extreme spatial correlation: adjacent pixels and patches share nearly identical color, lighting, and texture.
-Masking only $15-20\%$ allows the network to interpolate masked patches trivially from neighboring borders without understanding high-level 3D structure or semantics.
-A $75-80\%$ mask removes entire objects and context, forcing the encoder to learn holistic geometric representations.}
+\Q{Why doesn't BYOL collapse even though it has no negative pairs?}{
+Online network $f_\theta \to g_\theta \to q_\theta$ (predictor) regresses the target projection of the other view: $\mathcal{L} = \big\|\bar{q}_\theta(z) - \bar{z}'_\xi\big\|_2^2$ (L2-normalized), with target weights $\xi \leftarrow m\xi + (1-m)\theta$, $m: 0.996 \to 1$.\\
+A constant output is a minimum of this loss, yet training does not reach it, because:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Stop-gradient on the target}: the target is not optimized toward the online output, so the two branches cannot jointly shrink to a point.
+\item \textbf{Predictor}: SimSiam shows that removing $q_\theta$ collapses training immediately; a near-optimal predictor makes the online branch track the target's conditional expectation, which keeps variance.
+\item \textbf{EMA target}: slowly moving targets stabilize the dynamics (SimSiam shows EMA is helpful but not required).
+\end{enumerate}
+Interview line: \emph{asymmetry (predictor $+$ stop-grad) prevents collapse; negatives are not required.}}
 \Q{How does DINO produce emergent semantic segmentation without annotations?}{
 Caron et al. train a ViT student to match a momentum teacher over multi-crop views.
 Because the objective maximizes agreement between global crops (full image) and local crops (sub-regions), and because self-attention in transformers connects all spatial tokens without local receptive field restrictions:
@@ -68,6 +71,6 @@ Freezing DINOv2 features outperforms weakly supervised models on zero-shot class
 \begin{trap}[SSL Pretraining Traps]
 \begin{itemize}
 \item \textbf{Discarding the projection head}: In SimCLR, MoCo, and BYOL, downstream evaluation must use the encoder representation $h = f(x)$, \textbf{not} the projection head output $z = g(h)$. The projection head discards information (e.g., color, orientation) irrelevant to the contrastive objective that is vital for downstream tasks.
-\item \textbf{Patch norm in MAE}: Reconstructing raw RGB pixels directly causes the model to focus on low-frequency lighting shifts. Computing target pixel values normalized by the mean and variance of each patch ($y = (x - \mu) / \sigma$) gains $+1.5\%$ top-1 accuracy.
+\item \textbf{Comparing SSL methods on the wrong protocol}: MAE looks weak on linear probe and k-NN but strong after fine-tuning; DINO/DINOv2 are the reverse. Always report linear probe, k-NN and fine-tune (and say whether the backbone is frozen) before claiming one method wins.
 \end{itemize}
 \end{trap}

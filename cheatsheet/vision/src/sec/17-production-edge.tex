@@ -1,9 +1,9 @@
 \section{Production Vision, Optimization \& Edge Deployment}\label{sec:prod}
 \lab{Preprocessing \textperiodcentered\ Conv-BN fusion \textperiodcentered\ TensorRT \textperiodcentered\ INT8 PTQ \textperiodcentered\ Edge latency budgets \textperiodcentered\ ByteTrack}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (c) {Conv2D ($W, b$)};
 \node[bx,draw=acc2,fill=soft2,above=1.5mm of c] (bn) {BatchNorm ($\gamma, \beta, \mu, \sigma^2$)};
@@ -13,13 +13,12 @@
 \draw[arr,acc3,thick] (bn.east) -- (f.west);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Zero-Cost Fusion.} BatchNorm parameters are linear and static at test time.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Folding into Weights}:
 $W_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2+\epsilon}} W,\quad b_{\text{fused}} = \frac{\gamma}{\sqrt{\sigma^2+\epsilon}}(b-\mu) + \beta$\\[2pt]
 {\color{acc2}$\blacktriangleright$} Eliminates $2\times$ memory roundtrips to GPU DRAM per convolution block.
-\end{minipage}
+}
 
 \begin{mem}[Edge Inference Latency Budgets (Target: Real-Time)]
 \begin{tabularx}{\linewidth}{@{}p{22mm} c X@{}}
@@ -49,7 +48,7 @@ W_{\text{fused}} &= \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} W\\
 b_{\text{fused}} &= \frac{\gamma}{\sqrt{\sigma^2 + \epsilon}} (b - \mu) + \beta
 \end{align*}
 $W_{\text{fused}}$ is a standard $C_{\text{out}} \times C_{\text{in}} \times K \times K$ tensor and $b_{\text{fused}}$ is a $C_{\text{out}}$ vector. The BatchNorm operation and its memory allocation are completely eliminated at test time.}
-\Q{Why does BGR vs RGB channel order cause a 30-point accuracy drop, and how is it audited?}{
+\Q{Why can BGR vs RGB channel order silently cost tens of accuracy points, and how is it audited?}{
 OpenCV reads image buffers from disk or webcam in \textbf{BGR} format by default. PyTorch and Torchvision backbones (ResNet, ViT, CLIP) are trained exclusively on \textbf{RGB} arrays.
 Feeding BGR images into an RGB-trained model swaps the red and blue channels:
 skin tones become bright cyan/blue; blue skies become reddish-orange.

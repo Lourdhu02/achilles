@@ -6,7 +6,7 @@
 \RF{What does RoIAlign do that RoIPool didn't?}{Eliminates coordinate quantization using 4-point bilinear interpolation.}
 \RF{Why do ViTs need positional embeddings?}{Self-attention is permutation-equivariant; without PosEnc, patches have no spatial order.}
 \RF{What is the FLOP cost of a 2D convolution?}{$2 \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2 \cdot H_o W_o$.}
-\RF{Why does SigLIP scale better than CLIP?}{Replaces global softmax with pairwise sigmoid loss, eliminating cross-GPU all-gather.}
+\RF{Why does SigLIP scale better than CLIP?}{Pairwise sigmoid loss needs no global softmax, so logits are computed in $b\times b$ chunks with a ring exchange instead of a full $B \times B$ matrix.}
 \RF{What is the patch count for $384\times 384$ at $P=16$?}{$(384/16)^2 = 24^2 = 576$ tokens.}
 \RF{What is the spatial compression of standard SD VAE?}{$8\times$ in height and width ($64\times$ area compression).}
 \RF{What target does Flow Matching predict?}{Constant velocity vector field $v_t = x_1 - x_0$.}

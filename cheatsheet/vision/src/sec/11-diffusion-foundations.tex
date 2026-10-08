@@ -1,9 +1,9 @@
 \section{Generative Diffusion: DDPM, DDIM \& Guidance}\label{sec:diff}
 \lab{DDPM \textperiodcentered\ score SDE/ODE \textperiodcentered\ simplified loss \textperiodcentered\ DDIM ODE sampling \textperiodcentered\ EDM \textperiodcentered\ CFG}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \node[box,draw=acc,fill=soft] (x0) at (0,10) {$x_0$\\(Data)};
 \node[box,draw=mute] (xt) at (17,10) {$x_t$\\(Noisy)};
 \node[box,draw=acc2,fill=soft2] (xT) at (34,10) {$x_T \sim \mathcal{N}(0, \mathbf{I})$\\(Pure noise)};
@@ -13,12 +13,11 @@
 \draw[arr,acc2,thick] (xt) to[bend left=25] (x0);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Diffusion Duality.} Gradually corrupts data with Gaussian noise in the forward process; trains a neural network $\epsilon_\theta(x_t, t)$ to reverse the trajectory step-by-step.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{One-step noising}: Can jump directly to any timestep $t$ without simulating intermediate steps:
 $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1 - \bar{\alpha}_t} \epsilon$, where $\epsilon \sim \mathcal{N}(0, \mathbf{I})$.
-\end{minipage}
+}
 
 \begin{mem}[Mathematical Foundations of DDPM]
 \begin{itemize}
@@ -30,6 +29,20 @@ $$x_{t-1} = \frac{1}{\sqrt{\alpha_t}} \left( x_t - \frac{\beta_t}{\sqrt{1 - \bar
 \end{itemize}
 \end{mem}
 
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=\columnwidth,height=34mm,xmin=0,xmax=1000,ymin=0,ymax=1.02,
+  axis lines=left,xlabel={timestep $t$ ($T = 1000$)},ylabel={$\bar{\alpha}_t$ (signal kept)},
+  tick label style={font=\tiny},label style={font=\scriptsize},
+  xlabel style={yshift=2pt},ylabel style={yshift=-4pt},
+  legend style={font=\tiny,draw=none,fill=none,at={(1,1)},anchor=north east},legend cell align=left,
+  samples=120,domain=0:1000,every axis plot/.append style={line width=0.8pt}]
+\addplot[acc2] {exp(-0.0001*x - 0.0199*x^2/2000)}; \addlegendentry{{linear $\beta_t$, DDPM}}
+\addplot[acc] {cos(((x/1000+0.008)/1.008)*90)^2/cos((0.008/1.008)*90)^2}; \addlegendentry{{cosine, Nichol \& Dhariwal}}
+\end{axis}
+\end{tikzpicture}\\[-1pt]
+{\scriptsize\color{mute}The linear schedule destroys almost all signal by $t \approx 600$, wasting the last 40\% of steps on near-pure noise; the cosine schedule degrades smoothly.}
+\end{center}
 \begin{qa}[Sampling Acceleration, SDE Theory \& Classifier-Free Guidance]
 \Q{Derive the connection between DDPM and Continuous Score-Based SDEs.}{
 Song et al. unify DDPM as the discretization of an Itô Stochastic Differential Equation:

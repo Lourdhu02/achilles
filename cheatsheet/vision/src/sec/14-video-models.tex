@@ -1,9 +1,9 @@
 \section{Video Foundation Models: Spatio-Temporal DiT}\label{sec:vid}
 \lab{Factorized attention \textperiodcentered\ 3D VAE \textperiodcentered\ Space-Time DiT \textperiodcentered\ Sora mechanics \textperiodcentered\ Causal masking \textperiodcentered\ VBench}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \foreach \t in {0,4,8} {
   \draw[draw=acc,fill=soft,opacity=0.8] (\t,\t) rectangle (\t+14,\t+14);
 }
@@ -12,11 +12,10 @@
 \node[box,draw=acc3,fill=acc3!8] at (38,12) {Latent Volume\\$\frac{T}{4} \times \frac{H}{8} \times \frac{W}{8}$};
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Spatio-Temporal Explosion.} Naive full 3D self-attention over video tensor $\mathbb{R}^{B \times C \times T \times H \times W}$ scales as $\mathcal{O}((T \cdot H \cdot W)^2)$, causing immediate out-of-memory crashes on GPU.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Factorized Attention}: Decouples spatial attention (within frame) from temporal attention (across time) $\to \mathcal{O}(T(HW)^2 + (HW)T^2)$.
-\end{minipage}
+}
 
 \begin{mem}[Video Representation Paradigms]
 \begin{tabularx}{\linewidth}{@{}p{18mm} X X@{}}

@@ -1,9 +1,9 @@
 \section{Vision System Design: Autonomous Driving to Visual RAG}\label{sec:sys}
 \lab{System design framework \textperiodcentered\ BEV driving perception \textperiodcentered\ Visual Document RAG \textperiodcentered\ Sub-second GenAI API \textperiodcentered\ ColPali}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (cam) {6 Surround Cameras};
 \node[bx,draw=acc,above=1.5mm of cam] (bb) {Shared Backbone (ConvNeXt)};
@@ -13,8 +13,7 @@
 \draw[arr] (cam)--(bb); \draw[arr] (bb)--(bev); \draw[arr] (bev)--(temp); \draw[arr] (temp)--(heads);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The 6-Step System Design Recipe.}
 \textbf{1.} Clarify SLOs (latency, FPS, compute tier, accuracy).\\
 \textbf{2.} Data engine (collection, active learning, auto-labeling).\\
@@ -22,7 +21,7 @@
 \textbf{4.} Training setup (loss balance, distributed recipe).\\
 \textbf{5.} Serving (compilation, INT8 PTQ, pipelined batching).\\
 \textbf{6.} Telemetry \& OOD drift detection.
-\end{minipage}
+}
 
 \begin{mem}[Frontier System Architectures]
 \begin{tabularx}{\linewidth}{@{}p{20mm} X X@{}}
@@ -52,9 +51,9 @@
 \textbf{Modern Vision-Centric Solution}:
 \begin{enumerate}[leftmargin=*,itemsep=0.8pt]
 \item \textbf{Page Indexing}: Render PDF pages directly as $150\text{ DPI}$ images.
-\item \textbf{Retrieval Engine (ColPali)}: Feed document images into a vision backbone (SigLIP / PaliGemma); retain all patch tokens ($32\times 32 = 1024$ tokens/page). Store in multi-vector index. User text queries compute Late Interaction:
+\item \textbf{Retrieval Engine (ColPali)}: Feed page images into PaliGemma-3B (SigLIP encoder) and keep every output patch embedding projected to 128-d ($32\times 32 = 1024$ patches/page). Store in multi-vector index. User text queries compute Late Interaction:
 $$S(q, d) = \sum_{i=1}^{|q|} \max_{j=1}^{|d|} \left( \mathbf{q}_i^\top \mathbf{d}_j \right)$$
-achieving $94\%$ retrieval recall across dense diagrams and financial tables.
+On the ViDoRe benchmark ColPali reaches $\sim$81 nDCG@5 versus $\sim$65--67 for OCR/captioning $+$ text-retriever pipelines, at the cost of $\sim$1030 vectors per page.
 \item \textbf{Reader / Reasoner}: Selected top-3 document page images are fed into a high-resolution VLM (Qwen2-VL) with native dynamic resolution, generating structured JSON with source bounding box coordinates.
 \end{enumerate}}
 \Q{How does Adversarial Diffusion Distillation (ADD) compress 50-step diffusion into 1 to 4 steps?}{

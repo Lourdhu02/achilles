@@ -2,8 +2,8 @@
 \lab{NaN bounding box losses \textperiodcentered\ ViT convergence failure \textperiodcentered\ Diffusion gray output \textperiodcentered\ 3DGS needle floaters \textperiodcentered\ VLM repetition}
 
 \begin{center}
-\resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}[every node/.style={font=\tiny},node distance=1.8mm]
+\adjustbox{max width=\columnwidth}{%
+\begin{tikzpicture}[every node/.style={font=\scriptsize},node distance=1.8mm]
 \node[box,draw=acc,fill=soft,minimum width=20mm] (symptom) {\textbf{Failure Mode}};
 \node[box,draw=acc2,fill=soft2,right=4mm of symptom] (nan) {NaN Loss};
 \node[box,draw=acc2,fill=soft2,below=1.5mm of nan] (gray) {Gray Output};
@@ -50,7 +50,7 @@ Add epsilon ($\epsilon = 10^{-7}$) to all IoU denominators.}
 \Q{Latent Diffusion generates solid grey or noisy static images despite low training loss.}{
 \textbf{Diagnosis}:
 \begin{enumerate}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{Missing VAE Latent Scale}: VAE encoder latents have variance $\approx 5.5$. SD requires scaling latents by $0.18215$ (SDXL: $0.13025$) to enforce unit variance before adding Gaussian noise. Forgetting this leaves signal-to-noise ratio completely mismatched.
+\item \textbf{Missing VAE Latent Scale}: SD VAE latents have std $\approx 5.5$ ($1/0.18215$). SD requires scaling latents by $0.18215$ (SDXL: $0.13025$) to enforce unit variance before adding Gaussian noise. Forgetting this leaves signal-to-noise ratio completely mismatched.
 \item \textbf{Inverted Timestep Schedule}: Inverting the noise schedule (feeding $t=0$ as pure noise instead of clean image).
 \item \textbf{CFG Dropout Bug}: Dropping conditions during training without using the exact same null prompt embedding $\varnothing$ at test time.
 \end{enumerate}}

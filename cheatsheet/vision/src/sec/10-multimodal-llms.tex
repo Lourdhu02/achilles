@@ -1,9 +1,9 @@
 \section{Multimodal LLMs: Architecture, AnyRes \& Alignment}\label{sec:vlm}
 \lab{LLaVA \textperiodcentered\ Projectors \textperiodcentered\ AnyRes dynamic resolution \textperiodcentered\ 2D RoPE \textperiodcentered\ Qwen2-VL \textperiodcentered\ Hallucination \& POPE}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (img) {Image ($H\times W$)};
 \node[bx,draw=acc,above=1.5mm of img] (enc) {Vision Encoder (SigLIP)};
@@ -15,12 +15,11 @@
 \draw[arr] (txt)--(llm);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Modern VLM Pipeline.} Integrates visual tokens directly into the LLM's sequence context.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Token budget}: A $336\times 336$ image with patch 14 produces $(336/14)^2 = 576$ visual tokens.\\
 {\color{acc2}$\blacktriangleright$} \textbf{Pixel Shuffle}: Merging $2\times 2$ adjacent patch tokens compresses sequence length by $4\times$ ($576 \to 144$ tokens), preserving LLM context budget.
-\end{minipage}
+}
 
 \begin{mem}[Visual Connectors / Projectors]
 \begin{tabularx}{\linewidth}{@{}p{22mm} X X@{}}
@@ -46,25 +45,22 @@ Standard ViTs downsample images to fixed small resolutions (e.g., $336\times 336
 \end{enumerate}
 Increases effective resolution up to $4\times$ while reusing pretrained small-resolution ViT weights.}
 \Q{How does Qwen2-VL implement native dynamic resolution with 2D Rotary Position Embeddings?}{
-Rather than slicing images into discrete artificial tiles, Qwen2-VL introduces a \textbf{Naive ViT} architecture:
+Rather than slicing images into fixed tiles, Qwen2-VL uses \textbf{Naive Dynamic Resolution}:
 \begin{itemize}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{Dynamic Patchification}: An image of arbitrary resolution $(H, W)$ is directly partitioned into $\frac{H}{14} \times \frac{W}{14}$ patches without padding or interpolation.
+\item \textbf{Dynamic Patchification}: An image is resized only to the nearest multiple of 28, split into $\frac{H}{14} \times \frac{W}{14}$ patches, then adjacent $2\times 2$ patches are merged by an MLP, so a $224^2$ image costs 64 LLM tokens.
 \item \textbf{2D RoPE (Rotary Position Embeddings)}: Query and key vectors at spatial coordinate $(x, y)$ are rotated by two independent 1D frequency angles:
 $$\mathbf{R}_{2\text{D}}(x, y) = \text{diag}\big(\mathbf{R}(x), \mathbf{R}(y)\big)$$
 Inner products $\langle \mathbf{q}_{(x_1, y_1)}, \mathbf{k}_{(x_2, y_2)} \rangle$ depend strictly on relative spatial distance $(\Delta x, \Delta y) = (x_1 - x_2, y_1 - y_2)$.
-\item \textbf{Video Unification}: Replaces 2D RoPE with 3D RoPE $(t, x, y)$ to treat images and video frames within the exact same pipeline.
+\item \textbf{M-RoPE}: in the LLM, rotary dimensions are split into temporal, height and width components $(t, h, w)$; text tokens use equal ids for all three, so text, images and video share one position scheme.
 \end{itemize}
 Eliminates tile boundaries and aspect ratio distortion completely.}
-\Q{What causes object hallucination in VLMs, and how is it measured and mitigated?}{
-\textbf{Cause}: Language priors overpower visual attention. Because the LLM backbone was pretrained on trillions of text tokens, strong statistical associations (e.g., "refrigerator" co-occurring with "kitchen", or "helmet" with "motorcycle") cause the model to generate tokens regardless of visual evidence.
-\textbf{Measurement}: The \textbf{POPE (Polling-based Object Probing Evaluation)} benchmark queries whether specific objects exist in an image via binary yes/no questions under random, popular, and adversarial negative sampling.
-\textbf{Mitigations}:
+\Q{Walk through the LLaVA training recipe. What is frozen at each stage?}{
 \begin{enumerate}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{DPO-V}: Direct preference optimization where hallucinated answers are marked as rejected pairs.
-\item \textbf{Visual Contrastive Decoding (VCD)}: Samples from logits conditioned on clean image vs distorted/blurred image:
-$$\text{logit}^* = (1+\alpha) \cdot \text{logit}(x) - \alpha \cdot \text{logit}(x_{\text{blurred}})$$
-suppressing pure language prior biases and improving POPE score by $+8.5$ points.
-\end{enumerate}}
+\item \textbf{Stage 1, feature alignment} (LLaVA-1.5: 558K image--caption pairs, 1 epoch): vision encoder \emph{and} LLM frozen; only the MLP projector trains, learning to map CLIP/SigLIP patches into the LLM's word-embedding space. Cheap: a few GPU-hours.
+\item \textbf{Stage 2, visual instruction tuning} (665K mixed conversations: GPT-generated QA, VQAv2, GQA, OCR, region data, plus ShareGPT text): projector $+$ LLM train (full or LoRA); vision encoder usually stays frozen (later models unfreeze it at a low LR).
+\item \textbf{Stage 3 (modern additions)}: high-resolution/AnyRes data, then preference tuning (DPO/RLHF-V) against hallucination.
+\end{enumerate}
+Loss is next-token cross-entropy on assistant tokens only. Text-only data stays in the mix so the LLM does not forget language skills.}
 \end{qa}
 
 \begin{trap}[Multimodal Training Pitfalls]
