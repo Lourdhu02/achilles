@@ -1,0 +1,47 @@
+\section{Rapid-Fire Q\&A and Vision Glossary}\label{sec:rapid}
+\lab{Rapid interview drills \textperiodcentered\ core definitions \textperiodcentered\ precise terminology}
+
+\subsection{Rapid-Fire Drills (Answer in under 5 seconds)}
+\RF{Why use $1\times 1$ convs in ResNet bottleneck?}{Changes channel dimension cheaply without changing spatial resolution.}
+\RF{What does RoIAlign do that RoIPool didn't?}{Eliminates coordinate quantization using 4-point bilinear interpolation.}
+\RF{Why do ViTs need positional embeddings?}{Self-attention is permutation-equivariant; without PosEnc, patches have no spatial order.}
+\RF{What is the FLOP cost of a 2D convolution?}{$2 \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2 \cdot H_o W_o$.}
+\RF{Why does SigLIP scale better than CLIP?}{Replaces global softmax with pairwise sigmoid loss, eliminating cross-GPU all-gather.}
+\RF{What is the patch count for $384\times 384$ at $P=16$?}{$(384/16)^2 = 24^2 = 576$ tokens.}
+\RF{What is the spatial compression of standard SD VAE?}{$8\times$ in height and width ($64\times$ area compression).}
+\RF{What target does Flow Matching predict?}{Constant velocity vector field $v_t = x_1 - x_0$.}
+\RF{What is transmittance in NeRF?}{Probability that a light ray travels from $t_n$ to $t$ without colliding with particles.}
+\RF{How many floats represent a 3D Gaussian in 3DGS?}{59 floats: 3 position, 3 scale, 4 quaternion, 1 opacity, 48 spherical harmonics.}
+\RF{What is Focal Loss's focusing parameter?}{$\gamma$ (typically $\gamma=2$), which exponentially downweights easy negatives.}
+\RF{Why does MAE mask 75\% of patches?}{Images have high spatial redundancy; high masking prevents trivial pixel interpolation.}
+\RF{What does DINO self-attention map capture?}{Unsupervised semantic segmentation masks of foreground objects.}
+\RF{What causes object hallucination in VLMs?}{Language priors from text pretraining overpowering visual token attention.}
+\RF{How is Panoptic Quality calculated?}{$\text{PQ} = \text{SQ} \times \text{RQ}$ (Segmentation Quality $\times$ Recognition Quality).}
+\RF{What is the difference between SIFT and ORB?}{SIFT uses floating-point DoG histograms; ORB uses FAST corners and binary BRIEF strings.}
+\RF{What is the epipolar line equation?}{$l' = \mathbf{F} x$, where $\mathbf{F}$ is the Fundamental Matrix.}
+\RF{Why is the linear bottleneck in MobileNetV2 linear?}{ReLU non-linearities in low-dimensional manifolds collapse and zero out features.}
+\RF{What is the formula for the Canny gradient direction?}{$\theta = \arctan(G_y / G_x)$, quantized into $0^\circ, 45^\circ, 90^\circ, 135^\circ$.}
+\RF{What is the purpose of adaLN-Zero in DiT?}{Initializes scale gating to zero so every block acts as identity at step 0.}
+
+\subsection{The Vision Glossary}
+\begin{description}[leftmargin=1.2em,itemsep=1.5pt]
+\item[\textbf{Anchor Box}] Pre-defined candidate bounding box with fixed scale and aspect ratio used in detectors like Faster R-CNN and YOLOv3.
+\item[\textbf{ASPP}] Atrous Spatial Pyramid Pooling; parallel atrous convolutions with diverse dilation rates capturing multi-scale context.
+\item[\textbf{BEV (Bird's-Eye-View)}] Top-down 2D coordinate representation of 3D scenes used in autonomous driving perception.
+\item[\textbf{CFG (Classifier-Free Guidance)}] Diffusion sampling technique extrapolating conditional over unconditional predictions: $\epsilon_\varnothing + s(\epsilon_c - \epsilon_\varnothing)$.
+\item[\textbf{Deformable Conv}] Convolution where 2D sampling grid offsets are predicted dynamically from input features.
+\item[\textbf{DLT (Direct Linear Transformation)}] Linear algorithm for solving projective camera and homography matrices from point correspondences.
+\item[\textbf{Epipolar Plane}] 3D plane formed by a 3D scene point and the two camera optical centers.
+\item[\textbf{FPN (Feature Pyramid Network)}] Top-down architecture with lateral skip connections combining multi-scale semantic and spatial features.
+\item[\textbf{GIoU (Generalized IoU)}] IoU metric penalized by normalized empty space within the smallest enclosing bounding box.
+\item[\textbf{Homography}] $3\times 3$ projective transformation mapping coplanar 3D points between two camera views: $x' \sim Hx$.
+\item[\textbf{Inverted Residual}] Block structure expanding channels with $1\times 1$ conv before $3\times 3$ depthwise conv, ending with linear bottleneck.
+\item[\textbf{LPIPS}] Learned Perceptual Image Patch Similarity; distance between deep feature activations from a pretrained VGG network.
+\item[\textbf{NMS (Non-Maximum Suppression)}] Greedy algorithm pruning overlapping bounding boxes based on IoU thresholding.
+\item[\textbf{Patchify}] Splitting a 2D image into non-overlapping grid tiles and linearly projecting them to 1D token embeddings.
+\item[\textbf{RoIAlign}] Bilinear interpolation sampling inside region of interest bins to preserve floating-point spatial alignment.
+\item[\textbf{Spherical Harmonics (SH)}] Orthogonal basis functions on the 2D sphere modeling view-dependent radiance in NeRF and 3DGS.
+\item[\textbf{Swin Window Attention}] Restricting self-attention to localized $M\times M$ patch windows with linear complexity $\mathcal{O}(N)$.
+\item[\textbf{Transmittance}] Accumulation of transparency along a camera ray in volumetric rendering: $T(t) = \exp(-\int \sigma ds)$.
+\item[\textbf{VQ-VAE}] Vector Quantized Variational Autoencoder mapping continuous image latents to discrete codebook indices.
+\end{description}

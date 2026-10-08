@@ -1,0 +1,73 @@
+\section{Vision Transformers (ViT), Scaling \& Tokenization}\label{sec:vit}
+\lab{patch embedding \textperiodcentered\ inductive bias \textperiodcentered\ DeiT distillation \textperiodcentered\ 2D PosEnc \textperiodcentered\ NaViT patch packing}
+
+\noindent\begin{minipage}[t]{0.44\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\draw[draw=acc,fill=soft] (0,0) rectangle (16,16);
+\foreach \x in {4,8,12} \draw[mute] (\x,0) -- (\x,16);
+\foreach \y in {4,8,12} \draw[mute] (0,\y) -- (16,\y);
+\node[acc,above] at (8,16) {$H \times W \times 3$};
+\draw[arr] (16,8) -- (23,8) node[midway,above,font=\tiny] {flatten};
+\node[box,draw=acc2,fill=soft2] at (33,8) {Conv2D\\$K{=}P, S{=}P$};
+\draw[arr] (43,8) -- (49,8);
+\node[box,draw=acc3,fill=acc3!8] at (58,8) {$N \times D$\\$+$ pos};
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.54\columnwidth}\vspace{1pt}\small
+\textbf{Image to Sequence.} An image $x \in \mathbb{R}^{H\times W\times C}$ is split into $N = \frac{HW}{P^2}$ patches of size $P\times P$. Linear projection projects each patch to dimension $D$ (equivalent to Conv2D with kernel $P$, stride $P$, $D$ filters):\\[2pt]
+$\mathbf{z}_0 = [\mathbf{x}_{\text{cls}};\, \mathbf{x}_p^1 \mathbf{E}; \dots;\, \mathbf{x}_p^N \mathbf{E}] + \mathbf{E}_{\text{pos}}$\\[2pt]
+where $\mathbf{E} \in \mathbb{R}^{(P^2 C)\times D}$ and $\mathbf{E}_{\text{pos}} \in \mathbb{R}^{(N+1)\times D}$.
+\end{minipage}
+
+\begin{mem}[Standard ViT Model Configurations \& Scaling]
+\begin{tabularx}{\linewidth}{@{}lccccL@{}}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden $D$} & \textbf{Heads} & \textbf{MLP Dim} & \textbf{Params (FLOPs $224^2$)}\\
+\midrule
+ViT-B/16 & 12 & 768 & 12 & 3072 & 86M (17.6 GFLOPs)\\
+ViT-L/16 & 24 & 1024 & 16 & 4048 & 307M (61.6 GFLOPs)\\
+ViT-H/14 & 32 & 1280 & 16 & 5120 & 632M (167.4 GFLOPs)\\
+ViT-g/14 & 40 & 1408 & 16 & 6144 & 1.0B (284.1 GFLOPs)\\
+ViT-22B  & 48 & 6144 & 48 & 24576& 22B (4.4 TFLOPs)\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Inductive Bias, Distillation \& Tokenization]
+\Q{Why do CNNs outperform ViTs on small datasets, but lose at scale?}{
+\textbf{Inductive Biases}: CNNs hardcode \emph{translation equivariance} ($f(g(x)) = g(f(x))$) and \emph{locality} (pixels close together interact first). This provides a massive data-efficiency inductive prior.
+\textbf{ViT}: Has almost zero 2D prior; self-attention is permutation-equivariant, and spatial structure must be learned entirely through $\mathbf{E}_{\text{pos}}$ and attention weights.
+\textbf{Empirical inflection point}: Under $\approx 10\text{M}$ images (ImageNet-1K), ResNet outperforms standard ViT. Above $100\text{M}$ images (ImageNet-21K, JFT-300M), ViT's higher capacity scales monotonically without saturating.}
+\Q{How does DeiT achieve high accuracy on pure ImageNet-1K?}{
+Touvron et al. introduce \textbf{hard distillation}:
+\begin{enumerate}
+\item \textbf{Distillation Token}: Appends a learnable \texttt{[DIST]} token alongside \texttt{[CLS]}. The distillation token interacts with patches via self-attention and is supervised by a CNN teacher's hard label:
+$$\mathcal{L} = \frac{1}{2} \mathcal{L}_{\text{CE}}(y, \sigma(z_{\text{cls}})) + \frac{1}{2} \mathcal{L}_{\text{CE}}(y_{\text{teacher}}, \sigma(z_{\text{dist}}))$$
+\item \textbf{Heavy Regularization}: Mixup ($\alpha=0.8$), CutMix ($\alpha=1.0$), RandAugment, Stochastic Depth, and repeated augmentations prevent overfitting the unconstrained attention maps.
+\end{enumerate}
+Reaches $85.2\%$ top-1 on ImageNet-1K without external pretraining.}
+\Q{How do Mean Attention Distance and layer depth behave across a trained ViT?}{
+Define Mean Attention Distance for head $h$ at layer $l$:
+$$\bar{D}_{l, h} = \sum_{j=1}^N A_{i, j}^{(l, h)} \cdot \|\mathbf{p}_i - \mathbf{p}_j\|_2$$
+where $\mathbf{p}_i$ is the 2D spatial coordinate of patch $i$.
+\textbf{In shallow layers ($l=1\dots 4$)}: Different heads specialize. Several heads have tiny attention distance ($\bar{D} \approx 2-4$ patches), acting exactly like localized $3\times 3$ convolutional filters; other heads attend globally.
+\textbf{In deep layers ($l=8\dots 12$)}: Attention distance is universally large across almost all heads ($\bar{D} \approx 10-14$ patches), performing global scene integration and semantic classification across the entire image.}
+\Q{How does NaViT (Patch n' Pack) resolve aspect ratio distortion and padding waste?}{
+Standard ViTs resize images to fixed square shapes ($224\times 224$), causing non-square camera pictures (e.g., $16:9$) to stretch and distort geometric aspect ratios. Alternatively, padding with black bars wastes up to $50\%$ of sequence FLOPs on empty border tokens.
+\textbf{NaViT (Dehghani et al., 2023)}:
+\begin{enumerate}
+\item \textbf{Patch n' Pack}: Packs patches from multiple distinct images with arbitrary resolutions and aspect ratios into a single sequence of length $L$ (e.g., $L=4096$).
+\item \textbf{Self-Attention Masking}: Uses an attention mask that forbids tokens from different images within the packed sequence from attending to each other.
+\item \textbf{2D Continuous Positional Encodings}: Queries and keys receive 2D fractional coordinates $(x/W, y/H) \in [0, 1]^2$.
+\end{enumerate}
+Eliminates all padding waste, preserves native image aspect ratios, and increases training throughput by $4-5\times$.}
+\end{qa}
+
+\begin{trap}[ViT Attention Traps]
+\begin{itemize}
+\item \textbf{Quadratic token cost}: Doubling image resolution quadruples the token sequence length $N$, which increases self-attention computation and activation memory by $16\times$ ($\mathcal{O}(N^2)$).
+\item \textbf{Bicubic vs Nearest for PosEnc}: Using nearest-neighbor interpolation causes high-frequency spatial artifacts and loss spikes during high-res fine-tuning. Bicubic maintains smooth positional phases.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,72 @@
+\section{SSL Deep Dive: MAE, DINO \& DINOv2}\label{sec:ssl-deep}
+\lab{MAE asymmetric encoder \textperiodcentered\ 75\% masking \textperiodcentered\ DINO centering \& sharpening \textperiodcentered\ KoLeo regularizer \textperiodcentered\ Register tokens}
+
+\begin{mem}[MAE vs DINOv2 Paradigm Comparison]
+\begin{tabularx}{\columnwidth}{@{}p{19mm} X X@{}}
+\toprule
+\textbf{Property} & \textbf{Masked Autoencoders (MAE)} & \textbf{Self-Distillation (DINOv2)} \\
+\midrule
+\textbf{Objective} & Reconstruct masked pixels ($L_2$ MSE) & Match teacher probability distribution (Cross-Entropy) \\
+\textbf{Supervision} & Generative reconstruction & Joint embedding self-distillation \\
+\textbf{Masking / Views} & $75\%$ random masking of patches & Multi-crop (2 global views + 8 local views) \\
+\textbf{Asymmetry} & Encoder sees only $25\%$ visible patches & Student sees local+global; Teacher sees global only \\
+\textbf{Features} & Strong fine-tuning backbone; poor k-NN & State-of-the-art frozen features; $>86\%$ linear probe \\
+\textbf{Regularizer} & Normalized patch pixel targets & KoLeo differential entropy + Register tokens \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Masked Autoencoders (MAE) Mechanics]
+\Q{Why does MAE mask 75\% of image patches, whereas BERT masks only 15\% of text tokens?}{
+\textbf{Information Density}: Language is highly information-dense, discrete, and semantic; masking $15\%$ of words in a sentence already leaves subtle, challenging cloze puzzles. In contrast, images are continuous, spatially redundant signals: adjacent pixels are heavily correlated.
+\begin{itemize}
+\item At $15\%$ image masking, a network can reconstruct missing pixels through trivial local spatial interpolation (blurring/edge continuation) without understanding high-level scene composition.
+\item At \hl{$75\%$ masking}, only $1$ in $4$ patches is visible. The model cannot interpolate locally; it is forced to learn holistic scene grammar (e.g., inferring that an eye requires a nose, mouth, and face).
+\end{itemize}}
+
+\Q{How does MAE achieve a 4x throughput acceleration during pretraining?}{
+\textbf{Asymmetric Architecture}:
+\begin{enumerate}
+\item \textbf{Heavy Encoder}: Operates \hl{strictly on visible patches}. For $196$ total patches, $75\%$ masking leaves only $N_{\text{vis}} = 49$ tokens. Since ViT self-attention scales quadratically, attention FLOPs drop by $\left(\frac{49}{196}\right)^2 = \left(\frac{1}{4}\right)^2 = \mathbf{\frac{1}{16}}$!
+\item \textbf{Lightweight Decoder}: Only after the heavy encoder has processed visible tokens are learned, shared [mask] tokens inserted at the masked positions to form the complete $196$-token sequence. The decoder is shallow ($\sim 8$ layers vs $24$ in encoder), incurring minimal compute.
+\item \textbf{Loss Computation}: MSE is computed \hl{only on masked patches}, further saving loss evaluation overhead.
+\end{enumerate}}
+\end{qa}
+
+\begin{qa}[DINO \& DINOv2 Self-Distillation Dynamics]
+\Q{Derive how DINO avoids representation collapse without negative pairs via Centering and Sharpening.}{
+In self-distillation, student $g_s$ predicts teacher $g_t$ output. Two failure modes (collapse) threaten training:
+\begin{enumerate}
+\item \textbf{Dirac collapse}: Output distribution collapses to a single constant coordinate for all inputs.
+\item \textbf{Uniform collapse}: Output distribution collapses to a uniform distribution with maximum entropy.
+\end{enumerate}
+DINO parameterizes probability outputs via temperatures $\tau_s, \tau_t$ and center vector $c$:
+\begin{align*}
+P_s(x)^{(i)} &= \frac{\exp(g_s(x)^{(i)} / \tau_s)}{\sum_k \exp(g_s(x)^{(k)} / \tau_s)}\\
+P_t(x)^{(i)} &= \frac{\exp((g_t(x)^{(i)} - c_i) / \tau_t)}{\sum_k \exp((g_t(x)^{(k)} - c_k) / \tau_t)}
+\end{align*}
+\begin{itemize}
+\item \textbf{Centering}: $c \leftarrow m \cdot c + (1-m) \frac{1}{B}\sum_{b} g_t(x_b)$. Subtracting the center vector pulls the mean activation toward zero, preventing any single dimension from dominating (averts Dirac collapse). However, excessive centering pushes probabilities toward uniform distribution.
+\item \textbf{Sharpening}: Setting teacher temperature $\tau_t < \tau_s$ ($\tau_t \approx 0.04-0.07$ vs $\tau_s \approx 0.1$) sharpens the distribution, counteracting the uniform dispersion.
+\item \textbf{Equilibrium}: Centering and sharpening act as opposing forces: centering pushes toward uniform entropy, sharpening pushes toward peaked entropy. Balanced together, they guarantee stable non-collapsed representations.
+\end{itemize}}
+
+\Q{What is the KoLeo regularizer in DINOv2, and how do Register Tokens eliminate feature map artifacts?}{
+\textbf{KoLeo (Kozachenko-Leonenko) Regularizer}:
+Computes an empirical estimate of differential entropy across normalized feature vectors $z_i$:
+$$\mathcal{L}_{\text{KoLeo}} = - \frac{1}{n} \sum_{i=1}^n \ln \left( \min_{j \ne i} \| z_i - z_j \|_2 \right)$$
+Minimizing $\mathcal{L}_{\text{KoLeo}}$ maximizes the distance between every feature vector and its nearest neighbor, forcing representations to distribute uniformly across the unit hypersphere and preventing feature clustering.\\[2pt]
+\textbf{Register Tokens (Darcet et al., 2023)}:
+Standard ViTs trained with DINO/DINOv2 exhibit severe high-norm spike artifacts in flat, uniform background regions (5x higher activation norms than foreground objects).
+\begin{itemize}
+\item \textbf{Cause}: Because ViT lacks dedicated scratchpad memory, self-attention recycles uninformative background tokens to store global contextual information.
+\item \textbf{Solution}: Append 4--8 learnable [register] tokens to the input patch sequence. The model automatically routes global context through registers, completely eliminating background visual artifacts and producing razor-sharp feature maps.
+\end{itemize}}
+\end{qa}
+
+\begin{trap}[SSL Pretraining Traps]
+\begin{itemize}
+\item \textbf{Patch Pixel Normalization in MAE}: Omitting per-patch mean/variance normalization ($\frac{x - \mu}{\sigma}$) when computing MAE reconstruction loss degrades downstream linear probe accuracy by over $2.5\%$, as the model wastes capacity fitting global illumination variations rather than local structural geometry.
+\item \textbf{EMA Teacher Update Rate}: The teacher EMA momentum must start high ($\lambda = 0.996$) and cosine-anneal to $1.0$ at the end of training. Setting $\lambda$ too low makes the teacher track noisy student weights, destabilizing training.
+\end{itemize}
+\end{trap}

@@ -1,0 +1,38 @@
+\section{The 21-Day Vision Mastery Curriculum}\label{sec:plan}
+\lab{Foundations \textperiodcentered\ Multimodal \& Generative \textperiodcentered\ Systems \& Edge \textperiodcentered\ Code-Blind \textperiodcentered\ Mock Rubrics}
+
+\begin{mem}[The 3-Phase Revision Architecture]
+\begin{tabularx}{\columnwidth}{@{}l l X@{}}
+\toprule
+\textbf{Phase} & \textbf{Days} & \textbf{Core Focus \& Daily Target} \\
+\midrule
+\textbf{Phase 1} & Days 1--7 & \textbf{Foundations}: Classical CV, CNNs, ViTs, Detection, SAM, SSL \\
+\textbf{Phase 2} & Days 8--14 & \textbf{Generative \& 3D}: CLIP, VLMs, Diffusion, Flow, Video, 3DGS \\
+\textbf{Phase 3} & Days 15--21 & \textbf{Systems \& Drills}: Metrics, Edge NPU, Code-Blind, Mock Interviews \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\subsection*{Day-by-Day Execution Schedule}
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Days 1--2 (Classical \& Convolutions)}: Derive Harris response $R$ and Hartley 8-point normalization; calculate RANSAC sample count ($N=72$ for $\epsilon=0.5$); compute Conv2D output shape and receptive field recurrence ($RF_l = RF_{l-1} + (K-1)J$); derive depthwise separable FLOP ratio ($\sim 1/9$); explain ConvNeXt-V2 GRN.
+\item \textbf{Days 3--4 (ViTs \& Single-Stage Detectors)}: Derive ViT self-attention FLOPs ($4ND^2 + 2N^2D$); trace DeiT distillation token and Swin cyclic shift masking; derive Focal Loss gradient suppression ($10,000\times$ on easy negatives); compare RoIPool vs RoIAlign; analyze YOLOv8/v11 TAL metric ($s^\alpha \cdot \text{IoU}^\beta$) and DFL distribution regression.
+\item \textbf{Days 5--6 (DETR \& Segmentation)}: Trace DETR Hungarian bipartite assignment; calculate Deformable Attention sampling complexity ($4MK$ vs $N$); analyze DINO-DETR contrastive denoising; compare DeepLabv3+ ASPP to Mask2Former masked attention; walk through SAM ViT-H windowed backbone and SAM 2 streaming video memory bank.
+\item \textbf{Day 7 (Self-Supervised Learning)}: Prove InfoNCE lower bound on mutual information; analyze BYOL non-collapse dynamics; explain MAE $75\%$ masking asymmetric speedup and DINOv2 KoLeo entropy regularization with register tokens.
+\item \textbf{Days 8--9 (CLIP \& Multimodal LLMs)}: Derive CLIP InfoNCE gradients and distributed All-Gather backward bottleneck; compare CLIP softmax vs SigLIP pairwise sigmoid loss; diagram LLaVA AnyRes grid slicing; analyze Qwen2-VL native 2D/3D RoPE; explain POPE splits and VCD contrastive decoding.
+\item \textbf{Days 10--11 (Diffusion Foundations \& DiT)}: Derive DDPM forward noising $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon$; connect score matching to Tweedie's formula; analyze EDM continuous $\sigma$ scaling and CFG burn; contrast pixel diffusion vs latent VAE ($f=8$); trace DiT adaLN-Zero compute scaling laws.
+\item \textbf{Days 12--13 (Flow Matching \& Video Models)}: Derive straight probability trajectories and constant velocity objective $v_t = x_1 - x_0$; explain 2-Rectified Flow Reflowing; contrast Flux.1 double vs single stream blocks; factorize 3D attention into spatial-then-temporal operations; prove $15\times$ memory reduction; analyze Sora spacetime patch grids.
+\item \textbf{Day 14 (3D NeRF \& Gaussian Splatting)}: Derive NeRF volumetric quadrature rendering; prove 3D covariance positive semi-definiteness ($\Sigma = R S S^T R^T$); trace 3DGS tile rasterizer with 64-bit Radix sort and EWA Jacobian projection.
+\item \textbf{Days 15--16 (Benchmarks \& Edge Deployment)}: Calculate Panoptic Quality $\text{PQ} = \text{SQ} \times \text{RQ}$; derive FID 2-Wasserstein distance under Gaussian assumption; evaluate POPE Yes-ratio and MMBench circular eval; derive Conv-BN folding; explain TensorRT INT8 calibration via KL divergence minimization; trace ByteTrack secondary association.
+\item \textbf{Days 17--18 (System Design \& Code-Blind)}: Architect autonomous vehicle 3D perception (BEVFormer); design ColPali late-interaction visual document retrieval; write blind in $<5$ minutes: Conv2D via \texttt{im2col}, ResNet Bottleneck, ViT PatchEmbed, 2D RoPE, InfoNCE loss, and Vectorized NMS.
+\item \textbf{Days 19--20 (Training Loops \& Napkin Math)}: Write pure PyTorch execution loops for SimCLR step, DDPM step, Rectified Flow step, and AnyRes image slicer; compute without calculator: Conv FLOPs, ViT quadratic memory, distributed CLIP network bandwidth, 3DGS VRAM footprint, and edge NPU FPS.
+\item \textbf{Day 21 (Final Rapid-Fire Drill)}: Fire through all 50 rapid-fire flashcards aloud; time each answer strictly under 5 seconds.
+\end{itemize}
+
+\begin{trap}[Interview Red Flags Candidates Fail On]
+\begin{itemize}
+\item \textbf{Hand-Waving FLOP Calculations}: Saying "convolutions are heavy" without stating $2 C_{\text{in}} C_{\text{out}} K^2 H W$ or confusing FLOPs with MACs ($1\text{ MAC} = 2\text{ FLOPs}$).
+\item \textbf{VLM Token Naivety}: Assuming high-resolution images are simply resized; production VLMs tile images into multi-grid patches, generating $1000-4000$ tokens per image.
+\item \textbf{Confusing NeRF with 3DGS}: Claiming 3DGS uses an MLP; 3DGS is an \hl{explicit} point-based representation with closed-form rasterization, whereas NeRF is an \hl{implicit} continuous neural field.
+\end{itemize}
+\end{trap}

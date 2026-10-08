@@ -1,0 +1,63 @@
+\section{References: The Vision Canon}\label{sec:refs}
+{\small\raggedright
+\newcommand{\rf}[2]{\par\noindent\hangindent=1em\hangafter=1 #1 {\color{mute}\ttfamily\scriptsize #2}\par}
+
+\paragraph{Classical Geometry, Filtering \& Flow (1, 1b)}
+\rf{Hartley \& Zisserman 2004, \emph{Multiple View Geometry in Computer Vision}.}{Cambridge Univ Press}
+\rf{Lowe 2004, \emph{Distinctive Image Features from Scale-Invariant Keypoints} (SIFT).}{IJCV 60(2)}
+\rf{Rublee et al.\ 2011, \emph{ORB: An efficient alternative to SIFT or SURF}.}{ICCV 2011}
+\rf{Lucas \& Kanade 1981; Horn \& Schunck 1981, \emph{Determining Optical Flow}.}{AI Journal}
+\rf{Teed \& Deng 2020, \emph{RAFT: Recurrent All-Pairs Field Transforms for Optical Flow}.}{2003.12039}
+
+\paragraph{Convolutions \& Modern Backbones (2, 2b)}
+\rf{He et al.\ 2016, \emph{Deep Residual Learning for Image Recognition} (ResNet).}{1512.03385}
+\rf{Sandler et al.\ 2018, \emph{MobileNetV2: Inverted Residuals and Linear Bottlenecks}.}{1801.04381}
+\rf{Ma et al.\ 2018, \emph{ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture}.}{1807.11164}
+\rf{Tan \& Le 2019, \emph{EfficientNet: Rethinking Model Scaling for CNNs}.}{1905.11946}
+\rf{Liu et al.\ 2022, \emph{A ConvNet for the 2020s} (ConvNeXt); Woo et al.\ 2023 (ConvNeXt-V2).}{2201.03545, 2301.00808}
+
+\paragraph{Vision Transformers \& Hierarchical ViTs (3, 4)}
+\rf{Dosovitskiy et al.\ 2020, \emph{An Image is Worth 16x16 Words} (ViT).}{2010.11929}
+\rf{Touvron et al.\ 2021, \emph{Training data-efficient image transformers} (DeiT).}{2012.12877}
+\rf{Liu et al.\ 2021, \emph{Swin Transformer: Hierarchical Vision Transformer using Shifted Windows}.}{2103.14030}
+\rf{Dehghani et al.\ 2023, \emph{Scaling Vision Transformers to 22 Billion Parameters} (ViT-22B).}{2302.05442}
+\rf{Dehghani et al.\ 2023, \emph{Patch n' Pack: NaViT, a Vision Transformer for any Aspect Ratio}.}{2307.06304}
+
+\paragraph{Object Detection \& Set Prediction (5, 5b, 6)}
+\rf{Ren et al.\ 2015, \emph{Faster R-CNN}; He et al.\ 2017, \emph{Mask R-CNN}.}{1506.01497, 1703.06870}
+\rf{Lin et al.\ 2017, \emph{Focal Loss for Dense Object Detection} (RetinaNet).}{1708.02002}
+\rf{Carion et al.\ 2020, \emph{End-to-End Object Detection with Transformers} (DETR).}{2005.12872}
+\rf{Zhu et al.\ 2020, \emph{Deformable DETR}; Zhang et al.\ 2022, \emph{DINO-DETR}.}{2010.04159, 2203.03605}
+\rf{Wang et al.\ 2024, \emph{YOLOv10: Real-Time End-to-End Object Detection}.}{2405.14458}
+
+\paragraph{Segmentation \& Foundation Models (7, 7b)}
+\rf{Ronneberger et al.\ 2015, \emph{U-Net: Convolutional Networks for Biomedical Segmentation}.}{1505.04597}
+\rf{Chen et al.\ 2017, \emph{Rethinking Atrous Convolution for Semantic Image Segmentation} (DeepLabv3).}{1706.05587}
+\rf{Cheng et al.\ 2022, \emph{Masked-attention Mask Transformer for Universal Segmentation} (Mask2Former).}{2112.01527}
+\rf{Kirillov et al.\ 2023, \emph{Segment Anything} (SAM); Ravi et al.\ 2024 (SAM 2).}{2304.02643, 2408.00714}
+
+\paragraph{Self-Supervised Learning \& Dual Encoders (8, 8b, 9)}
+\rf{Chen et al.\ 2020, \emph{A Simple Framework for Contrastive Learning} (SimCLR); He 2020 (MoCo).}{2002.05709, 1911.05722}
+\rf{He et al.\ 2021, \emph{Masked Autoencoders Are Scalable Vision Learners} (MAE).}{2111.06377}
+\rf{Caron et al.\ 2021, \emph{Emerging Properties in Self-Supervised ViTs} (DINO); Oquab 2023 (DINOv2).}{2104.14294, 2304.07193}
+\rf{Radford et al.\ 2021, \emph{Learning Transferable Visual Models} (CLIP).}{2103.00020}
+\rf{Zhai et al.\ 2023, \emph{Sigmoid Loss for Language-Image Pre-Training} (SigLIP).}{2303.15343}
+
+\paragraph{Generative Diffusion, DiT \& Flow Matching (11, 12, 13)}
+\rf{Ho et al.\ 2020, \emph{DDPM}; Song et al.\ 2020, \emph{Score SDE}; Song et al.\ 2020, \emph{DDIM}.}{2006.11239, 2011.13456, 2010.02502}
+\rf{Karras et al.\ 2022, \emph{Elucidating the Design Space of Diffusion} (EDM).}{2206.00364}
+\rf{Rombach et al.\ 2022, \emph{High-Resolution Image Synthesis with Latent Diffusion Models}.}{2112.10752}
+\rf{Peebles \& Xie 2023, \emph{Scalable Diffusion Models with Transformers} (DiT).}{2212.09748}
+\rf{Lipman et al.\ 2022, \emph{Flow Matching for Generative Modeling}; Liu 2022 (Flow Straight and Fast).}{2210.02747, 2209.03003}
+\rf{Esser et al.\ 2024, \emph{Scaling Rectified Flow Transformers for High-Res Synthesis} (SD3 MM-DiT).}{2403.03206}
+
+\paragraph{Video Foundations, 3D \& Multimodal LLMs (10, 10b, 14, 15, 15b)}
+\rf{Mildenhall et al.\ 2020, \emph{NeRF}; Kerbl et al.\ 2023, \emph{3D Gaussian Splatting}.}{2003.08934, 2308.04079}
+\rf{Bertasius et al.\ 2021, \emph{TimeSformer}; Brooks et al.\ 2024 (Sora Technical Report).}{2102.05095, openai.com}
+\rf{Liu et al.\ 2023, \emph{LLaVA}; Wang et al.\ 2024, \emph{Qwen2-VL: To See the World More Clearly}.}{2304.08485, 2409.12191}
+\rf{Li et al.\ 2023, \emph{Evaluating Object Hallucination in Large Vision-Language Models} (POPE).}{2305.10355}
+\rf{Leng et al.\ 2024, \emph{Mitigating Object Hallucination via Visual Contrastive Decoding} (VCD).}{2311.16922}
+\rf{Frossard et al.\ 2024, \emph{ColPali: Efficient Document Retrieval with Vision Language Models}.}{2407.01449}
+\rf{Li et al.\ 2022, \emph{BEVFormer: Learning BEV Representation with Spatiotemporal Transformers}.}{2203.17270}
+\rf{Zhang et al.\ 2022, \emph{ByteTrack: Multi-Object Tracking by Associating Every Detection Box}.}{2110.06864}
+}

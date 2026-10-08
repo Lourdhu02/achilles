@@ -1,0 +1,78 @@
+\section{Debugging Playbooks: Vision Failure Modes}\label{sec:debug}
+\lab{NaN bounding box losses \textperiodcentered\ ViT convergence failure \textperiodcentered\ Diffusion gray output \textperiodcentered\ 3DGS needle floaters \textperiodcentered\ VLM repetition}
+
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[every node/.style={font=\tiny},node distance=1.8mm]
+\node[box,draw=acc,fill=soft,minimum width=20mm] (symptom) {\textbf{Failure Mode}};
+\node[box,draw=acc2,fill=soft2,right=4mm of symptom] (nan) {NaN Loss};
+\node[box,draw=acc2,fill=soft2,below=1.5mm of nan] (gray) {Gray Output};
+\node[box,draw=acc2,fill=soft2,below=1.5mm of gray] (needle) {3DGS Floaters};
+\node[box,draw=acc2,fill=soft2,below=1.5mm of needle] (drop) {Acc Drop};
+
+\node[box,draw=acc3,fill=acc3!10,right=3mm of nan] (fix1) {Clamp $\Delta w \in [-4, 4]$; add $\epsilon$ to IoU denom};
+\node[box,draw=acc3,fill=acc3!10,right=3mm of gray] (fix2) {VAE latent scale $0.18215$; verify CFG null $\varnothing$};
+\node[box,draw=acc3,fill=acc3!10,right=3mm of needle] (fix3) {Opacity reset $\alpha \leftarrow 0.01$; clamp scale};
+\node[box,draw=acc3,fill=acc3!10,right=3mm of drop] (fix4) {BGR $\leftrightarrow$ RGB channel swap; PIL bicubic};
+
+\draw[arr] (symptom.east) -- (nan.west);
+\draw[arr] (symptom.east) |- (gray.west);
+\draw[arr] (symptom.east) |- (needle.west);
+\draw[arr] (symptom.east) |- (drop.west);
+
+\draw[arr] (nan)--(fix1);
+\draw[arr] (gray)--(fix2);
+\draw[arr] (needle)--(fix3);
+\draw[arr] (drop)--(fix4);
+\end{tikzpicture}%
+}
+\end{center}
+
+\begin{qa}[Production Debugging Scenarios]
+\Q{Detection loss suddenly becomes NaN at step 2,400. What is broken and how do you triage?}{
+\textbf{Root Causes}:
+\begin{itemize}
+\item \textbf{Zero-Area Box / Division by Zero}: In GIoU or CIoU, if predicted or ground-truth coordinates satisfy $x_2 \le x_1$ or $y_2 \le y_1$, box area becomes 0 or negative. The enclosing convex hull denominator $|C|$ produces division by zero ($0/0 \to \text{NaN}$).
+\item \textbf{Extreme Log Ratio}: If using anchor delta parametrization $\Delta w = \log(w / w_a)$, an unconstrained linear head predicting large positive values (e.g. $+89$) causes $\exp(\Delta w)$ to overflow FP16 max ($65{,}504$).
+\end{itemize}
+\textbf{The Fix}:
+Enforce strict coordinate ordering before loss: $x_1 = \min(x_1, x_2)$, $x_2 = \max(x_1, x_2) + \epsilon$.
+Clamp box width/height outputs: $\Delta w = \text{clamp}(\Delta w, \min=-4.0, \max=4.0)$.
+Add epsilon ($\epsilon = 10^{-7}$) to all IoU denominators.}
+\Q{A ViT model fails to train from scratch on a 50k image dataset (loss plateaus at chance).}{
+\textbf{Diagnosis}: Vision Transformers lack 2D local translation and neighborhood inductive biases. On small datasets ($<100\text{k}$ images), random gradient steps in unconstrained self-attention space fail to find spatial structure.
+\textbf{The Playbook}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Initialize from Pretrained Checkpoints}: Fine-tune from MAE, DINOv2, or ImageNet-21k checkpoints rather than random initialization.
+\item \textbf{Inject Heavy Regularization}: If training from scratch is mandatory, implement DeiT's recipe: RandAugment ($N=2, M=9$), Mixup ($\alpha=0.8$), CutMix ($\alpha=1.0$), and Stochastic Depth ($p=0.1$).
+\item \textbf{Switch to Hybrid/CNN}: Replace ViT with ConvNeXt-Tiny or Swin-T, whose built-in inductive priors converge reliably on small datasets.
+\end{enumerate}}
+\Q{Latent Diffusion generates solid grey or noisy static images despite low training loss.}{
+\textbf{Diagnosis}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Missing VAE Latent Scale}: VAE encoder latents have variance $\approx 5.5$. SD requires scaling latents by $0.18215$ (SDXL: $0.13025$) to enforce unit variance before adding Gaussian noise. Forgetting this leaves signal-to-noise ratio completely mismatched.
+\item \textbf{Inverted Timestep Schedule}: Inverting the noise schedule (feeding $t=0$ as pure noise instead of clean image).
+\item \textbf{CFG Dropout Bug}: Dropping conditions during training without using the exact same null prompt embedding $\varnothing$ at test time.
+\end{enumerate}}
+\Q{3D Gaussian Splatting scene produces needle floaters and blurry foreground artifacts.}{
+\textbf{Diagnosis}:
+Needle floaters stem from Gaussians with one elongated covariance axis ($s_x \gg s_y, s_z$) in unobserved camera frustums.
+Blurry foreground stems from failure of adaptive density control to clone under-reconstructed Gaussians.
+\textbf{The Fix}:
+Clamp maximum spatial scale: $s = \min(s, s_{\text{max}})$.
+Enforce \textbf{Periodic Opacity Reset}: Every 3,000 steps, force all Gaussian opacities to near-zero ($\alpha_i \leftarrow 0.01$). Valid surface Gaussians quickly regain opacity from photometric gradients; spurious floaters in empty space remain low and are culled by $\alpha < 0.005$ thresholding.}
+\Q{A VLM repeats generated output tokens in an infinite loop during image reasoning.}{
+\textbf{Diagnosis}:
+\begin{enumerate}
+\item \textbf{Visual Attention Sink}: If the projector maps visual tokens to an embedding scale significantly smaller or larger than text token embeddings, attention weights in the LLM backbone saturate on initial visual tokens.
+\item \textbf{Missing End-of-Sequence (EOS) Supervision}: Pretraining data omitted \texttt{<|im\_end|>} or \texttt{</s>} tokens, teaching the LLM to continue emitting tokens forever.
+\end{enumerate}
+\textbf{The Fix}: Add LayerNorm at projector exit to equalize visual and text embedding variance; enforce repetition penalties during decoding; audit presence of EOS tokens in instruction tuning targets.}
+\Q{Validation accuracy drops 25\% on deployed model despite zero change in weights.}{
+\textbf{Triage Checklist}:
+\begin{enumerate}
+\item \textbf{Color Channel Swap}: Check if deployed inference feeds OpenCV BGR into a model trained on Torchvision RGB.
+\item \textbf{Resizing Interpolation}: Training used PIL bicubic with antialiasing; deployed engine used \lstinline|INTER_NEAREST| or \lstinline|INTER_LINEAR|.
+\item \textbf{Normalization Mean/Std}: Input was scaled to $[0, 1]$ but omitted ImageNet subtract mean and divide std.
+\end{enumerate}}
+\end{qa}

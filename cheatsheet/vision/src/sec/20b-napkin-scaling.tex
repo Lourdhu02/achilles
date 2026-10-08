@@ -1,0 +1,79 @@
+\section{Vision Systems: Hardware Scaling \& Napkin Math II}\label{sec:napkin2}
+\lab{Video attention complexity \textperiodcentered\ patch size quadratic scaling \textperiodcentered\ lr batch scaling \textperiodcentered\ distributed CLIP all-gather \textperiodcentered\ NPU TOPS}
+
+\begin{mem}[Quick Formulas for Vision System Architects]
+\begin{tabularx}{\columnwidth}{@{}p{18mm} p{36mm} X@{}}
+\toprule
+\textbf{Metric} & \textbf{Exact Formula} & \textbf{Typical Magnitude} \\
+\midrule
+\textbf{ViT Patch Shrinkage} & $N = \frac{HW}{P^2}; \quad \text{Attn} \propto P^{-4}$ & $P=16 \to 8 \implies \mathbf{16\times}$ Attention FLOPs! \\
+\textbf{Video Attn Savings} & $\frac{\mathcal{O}(LS^2 + SL^2)}{\mathcal{O}((LS)^2)} \approx \frac{1}{L} + \frac{1}{S}$ & Factorized attention saves $\mathbf{\sim 15-20\times}$ VRAM \\
+\textbf{Linear LR (SGD)} & $\eta = \eta_0 \times \frac{B}{B_0}$ & Scales with batch size $B$; 5-ep warmup \\
+\textbf{Sqrt LR (AdamW)} & $\eta = \eta_0 \times \sqrt{\frac{B}{B_0}}$ & Used in large-scale ViT and diffusion \\
+\textbf{NPU Frame Time} & $T \approx \frac{\text{FLOPs}}{\text{TOPS} \times \text{Util}}$ & Edge NPU utilization typically $\mathbf{25\%-40\%}$ \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Video Attention \& Patch Resolution Complexity]
+\Q{Derive the memory and compute savings of factorized spatial-temporal attention vs joint 3D attention in video transformers.}{
+Consider a video clip with $T$ temporal frames and spatial resolution $H \times W$.
+After patchification, let spatial tokens per frame be $S = \frac{H W}{P^2}$ and temporal tokens be $L = T$:
+\begin{itemize}
+\item \textbf{Joint 3D Space-Time Attention}:
+Every token attends to all tokens across all frames. Total sequence length $N_{\text{total}} = L \cdot S$.
+The attention matrix size is:
+$$\text{Memory}_{\text{joint}} = \mathcal{O}\left( (L \cdot S)^2 \right) = \mathcal{O}(L^2 S^2)$$
+For a 16-frame clip with $14 \times 14 = 196$ patches per frame:
+$N_{\text{total}} = 16 \times 196 = 3136 \implies \text{Tokens}^2 \approx 9.83 \times 10^6 \text{ pairs}$.
+\item \textbf{Factorized Spatial-Temporal Attention (TimeSformer / Sora)}:
+Decomposes attention into (1) spatial attention within each frame, followed by (2) temporal attention across corresponding spatial locations:
+$$\text{Memory}_{\text{factorized}} = L \cdot \mathcal{O}(S^2) + S \cdot \mathcal{O}(L^2) = \mathcal{O}(L S^2 + S L^2)$$
+\item \textbf{Savings Ratio}:
+$$\frac{\text{Factorized}}{\text{Joint}} = \frac{L S^2 + S L^2}{L^2 S^2} = \frac{1}{L} + \frac{1}{S}$$
+For $L=16, S=196$:
+$\frac{1}{16} + \frac{1}{196} \approx 0.0625 + 0.0051 \approx 0.0676 \implies \mathbf{\sim 15\times \text{ memory reduction!}}$
+\end{itemize}}
+
+\Q{What happens mathematically to compute, memory, and receptive field when patch size is halved from $P=16$ to $P=8$ in ViT?}{
+Given image size $H \times W$:
+\begin{enumerate}
+\item \textbf{Token Count}: $N = \frac{H W}{P^2}$. Halving $P$ increases token sequence length by \hl{$4\times$}.
+\item \textbf{Self-Attention FLOPs}: $4 N d^2 + 2 N^2 d$. The quadratic term $2 N^2 d$ scales by $(4)^2 = \mathbf{16\times}$!
+\item \textbf{KV Cache / Activation Memory}: Attention score matrix requires $16\times$ higher intermediate activation memory.
+\item \textbf{Spatial Representation}: Patch embedding receptive field shrinks from $16 \times 16$ to $8 \times 8$, capturing fine-grained edges and small objects at the expense of massive GPU compute.
+\end{enumerate}}
+\end{qa}
+
+\begin{qa}[Distributed All-Gather Communication \& NPU Latency]
+\Q{Calculate the exact network bandwidth and transmission time for All-Gather in large-batch CLIP pretraining.}{
+Consider training CLIP with total batch size $B = 65,536$ distributed across $P = 64$ GPUs ($1024$ samples/GPU), embedding dimension $D = 768$ in FP16 ($2$ bytes/float):
+\begin{itemize}
+\item \textbf{Local Tensor Size}: Each GPU holds an image embedding matrix of size:
+$$M_{\text{local}} = 1024 \times 768 \times 2\text{ bytes} = 1.57\text{ MB}$$
+\item \textbf{All-Gather Data Transferred}: In a ring all-gather, each GPU transmits and receives $\frac{P-1}{P} \times \text{Total Data}$:
+$$\text{Total Data} = 65,536 \times 768 \times 2\text{ bytes} = 100.66\text{ MB}$$
+$\text{Data sent per GPU} = \frac{63}{64} \times 100.66\text{ MB} \approx 99.09\text{ MB}$.
+\item \textbf{Transfer Time over 400 Gbps (50 GB/s) InfiniBand}:
+$$t_{\text{comm}} = \frac{99.09\text{ MB}}{50\text{ GB/s}} \approx 1.98\text{ ms}$$
+Because both image and text embeddings must be gathered, communication overhead is $\sim 4$\,ms per training step.
+\end{itemize}}
+
+\Q{How do you calculate real-world inference frame rate on an edge NPU given theoretical TOPS?}{
+\textbf{The Trap}: A 26 TOPS NPU does not deliver 26 trillion operations per second on vision models!
+\begin{itemize}
+\item \textbf{Effective Formula}:
+$$\text{FPS}_{\text{real}} = \frac{\text{NPU TOPS} \times 10^{12} \times \eta_{\text{hardware}}}{\text{Model GFLOPs} \times 10^9}$$
+where hardware efficiency $\eta_{\text{hardware}}$ depends on operator memory bandwidth (typically $25\%-40\%$).
+\item \textbf{Example}: YOLOv8s (28.6 GFLOPs) on an INT8 26 TOPS edge processor with realistic $\eta = 30\%$:
+$$\text{FPS}_{\text{real}} = \frac{26 \times 10^{12} \times 0.30}{28.6 \times 10^9} \approx \frac{7,800}{28.6} \approx \mathbf{272\text{ FPS}}$$
+Frame latency $t_{\text{frame}} = \frac{1000}{272} \approx 3.67$\,ms.
+\end{itemize}}
+\end{qa}
+
+\begin{trap}[Scaling Traps in Vision Infrastructure]
+\begin{itemize}
+\item \textbf{Square-Root LR Pitfall on SGD}: Applying square-root scaling to SGD with momentum causes underfitting on large batches; SGD strictly requires linear scaling with momentum adjustment ($1 - \beta \to (1 - \beta) \times \frac{B}{B_0}$).
+\item \textbf{NPU Memory Bandwidth Bottlenecks}: High TOPS cannot compensate for low LPDDR bandwidth ($<50$\,GB/s). High-resolution inputs saturate memory buses rather than compute units, capping real frame rates far below theoretical TOPS.
+\end{itemize}
+\end{trap}

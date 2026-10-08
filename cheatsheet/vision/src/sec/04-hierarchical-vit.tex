@@ -1,0 +1,63 @@
+\section{Hierarchical Vision Transformers: Swin \& Hybrids}\label{sec:swin}
+\lab{Swin Transformer \textperiodcentered\ shifted windows \textperiodcentered\ patch merging \textperiodcentered\ cyclic masking \textperiodcentered\ CoAtNet \textperiodcentered\ FastViT}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+% Layer l: regular window
+\draw[draw=acc,fill=soft,thick] (0,10) rectangle (14,24);
+\draw[mute] (7,10) -- (7,24); \draw[mute] (0,17) -- (14,17);
+\node[acc,above] at (7,24) {Layer $l$ (W-MSA)};
+% Layer l+1: shifted window
+\draw[draw=acc2,fill=soft2,thick] (18,10) rectangle (32,24);
+\draw[acc2,dashed] (21,10) -- (21,24); \draw[acc2,dashed] (18,13) -- (32,13);
+\node[acc2,above] at (25,24) {Layer $l{+}1$ (SW-MSA)};
+\draw[arr,acc3] (14,17) -- (18,17);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{Linear Complexity Vision.} Standard global ViT self-attention scales quadratically: $\mathcal{O}(H^2 W^2)$. Swin restricts self-attention to local $M\times M$ windows ($M=7$):
+$$\Omega(\text{W-MSA}) = 4hwC^2 + 2M^2 hwC$$
+Linear in image area $hw$. To exchange cross-window information without global attention, consecutive blocks alternate between standard and \textbf{shifted} window partitions.
+\end{minipage}
+
+\begin{mem}[Hierarchical Feature Pyramid (Swin vs ViT)]
+\begin{itemize}
+\item \textbf{Patch Merging}: Concatenates features of each $2\times 2$ neighborhood ($4C$-dim), applies a linear layer to produce $2C$-dim. Halves spatial resolution while doubling channels (produces $\frac{H}{4}, \frac{H}{8}, \frac{H}{16}, \frac{H}{32}$ pyramids compatible with FPN).
+\item \textbf{Cyclic Shift \& Masking}: Naive shifted window partitioning yields up to $2\times 2$ extra partial windows at boundaries. Swin performs a cyclic shift to assemble partial windows into regular $M\times M$ windows, computes attention with a masking matrix $\mathbf{M}$ that blocks non-adjacent tokens, then reverse shifts.
+\item \textbf{Relative Position Bias}: Adds bias matrix $\mathbf{B} \in \mathbb{R}^{M^2 \times M^2}$ from learned table $\hat{B} \in \mathbb{R}^{(2M-1)\times (2M-1)}$ based on coordinate offsets $(\Delta x, \Delta y) \in [-M+1, M-1]$.
+\end{itemize}
+\end{mem}
+
+\begin{qa}[Dense Prediction, Window Attention \& Hybrids]
+\Q{Why can't standard ViT directly replace ResNet in Faster R-CNN or U-Net?}{
+\textbf{1. Single-scale representation}: ViT maintains constant token resolution ($\frac{H}{16} \times \frac{W}{16}$) throughout all depth. FPN and U-Net require multi-scale pyramids ($C_2, C_3, C_4, C_5$) to detect objects across small, medium, and large scales.
+\textbf{2. High-resolution memory explosion}: Object detection and segmentation require large inputs ($1024\times 1024$ or $1333\times 800$). At $P=16$, $1024^2 \implies 4096$ tokens, whose $N^2$ attention map consumes $4096^2 \times 2\text{ bytes} = 33.5\text{ MB}$ per head, overflowing GPU VRAM during training.}
+\Q{How does the Swin attention mask prevent cyclic leakage?}{
+A cyclic shift wraps border tokens from the top-left to the bottom-right of the feature map, packing multiple disconnected image patches into the same $M\times M$ window.
+The attention mask $\mathbf{M}$ assigns $-\infty$ to logit entries $(i, j)$ if tokens $i$ and $j$ originated from different sub-windows before the shift:
+$$\text{Attention} = \text{Softmax}\left(\frac{QK^\top}{\sqrt{d}} + B + M\right) V$$
+$\text{Softmax}(\cdot)$ zeros out cross-patch attention weights, computing identical values to separate window evaluations in a single dense batched kernel without kernel launch overhead.}
+\Q{How does Pyramid Vision Transformer (PVT) achieve multi-scale representations without windows?}{
+Wang et al. maintain global self-attention across the full image while reducing complexity via \textbf{Spatial-Reduction Attention (SRA)}:
+Instead of attending to all $N$ tokens, keys and values are spatially downsampled by reduction ratio $R_i$ using a strided convolution before projection:
+$$\hat{K} = \operatorname{Linear}(\operatorname{Conv2D}(x, R_i)), \quad \hat{V} = \operatorname{Linear}(\operatorname{Conv2D}(x, R_i))$$
+Reduces keys/values from $N$ to $N / R_i^2$.
+Complexity drops from $\mathcal{O}(N^2)$ to $\mathcal{O}(N^2 / R_i^2)$, allowing global receptive fields in shallow stages with manageable memory.}
+\Q{What is CoAtNet's recipe for combining Convolutions and Attention?}{
+Dai et al. organize blocks into 5 stages:
+\begin{itemize}
+\item \textbf{Stage 0--1 (Conv)}: Standard $3\times 3$ conv and depthwise convs (captures low-level local edges and textures cheaply where spatial resolution is huge).
+\item \textbf{Stage 2--3 (Attention + Conv)}: Relative self-attention fused with depthwise convolution:
+$$y = \text{Softmax}\left(\frac{QK^\top}{\sqrt{d}} + W_{\text{conv}} + B\right) V$$
+\end{itemize}
+Balances inductive bias in shallow layers with global semantic reasoning in deep layers, achieving $86.0\%$ top-1 on ImageNet-1K with fast training.}
+\end{qa}
+
+\begin{trap}[Swin Implementation Gotchas]
+\begin{itemize}
+\item \textbf{Dynamic image sizing in Swin}: If $H$ or $W$ is not a multiple of $M \cdot 2^{\text{stages}-1} = 7 \cdot 8 = 56$, inputs must be padded. Omitting pad/unpad logic creates silent spatial coordinate warping.
+\item \textbf{Batch dimension in Window Attention}: Folding spatial windows into batch $(B \cdot N_w, M^2, C)$ requires memory contiguity (\lstinline|.contiguous().view(...)|); failure to ensure contiguity triggers silent stride errors on CUDA.
+\end{itemize}
+\end{trap}

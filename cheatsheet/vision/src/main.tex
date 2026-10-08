@@ -1,0 +1,159 @@
+% =====================================================================
+%  Vision & Multimodal AI Engineer --- The Memorize-Cold Sheet
+%  Comprehensive reference on Computer Vision, CNNs, ViTs, Detection,
+%  Segmentation, SSL, VLMs, Diffusion, Video, 3DGS, and Vision Systems
+%  Compile: pdflatex main.tex (twice, for the table of contents)
+% =====================================================================
+\documentclass[8pt,twocolumn,a4paper]{extarticle}
+
+% ---------- page ----------
+\usepackage[a4paper,top=13mm,bottom=13mm,left=11mm,right=11mm,columnsep=6mm,headsep=3mm,footskip=6mm]{geometry}
+\setlength{\columnseprule}{0.2pt}
+
+% ---------- fonts ----------
+\usepackage[T1]{fontenc}
+\usepackage[sc]{mathpazo}
+\linespread{1.04}
+\usepackage[scaled=0.90]{helvet}
+\renewcommand{\ttdefault}{lmtt}
+\usepackage{microtype}
+
+% ---------- maths, tables ----------
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs,tabularx,array,multirow}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.1em,labelsep=0.4em}
+\setlist[itemize]{label={\color{acc}\tiny$\blacktriangleright$}}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{3pt}
+
+% ---------- colour ----------
+\usepackage[dvipsnames]{xcolor}
+\definecolor{acc}{HTML}{144D78}   % deep maritime blue
+\definecolor{acc2}{HTML}{B84A29}  % terracotta / rust
+\definecolor{acc3}{HTML}{1E754C}  % emerald green
+\definecolor{ink}{HTML}{222222}
+\definecolor{soft}{HTML}{F3F6FA}
+\definecolor{soft2}{HTML}{FBF4EE}
+\definecolor{rule}{HTML}{9DB3C8}
+\definecolor{mute}{HTML}{6B7785}
+\color{ink}
+
+% ---------- diagrams ----------
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,shapes.geometric,backgrounds,decorations.pathreplacing,matrix}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\tikzset{
+  >={Stealth[length=1.6mm]},
+  box/.style={draw=acc,rounded corners=1pt,line width=0.5pt,inner sep=2pt,minimum height=4.2mm,font=\scriptsize,align=center,fill=white},
+  sbox/.style={box,fill=soft},
+  hbox/.style={box,draw=acc2,fill=soft2},
+  gbox/.style={box,draw=acc3,fill=acc3!8},
+  lab/.style={font=\scriptsize\color{mute},align=center},
+  arr/.style={->,draw=acc,line width=0.5pt},
+  darr/.style={->,draw=acc2,line width=0.5pt,dashed},
+}
+
+% ---------- boxes ----------
+\usepackage[most]{tcolorbox}
+\tcbset{
+  base/.style={enhanced,breakable,boxrule=0pt,arc=0pt,outer arc=0pt,
+    left=3pt,right=3pt,top=2pt,bottom=2pt,before skip=3pt,after skip=4pt,
+    fonttitle=\sffamily\bfseries\scriptsize,coltitle=white,
+    toptitle=0.5pt,bottomtitle=0.5pt,lefttitle=3pt},
+}
+% Interview Q&A block
+\newtcolorbox{qa}[1][]{base,colback=soft,borderline west={1.6pt}{0pt}{acc},
+  before upper={{\sffamily\bfseries\scriptsize\color{acc}INTERVIEW Q\&A\enspace{\color{mute}\textbar}\enspace\MakeUppercase{#1}}\par\smallskip}}
+% Must-memorize facts
+\newtcolorbox{mem}[1][Memorize]{base,colback=soft2,borderline west={1.6pt}{0pt}{acc2},
+  before upper={{\sffamily\bfseries\scriptsize\color{acc2}\MakeUppercase{#1}}\par\smallskip}}
+% Traps
+\newtcolorbox{trap}[1][Traps]{base,colback=white,borderline west={1.6pt}{0pt}{acc3},
+  before upper={{\sffamily\bfseries\scriptsize\color{acc3}\MakeUppercase{#1}}\par\smallskip}}
+
+% One question/answer pair
+\newcounter{qn}
+\newcommand{\Q}[2]{\refstepcounter{qn}%
+  \par\noindent{\sffamily\bfseries\color{acc}Q\theqn.}~{\bfseries #1}\par
+  \noindent\hangindent=0.9em\hangafter=0{#2}\par\vspace{2.2pt}}
+% Rapid-fire single line
+\newcommand{\RF}[2]{\par\noindent\hangindent=0.9em\hangafter=1{\bfseries #1}\;{\color{mute}$\to$}\;#2\par}
+
+% ---------- headings ----------
+\usepackage{titlesec}
+\titleformat{\section}{\sffamily\bfseries\large\color{acc}}{\thesection}{0.5em}{}[{\color{acc}\titlerule[0.6pt]}]
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\titleformat{\subsection}{\sffamily\bfseries\normalsize\color{acc}}{\thesubsection}{0.45em}{}
+\titlespacing*{\subsection}{0pt}{4pt}{1.5pt}
+\titleformat{\paragraph}{\sffamily\bfseries\small\color{acc2}}{}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{2pt}{1pt}
+\setcounter{secnumdepth}{2}
+
+% ---------- header / footer ----------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{{\color{rule}\hrule width\headwidth height\headrulewidth}}
+\fancyhead[L]{\sffamily\scriptsize\color{mute}Vision \& Multimodal AI Engineer --- memorize-cold sheet}
+\fancyhead[R]{\sffamily\scriptsize\color{mute}\nouppercase{\leftmark}}
+\fancyfoot[C]{\sffamily\scriptsize\color{mute}\thepage}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection\ \ #1}{}}
+
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Vision and Multimodal AI Engineer: memorize-cold sheet},pdfauthor={Achilles}}
+\usepackage{xurl}
+\usepackage{listings}
+\usepackage{needspace}
+\lstset{language=Python,basicstyle=\ttfamily\fontsize{6.6}{7.6}\selectfont,keywordstyle=\color{acc}\bfseries,commentstyle=\color{mute}\itshape,stringstyle=\color{acc2},backgroundcolor=\color{soft},frame=leftline,framerule=1.2pt,rulecolor=\color{acc},xleftmargin=4pt,framexleftmargin=3pt,aboveskip=2pt,belowskip=3pt,columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true}
+
+% ---------- small helpers ----------
+\newcommand{\tb}[1]{\textbf{#1}}
+\newcommand{\hl}[1]{{\color{acc2}\textbf{#1}}}
+\newcommand{\ra}{\,{\color{mute}$\rightarrow$}\,}
+\newcommand{\lab}[1]{{\color{mute}\scriptsize[#1]}}
+\newcommand{\cn}[1]{{\color{mute}\,[#1]}}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcommand{\tsmall}{\scriptsize}
+
+\begin{document}
+\input{sec/00-front}
+\input{sec/01-geometry-filtering}
+\input{sec/01b-classical-descriptors}
+\input{sec/02-cnn-foundations}
+\input{sec/02b-modern-convnets}
+\input{sec/03-vision-transformers}
+\input{sec/04-hierarchical-vit}
+\input{sec/05-object-detection}
+\input{sec/05b-single-stage-yolo}
+\input{sec/06-detr-query-detection}
+\input{sec/07-segmentation-sam}
+\input{sec/07b-sam-foundation-seg}
+\input{sec/08-self-supervised-vision}
+\input{sec/08b-ssl-mae-dino}
+\input{sec/09-vlm-clip-siglip}
+\input{sec/10-multimodal-llms}
+\input{sec/10b-vlm-benchmarks-hallucination}
+\input{sec/11-diffusion-foundations}
+\input{sec/12-latent-diffusion-dit}
+\input{sec/13-flow-matching-flux}
+\input{sec/14-video-models}
+\input{sec/15-3d-nerf-3dgs}
+\input{sec/15b-3d-splatting-details}
+\input{sec/16-benchmarks-eval}
+\input{sec/17-production-edge}
+\input{sec/18-system-design}
+\input{sec/19-code-blind}
+\input{sec/19b-training-loops}
+\input{sec/20-napkin-math}
+\input{sec/20b-napkin-scaling}
+\input{sec/21-debugging}
+\input{sec/22-rapid-glossary}
+\input{sec/22b-rapid-fire-drill}
+\input{sec/23-formulas}
+\input{sec/24-seminal-papers}
+\input{sec/25-canon-references}
+\input{sec/26-study-plan}
+\end{document}

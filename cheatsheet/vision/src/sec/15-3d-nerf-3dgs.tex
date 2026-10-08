@@ -1,0 +1,68 @@
+\section{3D Vision: NeRF to 3D Gaussian Splatting}\label{sec:nerf}
+\lab{NeRF \textperiodcentered\ Volume rendering \textperiodcentered\ Instant-NGP \textperiodcentered\ 3DGS covariance \textperiodcentered\ Tile rasterization \textperiodcentered\ SH radiance}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\node[box,draw=acc,fill=soft] (cam) at (0,10) {Camera\\Ray $r(t)$};
+\draw[arr,acc] (cam) -- (18,10);
+\node[box,draw=acc2,fill=soft2] (g) at (25,10) {3D Gaussian\\$(\mu, \Sigma, \alpha, \text{SH})$};
+\draw[arr,acc2] (g) -- (36,10) node[midway,above] {Project $J$};
+\node[box,draw=acc3,fill=acc3!8] (px) at (43,10) {2D Splat\\$\Sigma'$ on screen};
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{Implicit vs Explicit 3D.} NeRF represents scenes implicitly via continuous MLPs. 3D Gaussian Splatting (3DGS) represents scenes explicitly via millions of anisotropic 3D Gaussians.\\[2pt]
+{\color{acc2}$\blacktriangleright$} \textbf{3DGS Real-Time Rendering}: Replaces expensive volumetric MLP ray-marching with GPU tile-based rasterization at $>100\text{ FPS}$.
+\end{minipage}
+
+\begin{mem}[Parameters per 3D Gaussian (Total: 59 floats $\approx 236$ bytes)]
+\begin{tabularx}{\linewidth}{@{}p{18mm} c X@{}}
+\toprule
+\textbf{Property} & \textbf{Floats} & \textbf{Mathematical Representation}\\
+\midrule
+Position ($\mu$) & 3 & 3D world center $[x, y, z]^\top \in \mathbb{R}^3$\\
+Scale ($s$) & 3 & Diagonal scaling vector $S = \text{diag}(s_x, s_y, s_z)$\\
+Rotation ($q$) & 4 & Unit quaternion representing rotation $R \in SO(3)$\\
+Opacity ($\alpha$) & 1 & Density parameter $\alpha \in [0, 1]$ passed through sigmoid\\
+Color (SH) & 48 & Degree-3 Spherical Harmonics ($16\text{ coeffs} \times 3\text{ RGB}$)\\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[3D Representation, NeRF \& Gaussian Rasterization]
+\Q{Walk through the Volume Rendering equation in NeRF and its discrete quadrature.}{
+NeRF casts a ray $r(t) = \mathbf{o} + t \mathbf{d}$ from camera origin $\mathbf{o}$ along direction $\mathbf{d}$.
+The continuous color integral between near and far bounds $[t_n, t_f]$ is:
+$$C(r) = \int_{t_n}^{t_f} T(t) \cdot \sigma(r(t)) \cdot c(r(t), \mathbf{d})\, dt$$
+$$\text{where } T(t) = \exp\left(-\int_{t_n}^t \sigma(r(s))\, ds\right)$$
+$T(t)$ is \textbf{transmittance} (probability the ray traverses from $t_n$ to $t$ without hitting particles).
+\textbf{Discrete Numerical Quadrature}: Sample $N$ points along the ray:
+$$C(r) \approx \sum_{i=1}^N T_i \cdot \alpha_i \cdot c_i \quad \text{with } \alpha_i = 1 - \exp(-\sigma_i \delta_i), \quad T_i = \prod_{j=1}^{i-1} (1 - \alpha_j)$$
+Evaluating this on a $1080\text{p}$ image requires $\approx 200\text{M}$ MLP forward passes, bounding vanilla NeRF to several seconds per frame.}
+\Q{How does Instant-NGP accelerate NeRF training from days to seconds?}{
+Müller et al. identify that large MLPs are slow to evaluate and suffer from spectral bias on high spatial frequencies.
+\textbf{Instant-NGP (Multiresolution Hash Encoding)}:
+\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
+\item Discretizes 3D space into $L=16$ hierarchical grid levels with geometric progression of resolutions $N_l$.
+\item Maps voxel corners to a fixed-size hash table of size $T=2^{19}$ using spatial hashing: $h(\mathbf{x}) = \left(\bigoplus_{i=1}^3 x_i \pi_i\right) \pmod T$.
+\item Interpolates feature vectors ($d=2$ per level) trilinearly within the voxel.
+\item Feeds concatenated features ($16 \times 2 = 32$-dim) into a tiny 2-layer MLP (64 neurons) implemented with fully fused CUDA kernels.
+\end{enumerate}
+Trains high-quality radiance fields in \textbf{5 seconds}.}
+\Q{How does 3D Gaussian Splatting project 3D ellipsoids onto a 2D screen?}{
+A 3D Gaussian has spatial density $G(x) = \exp\left(-\frac{1}{2}(x - \mu)^\top \Sigma^{-1} (x - \mu)\right)$.
+Its 3D covariance is parameterized as $\Sigma = R S S^\top R^\top$.
+To project onto the 2D image plane, Zwicker et al. apply an affine approximation via viewing transformation matrix $W$ and projective Jacobian $J$:
+$$\Sigma' = \mathbf{J} \mathbf{W} \mathbf{\Sigma} \mathbf{W}^\top \mathbf{J}^\top$$
+$\Sigma'$ is a $2\times 2$ positive semi-definite screen-space covariance matrix.
+The GPU rasterizer divides the screen into $16\times 16$ pixel tiles, sorts overlapping Gaussians by depth via fast radix sort, and accumulates color via front-to-back $\alpha$-blending without casting rays.}
+\end{qa}
+
+\begin{trap}[3D Vision Pitfalls]
+\begin{itemize}[leftmargin=*,itemsep=0.8pt]
+\item \textbf{Needle and Floater Artifacts in 3DGS}: Excessively large Gaussians in under-constrained background regions create needle-like spikes. Periodic \textbf{opacity reset} (forcing all $\alpha \to 0$ every $3000$ steps) prunes spurious floaters.
+\item \textbf{Camera coordinate conventions}: OpenCV uses $(X \text{ right}, Y \text{ down}, Z \text{ forward})$; OpenGL/Blender uses $(X \text{ right}, Y \text{ up}, Z \text{ backward})$. Mixing coordinate conventions flips camera rays and produces completely black renders.
+\end{itemize}
+\end{trap}

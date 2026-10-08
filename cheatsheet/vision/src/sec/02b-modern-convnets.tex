@@ -1,0 +1,100 @@
+\section{Modern ConvNets: MobileNet, ShuffleNet \& ConvNeXt}\label{sec:modern-conv}
+\lab{Depthwise separable \textperiodcentered\ linear bottleneck \textperiodcentered\ channel shuffle \textperiodcentered\ compound scaling \textperiodcentered\ ConvNeXt \textperiodcentered\ GRN}
+
+\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+  bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
+\node[bx,fill=soft] (in) {Input $C_{\text{in}}$ (narrow)};
+\node[bx,draw=acc2,fill=soft2,above=1.5mm of in] (exp) {$1\times 1\text{ Conv } (6\times C_{\text{in}})$};
+\node[bx,draw=acc,above=1.5mm of exp] (dw) {$3\times 3\text{ Depthwise Conv}$};
+\node[bx,draw=mute,above=1.5mm of dw] (proj) {$1\times 1\text{ Linear Project } (C_{\text{out}})$};
+\node[circle,draw=acc,inner sep=0pt,minimum size=2.6mm,above=1.5mm of proj] (add) {$+$};
+\node[bx,above=1.5mm of add] (out) {Output ($C_{\text{out}}$)};
+\draw[arr] (in)--(exp); \draw[arr] (exp)--(dw); \draw[arr] (dw)--(proj); \draw[arr] (proj)--(add); \draw[arr] (add)--(out);
+\draw[arr,acc2,thick] (in.east) -- ++(3.5mm,0) |- (add.east);
+\end{tikzpicture}%
+}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+\textbf{The Inverted Residual.} MobileNetV2 expands to high dimension ($t=6$) for depthwise filtering, then projects to low dimension with a linear bottleneck.\\[2pt]
+{\color{acc2}$\blacktriangleright$} Standard ResNet: High $\to$ Low $\to$ High.\\
+{\color{acc2}$\blacktriangleright$} Inverted: Low $\to$ High ($6\times$) $\to$ Low.\\
+{\color{acc2}$\blacktriangleright$} Linear Bottleneck: Non-linear ReLU in low-dim collapses the manifold; projection must be purely linear.
+\end{minipage}
+
+\begin{mem}[Architectural Milestones in Modern Convolutions]
+\begin{tabularx}{\columnwidth}{@{}p{19mm} p{23mm} X r@{}}
+\toprule
+\textbf{Model} & \textbf{Key Op} & \textbf{Core Innovation} & \textbf{Savings} \\
+\midrule
+\textbf{MobileNetV1} & Depthwise Sep. & Factorizes spatial ($K \times K$) and channel ($1 \times 1$) & $8-9\times$ \\
+\textbf{MobileNetV2} & Inverted Resid. & Low $\to$ Exp $6\times \to$ DW $\to$ Linear project (no ReLU) & Low MAC \\
+\textbf{ShuffleNetV2} & Channel Shuffle & Equal channel width minimizes memory access cost (MAC) & Fast GPU \\
+\textbf{EfficientNet} & Compound Scale & Jointly scales depth $\alpha$, width $\beta$, and resolution $\gamma$ & Pareto SOTA \\
+\textbf{ConvNeXt-V2} & GRN + 7x7 DW & Global Response Normalization solves MAE feature collapse & Beats Swin \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[Depthwise Convolutions \& Bottleneck Dynamics]
+\Q{Derive the exact FLOP reduction of Depthwise Separable Convolutions vs Standard Convolutions.}{
+Let input feature map be $H \times W \times C_{\text{in}}$, output be $H \times W \times C_{\text{out}}$, and kernel size be $K \times K$:
+\begin{itemize}
+\item \textbf{Standard Convolution FLOPs}:
+$$\text{FLOPs}_{\text{std}} = 2 \cdot H \cdot W \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot K^2$$
+\item \textbf{Depthwise Separable Convolution FLOPs}:
+Composed of (1) Depthwise ($K \times K$ per channel) and (2) Pointwise ($1 \times 1$ conv):
+$$\text{FLOPs}_{\text{sep}} = 2 \cdot H \cdot W \cdot C_{\text{in}} \cdot K^2 + 2 \cdot H \cdot W \cdot C_{\text{in}} \cdot C_{\text{out}} \cdot 1^2$$
+\item \textbf{Theoretical Ratio}:
+$$\frac{\text{FLOPs}_{\text{sep}}}{\text{FLOPs}_{\text{std}}} = \frac{C_{\text{in}} K^2 + C_{\text{in}} C_{\text{out}}}{C_{\text{in}} C_{\text{out}} K^2} = \frac{1}{C_{\text{out}}} + \frac{1}{K^2}$$
+For standard $3 \times 3$ kernel ($K=3$) and large $C_{\text{out}} \gg 1$:
+$$\frac{\text{FLOPs}_{\text{sep}}}{\text{FLOPs}_{\text{std}}} \approx \frac{1}{9} \approx 0.111 \quad \implies \quad \mathbf{\sim 8\text{ to }9\times \text{ FLOP reduction!}}$$
+\end{itemize}}
+
+\Q{Why does MobileNetV2 use Inverted Residuals with Linear Bottlenecks instead of classic ResNet bottlenecks?}{
+\textbf{Classic ResNet Bottleneck}: High dimension $\to$ 1x1 reduce (channel compression) $\to$ 3x3 conv $\to$ 1x1 expand.
+\textbf{MobileNetV2 Inverted Residual}: Low dimension (narrow) $\to$ 1x1 expand ($6\times$ channels) $\to$ 3x3 depthwise in high-dim $\to$ 1x1 project (narrow).
+\begin{itemize}
+\item \textbf{Why expand before depthwise?}: Depthwise convolutions cannot change channel count; performing depthwise filtering in low-dimensional space severely restricts representation capacity. Expanding channels by $t=6$ gives the depthwise filter an expressive manifold.
+\item \textbf{Why Linear Bottleneck (no ReLU at output)?}: Applying a non-linear activation (ReLU) on low-dimensional manifolds destroys information: any negative values are zeroed out, collapsing dimensions. In high-dimensional representations, manifold features remain intact after ReLU; in low-dim bottlenecks, the projection must remain purely linear.
+\end{itemize}}
+
+\Q{Explain the ShuffleNet V2 design principles for practical inference latency on hardware.}{
+Ma et al. showed that FLOPs do not correlate directly with wall-clock runtime; \textbf{Memory Access Cost (MAC)} dominates:
+\begin{enumerate}
+\item \textbf{Principle 1 (Equal channel width minimizes MAC)}: For $1 \times 1$ conv with FLOPs $B = H W C_1 C_2$, $\text{MAC} = H W (C_1 + C_2) + C_1 C_2 \ge 2\sqrt{H W B} + \frac{B}{H W}$. Equality holds when $C_1 = C_2$.
+\item \textbf{Principle 2 (Excessive group convolution increases MAC)}: Large group count $g$ increases MAC for the same FLOP budget.
+\item \textbf{Principle 3 (Network fragmentation reduces parallelism)}: Multi-branch paths (e.g., Inception, NAS architectures) fragment GPU kernel launches and reduce device utilization.
+\item \textbf{Principle 4 (Element-wise operations have high MAC/FLOP ratio)}: Tensor addition, ReLU, and Squeeze-and-Excitation have negligible FLOPs but heavy memory round-trips.
+\end{enumerate}}
+\end{qa}
+
+\begin{qa}[ConvNeXt Architecture \& Global Response Normalization]
+\Q{How does ConvNeXt modernize standard ResNet-50 into a pure ConvNet competitive with Swin?}{
+Liu et al. (2022) systematically modernized ResNet using ViT design principles:
+\begin{itemize}
+\item \textbf{Macro design}: ResNet stage ratio changed from $(3, 4, 6, 3)$ to $(3, 3, 9, 3)$ matching Swin.
+\item \textbf{Patchify stem}: Replaced $7 \times 7$ conv (stride 2) + maxpool with a single $4 \times 4$ stride-4 convolution patchifying stem.
+\item \textbf{Depthwise 7x7 conv}: Moved spatial conv before pointwise conv; enlarged kernel from $3 \times 3$ to $7 \times 7$ to match Swin's local window attention receptive field.
+\item \textbf{Inverted bottleneck}: Expanded channel width $4\times$ inside each block (like ViT MLP expansion ratio 4).
+\item \textbf{Activation \& Normalization}: Replaced ReLU with GELU; reduced activations to 1 per block; replaced BatchNorm with LayerNorm.
+\end{itemize}}
+
+\Q{What is Global Response Normalization (GRN) in ConvNeXt-V2, and why does it prevent feature collapse?}{
+When training ConvNeXt with Masked Autoencoders (FCMAE), masked feature channels exhibit feature collapse (redundant/dead channels with near-identical activation maps).
+\textbf{GRN mechanism} computes spatial $L_2$ norm per channel, normalizes across channels, and recalibrates:
+\begin{enumerate}
+\item \textbf{Global feature aggregation}: $g_c = \| X_c \|_2 = \sqrt{\sum_{i,j} X_c(i,j)^2}$.
+\item \textbf{Channel response normalization}: $n_c = \frac{g_c}{\frac{1}{C}\sum_{c'} g_{c'}}$.
+\item \textbf{Feature calibration}: $X_c' = \gamma \cdot (X_c \odot n_c) + \beta + X_c$, initialized with $\gamma=0, \beta=0$.
+\end{enumerate}
+GRN creates channel competition: active channels suppress redundant passive channels, preventing representation collapse in self-supervised pretraining.}
+\end{qa}
+
+\begin{trap}[Modern ConvNet Hardware Traps]
+\begin{itemize}
+\item \textbf{Depthwise Conv Slowdown on GPUs}: Depthwise convolutions have extremely low compute-to-memory ratio (arithmetic intensity). On GPUs without specialized Tensor Core depthwise acceleration, standard $3 \times 3$ dense convs often execute faster than depthwise convs despite higher theoretical FLOPs!
+\item \textbf{Fused 1x1 Convolutions}: Inverted bottleneck blocks should use kernel fusion ($1 \times 1 \to 3 \times 3 \to 1 \times 1$) in TensorRT/TorchScript to avoid multiple intermediate DRAM round-trips.
+\end{itemize}
+\end{trap}

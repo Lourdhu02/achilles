@@ -1,0 +1,40 @@
+\twocolumn[{%
+\begin{tikzpicture}[remember picture,overlay]
+\fill[acc] ($(current page.north west)+(0,-0mm)$) rectangle ($(current page.north east)+(0,-4mm)$);
+\end{tikzpicture}
+\vspace*{1mm}
+{\sffamily\bfseries\fontsize{19}{21}\selectfont\color{acc}Vision \& Multimodal AI Engineer}\\[1mm]
+{\sffamily\large\color{acc2}The memorize-cold sheet: what you must be able to answer in your sleep}\\[1.5mm]
+{\small\color{mute}Built across the entire visual AI stack: geometry, classical filtering, CNNs, ViTs, object detection, segmentation, SSL, CLIP, modern VLMs, diffusion, flow matching, video foundation models, 3DGS, and edge vision systems. Interview Q\&A first, derivations only where the answer \emph{is} the derivation. Snapshot: October 2026.}
+\vspace{2mm}
+{\color{rule}\hrule height 0.4pt}
+\vspace{3mm}
+}]
+\thispagestyle{plain}
+
+\section*{How to use this sheet}
+\begin{itemize}
+\item \textbf{Three passes.} Day 1: read a section. Day 3: cover every answer and state the math, mechanics, and trade-offs out loud. Day 7 and 21: drill only missed items.
+\item \textbf{Boxes.} {\color{acc}\textbf{Blue}} = interview Q\&A. {\color{acc2}\textbf{Rust}} = numbers, formulas, and invariants to memorize. {\color{acc3}\textbf{Green}} = traps interviewers use to catch out candidates who memorize buzzwords without understanding the physics.
+\item \textbf{The five numbers of any vision model}: $H\times W$ (resolution), $C$ (channels / embedding dimension), $P$ (patch size / stride), $L$ (layers / depth), and $N_{\text{tok}}$ (visual tokens). FLOPs, receptive field, memory, and latency all follow.
+\item \textbf{Answer shape}: mechanism \ra\ number \ra\ trade-off \ra\ what you would measure and debug.
+\end{itemize}
+
+\begin{mem}[The 12 numbers everyone asks in Vision]
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+$2 C_{\text{in}} C_{\text{out}} K^2 H W$ & FLOPs of a 2D convolution ($H, W$ output spatial size)\\
+$\frac{H W}{P^2}$ & Visual tokens for an image in ViT ($P=14 \implies 256$ for $224^2$)\\
+$25.6\text{M} / 4.1\text{G}$ & ResNet-50 parameters and FLOPs at $224\times 224$\\
+$86\text{M} / 307\text{M}$ & ViT-Base and ViT-Large parameters ($16\times 16$ patches)\\
+$8\times$ & Spatial compression factor of standard SD / Flux VAEs ($512^2 \to 64^2$)\\
+$\tau \approx 0.07$ & CLIP InfoNCE temperature ($1/\tau \approx 100$ maximum logit scale)\\
+$14\text{ params}$ & Memory footprint per 3D Gaussian (pos 3, quat 4, scale 3, opacity 1, SH 48 floats $\approx 236$ B)\\
+$632\text{M}$ & SAM (Segment Anything) ViT-H image encoder parameter count\\
+$1.0$ & Flow Matching straight velocity target $v_t = x_1 - x_0$\\
+$\text{IoU} \ge 0.5$ & Standard VOC/PASCAL positive detection match threshold\\
+$RF_l = RF_{l-1} + (K-1)J$ & Cumulative receptive field recurrence relation\\
+$33.3\text{ ms}$ & Real-time camera streaming latency budget at 30 FPS\\
+\end{tabularx}
+\end{mem}
+
+{\small\tableofcontents}

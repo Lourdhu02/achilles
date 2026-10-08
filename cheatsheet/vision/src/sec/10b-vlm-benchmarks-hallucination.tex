@@ -1,0 +1,77 @@
+\section{VLM Evaluation \& Visual Hallucination}\label{sec:vlm-eval}
+\lab{POPE benchmark \textperiodcentered\ affirmative bias \textperiodcentered\ Visual Contrastive Decoding (VCD) \textperiodcentered\ MMMU \textperiodcentered\ DocVQA \textperiodcentered\ OCR}
+
+\begin{mem}[Key Vision-Language Benchmarks to Memorize]
+\begin{tabularx}{\columnwidth}{@{}p{16mm} p{24mm} X@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Evaluation Focus} & \textbf{Core Challenge / Metric} \\
+\midrule
+\textbf{POPE} & Object hallucination & Random, Popular, Adversarial; F1 \& Yes-ratio \\
+\textbf{MMMU} & College reasoning & 30 subjects, diagrams, physics, schematics \\
+\textbf{MathVista} & Visual math reasoning & Geometry proofs, coordinate plots, arithmetic \\
+\textbf{DocVQA} & Document comprehension & Fine-grained OCR, invoice tables, font parsing \\
+\textbf{ChartQA} & Data visualization & Numerical reasoning over bar charts, scatter plots \\
+\textbf{MME} & Perception \& cognition & Yes/No probing with circular evaluation \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[The POPE Benchmark \& Object Hallucination Mechanics]
+\Q{How does POPE (Polling-based Object Probing Evaluation) expose visual hallucination, and what are its 3 splits?}{
+Standard open-ended captioning metrics (CIDEr, BLEU) fail to detect hallucinations: a model can produce a beautifully fluent caption with $90\%$ true text and casually invent a dog or chair.\\[2pt]
+\textbf{POPE Probing Format}: Converts object existence into binary Yes/No queries: \emph{"Is there a <object> in the image?"}
+\begin{itemize}
+\item \textbf{Random Split}: Queries non-existing objects selected purely at random from the dataset lexicon. (Tests baseline vocabulary discrimination).
+\item \textbf{Popular Split}: Queries non-existing objects chosen from the most frequent objects in the dataset (e.g., person, car, chair). Exposes frequency bias where models hallucinate popular classes.
+\item \textbf{Adversarial Split}: Queries non-existing objects that frequently \hl{co-occur} with objects actually present in the image. (e.g., an image contains a laptop; POPE queries whether a mouse is present). Tests whether the model looks at visual evidence or blindly relies on statistical text priors.
+\end{itemize}
+\textbf{Yes-Ratio Diagnostic}: A model reporting $80\%$ accuracy might have a $95\%$ "Yes" response rate; checking Precision, Recall, F1, and Yes-ratio prevents false performance inflation.}
+
+\Q{Why do VLMs hallucinate, and how does Visual Contrastive Decoding (VCD) mitigate it without training?}{
+\textbf{Root Causes of Hallucination}:
+\begin{enumerate}
+\item \textbf{Language Prior Over-Reliance}: The LLM backbone's strong pretraining causes language statistical priors to overpower visual tokens (e.g., predicting "spoon" after "fork").
+\item \textbf{Attention Sinks \& Visual Degradation}: In long autoregressive generation, attention to visual tokens decays exponentially; the model defaults to pure text continuation.
+\end{enumerate}
+\textbf{Visual Contrastive Decoding (VCD, Leng et al., 2024)}:
+\begin{center}
+\resizebox{0.95\columnwidth}{!}{%
+\begin{tikzpicture}[every node/.style={font=\tiny},node distance=2mm]
+\node[box,draw=acc,fill=soft] (clean) {Clean Image $v$};
+\node[box,draw=mute,fill=mute!10,below=2mm of clean] (noisy) {Noisy $v_{\text{corrupt}}$};
+\node[box,draw=acc2,fill=soft2,right=5mm of clean] (vlm1) {VLM Head};
+\node[box,draw=mute,right=5mm of noisy] (vlm2) {VLM Head};
+\node[box,draw=acc3,fill=acc3!10,right=5mm of vlm1] (contrast) {Contrast: $(1+\beta)\operatorname{logit}(v) - \beta\operatorname{logit}(v_{\text{corrupt}})$};
+\draw[arr] (clean)--(vlm1); \draw[arr] (noisy)--(vlm2);
+\draw[arr] (vlm1)--(contrast); \draw[arr] (vlm2)|-(contrast);
+\end{tikzpicture}%
+}
+\end{center}
+\begin{itemize}
+\item Creates a corrupted image $v_{\text{corrupt}}$ by adding Gaussian noise or blurring to destroy fine-grained visual details while keeping coarse text prompt $q$ identical.
+\item Evaluates both original logits $p(y_t | v, q, y_{<t})$ and corrupted logits $p(y_t | v_{\text{corrupt}}, q, y_{<t})$.
+\item Contrasts the two distributions at each decoding step:
+$$\operatorname{logit}^*(y_t) = (1 + \beta) \operatorname{logit}(y_t | v) - \beta \operatorname{logit}(y_t | v_{\text{corrupt}}) \quad (\beta \approx 0.5-1.0)$$
+\item Tokens driven purely by language priors have equal probability under both views and cancel out; tokens strongly grounded in visual evidence remain elevated.
+\end{itemize}}
+\end{qa}
+
+\begin{qa}[High-Resolution Document Understanding \& MMMU]
+\Q{What makes document understanding (DocVQA) fundamentally harder than natural image VLM tasks?}{
+\begin{itemize}
+\item \textbf{Aspect Ratio \& Scale}: Documents are typically tall portrait orientations ($8.5 \times 11$ inches, $>2000 \times 3000$ pixels). Resizing to square $336 \times 336$ or $448 \times 448$ shrinks 8pt fonts to sub-pixel noise, causing severe OCR failure.
+\item \textbf{Reading Order \& Spatial Layout}: Text flows across multi-column tables, bounding boxes, and headers. Raster visual encoders lack explicit layout priors and scramble reading order without specialized 2D positional embeddings.
+\item \textbf{Resolution Solution}: Modern models (Qwen2-VL, InternVL-2) use dynamic patch slicing (AnyRes) or native resolution processing, dividing high-res documents into $10-20$ localized sub-patches and preserving native $300$ DPI text fidelity.
+\end{itemize}}
+
+\Q{Why is MMMU considered the premier college-level evaluation for multimodal foundation models?}{
+Unlike perception benchmarks testing whether a model sees a cat, MMMU evaluates expert reasoning across 30 college-level disciplines (Quantum Physics, Organic Chemistry, Structural Engineering, Medicine).
+Questions involve multi-panel plots, circuit schematics, histological slides, and complex mathematical formulas, requiring joint perceptual parsing, spatial geometric projection, and multi-step domain reasoning.}
+\end{qa}
+
+\begin{trap}[VLM Evaluation Pitfalls]
+\begin{itemize}
+\item \textbf{Option Order Bias}: Multiple-choice benchmarks (e.g. MMBench) suffer from severe position bias (e.g., models prefer option "A" 60\% of the time). Always run \hl{circular evaluation} (evaluating all cyclic permutations A$\to$B$\to$C$\to$D and requiring correct answers on all permutations to grant a point).
+\item \textbf{Data Contamination}: Many popular vision-language benchmarks (DocVQA, ScienceQA) have had their images scraped into web-scale pretraining datasets; always verify train-test split hashes.
+\end{itemize}
+\end{trap}

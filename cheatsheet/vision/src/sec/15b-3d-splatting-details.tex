@@ -1,0 +1,78 @@
+\section{3D Gaussian Splatting: Math, Rasterizer \& SH}\label{sec:3dgs-deep}
+\lab{3D Covariance $\Sigma$ \textperiodcentered\ EWA Jacobian projection \textperiodcentered\ Spherical Harmonics \textperiodcentered\ 64-bit Radix Sort \textperiodcentered\ Adaptive density control}
+
+\begin{mem}[Parameters per 3D Gaussian Primitive]
+\begin{tabularx}{\columnwidth}{@{}p{18mm} p{12mm} p{9mm} X@{}}
+\toprule
+\textbf{Attribute} & \textbf{Shape} & \textbf{Type} & \textbf{Mathematical Representation / Activation} \\
+\midrule
+\textbf{Position ($\mu$)} & 3 floats & $\mathbb{R}^3$ & World coordinates $(x, y, z)$ \\
+\textbf{Scale ($s$)} & 3 floats & $\mathbb{R}^3$ & Semi-axis lengths via exponential $\exp(s) > 0$ \\
+\textbf{Rotation ($q$)} & 4 floats & $\mathbb{H}$ & Unit quaternion $(w, x, y, z) / \|q\|$ \\
+\textbf{Opacity ($\alpha$)} & 1 float & $[0, 1]$ & Blending density via sigmoid $\sigma(\alpha)$ \\
+\textbf{Color / SH} & 48 floats & $\mathbb{R}^{3 \times 16}$ & Spherical Harmonics degree 3 ($16 \times 3$ RGB) \\
+\midrule
+\multicolumn{4}{@{}X@{}}{\textbf{Total Memory Footprint}: $59\text{ floats} \times 4\text{ bytes} \approx \mathbf{236\text{ bytes per Gaussian}}$. At $3\text{M Gaussians} \implies \mathbf{\sim 708\text{ MB}}$.} \\
+\bottomrule
+\end{tabularx}
+\end{mem}
+
+\begin{qa}[3D Covariance Parameterization \& EWA Projection]
+\Q{Derive why 3DGS parameterizes covariance as $\Sigma = R S S^T R^T$ and how it projects into 2D screen space.}{
+A valid covariance matrix must be \hl{symmetric positive semi-definite} ($\Sigma \succeq 0$).
+Directly optimizing $\Sigma \in \mathbb{R}^{3 \times 3}$ violates positive definiteness during gradient descent, causing imaginary eigenvalues and catastrophic collapse.\\[2pt]
+\textbf{Decomposition into Scale and Rotation}:
+\begin{itemize}
+\item $\mathbf{S} = \operatorname{diag}(\exp(s_x), \exp(s_y), \exp(s_z))$ guarantees non-zero real scaling.
+\item $\mathbf{R} \in \operatorname{SO}(3)$ is computed from normalized unit quaternion $\mathbf{q} = (w, x, y, z) / \sqrt{w^2+x^2+y^2+z^2}$.
+\item Thus $\mathbf{\Sigma} = \mathbf{R} \mathbf{S} \mathbf{S}^T \mathbf{R}^T$ is mathematically guaranteed to be symmetric positive semi-definite.
+\end{itemize}
+\textbf{2D EWA Projection (Zwicker et al.)}:
+Given camera viewing transformation $\mathbf{W}$ (world-to-camera matrix) and projective transformation, the 2D projected covariance $\mathbf{\Sigma}' \in \mathbb{R}^{2 \times 2}$ is given by:
+$$\mathbf{\Sigma}' = \mathbf{J} \mathbf{W} \mathbf{\Sigma} \mathbf{W}^T \mathbf{J}^T + 0.3 \cdot \mathbf{I}_{2 \times 2}$$
+where $\mathbf{J}$ is the Jacobian of the affine approximation of projective transformation evaluated at camera coordinates $(t_x, t_y, t_z)$:
+$$\mathbf{J} = \begin{bmatrix} \frac{f_x}{t_z} & 0 & -\frac{f_x t_x}{t_z^2} \\ 0 & \frac{f_y}{t_z} & -\frac{f_y t_y}{t_z^2} \end{bmatrix}$$
+The term $0.3 \cdot \mathbf{I}_{2 \times 2}$ acts as a low-pass Gaussian blur filter, preventing aliasing artifacts when a splat projects to an area smaller than a single pixel.}
+
+\Q{Explain how Spherical Harmonics model view-dependent specular reflections in 3DGS.}{
+Lambertian surfaces reflect light uniformly in all directions; non-Lambertian surfaces (metals, mirrors, glass) reflect different colors depending on viewing direction $\mathbf{d} = \frac{\mathbf{x} - \mathbf{c}}{\|\mathbf{x} - \mathbf{c}\|}$.\\[2pt]
+\textbf{Spherical Harmonics (SH) Expansion}:
+Color $c(\mathbf{d}) \in \mathbb{R}^3$ is modeled as a linear combination of orthonormal basis functions $Y_l^m(\mathbf{d})$ on the unit sphere:
+$$c(\mathbf{d}) = \sum_{l=0}^{l_{\max}} \sum_{m=-l}^l k_l^m \, Y_l^m(\mathbf{d})$$
+\begin{itemize}
+\item \textbf{Degree 0 ($l=0, 1$ basis)}: $Y_0^0 = \frac{1}{2}\sqrt{\frac{1}{\pi}}$. Represents constant ambient/diffuse color (1 coeff $\times 3 = 3$ floats).
+\item \textbf{Degree 1 ($l=1, 3$ bases)}: Directional gradient (4 total coeffs $\times 3 = 12$ floats).
+\item \textbf{Degree 2 ($l=2, 5$ bases)}: Quadric reflection lobes (9 total coeffs $\times 3 = 27$ floats).
+\item \textbf{Degree 3 ($l=3, 7$ bases)}: Sharp specular highlights (16 total coeffs $\times 3 = 48$ floats).
+\end{itemize}}
+\end{qa}
+
+\begin{qa}[Tile-Based Tile Rasterizer \& Adaptive Densification]
+\Q{Step through the GPU tile-based rasterization pipeline that enables 100+ FPS real-time rendering.}{
+\begin{enumerate}
+\item \textbf{Screen Tiling}: Divides display resolution into non-overlapping $16 \times 16$ pixel tiles.
+\item \textbf{Culling \& Bounding}: Evaluates $99\%$ confidence ellipse ($3\sigma$) for each 2D projected Gaussian $\mathbf{\Sigma}'$; discards splats outside viewing frustum.
+\item \textbf{Tile Assignment \& 64-bit Key}: For each tile a Gaussian overlaps, generates a duplicate 64-bit integer key:
+$$\text{Key} = [\text{Tile ID (32-bit)} \mid \text{Viewspace Depth } z \text{ (32-bit)}]$$
+\item \textbf{GPU Radix Sort}: A single parallel GPU Radix Sort orders all key-value pairs by Tile ID, and within each tile, strictly front-to-back by depth $z$.
+\item \textbf{Tile Rasterization Warp}: One thread block processes one tile; threads load sorted Gaussians into shared memory and blend colors front-to-back:
+$$C_{\text{pixel}} = \sum_{i=1}^N c_i \alpha_i \prod_{j=1}^{i-1} (1 - \alpha_j), \quad \alpha_i = \sigma_i \exp\left(-\frac{1}{2} \Delta^T {\mathbf{\Sigma}'}^{-1} \Delta\right)$$
+\item \textbf{Early Ray Termination}: Accumulates transmittance $T_i = \prod_{j=1}^{i-1}(1 - \alpha_j)$; once $T_i < 0.0001$, rendering terminates immediately for that pixel.
+\end{enumerate}}
+
+\Q{How does Adaptive Density Control decide whether to Clone or Split a 3D Gaussian?}{
+During optimization, 3DGS tracks the average viewspace position gradient magnitude $\nabla_p = \|\frac{\partial \mathcal{L}}{\partial \mu_{2D}}\|_2$.
+If $\nabla_p > \tau_{\text{pos}} = 0.0002$, the region is improperly reconstructed:
+\begin{itemize}
+\item \textbf{If Scale is Small ($\max(s) < \tau_{\text{scale}}$)}: Represents an \hl{under-reconstructed} region (e.g. missing thin bicycle spokes or leaf geometry). The Gaussian is \textbf{cloned} (duplicated) and shifted along the gradient direction.
+\item \textbf{If Scale is Large ($\max(s) > \tau_{\text{scale}}$)}: Represents an \hl{over-reconstructed} region (a huge Gaussian trying to cover too much space). The Gaussian is \textbf{split} into two smaller Gaussians, each scaled down by factor $1.6\times$.
+\item \textbf{Opacity Reset \& Pruning}: Every $3000$ iterations, opacities are reset to near-zero ($\alpha \leftarrow \min(\alpha, 0.01)$); Gaussians unable to rebuild opacity ($\alpha < 0.005$) are permanently pruned.
+\end{itemize}}
+\end{qa}
+
+\begin{trap}[3DGS Optimization Pitfalls]
+\begin{itemize}
+\item \textbf{Needle Floater Artifacts}: Large background Gaussians very close to the camera form huge translucent "needle" streaks when rotated. Solution: Clamp minimum depth $z_{\text{near}}$ and penalize maximum spatial scale $\|s\|_\infty$ in the loss.
+\item \textbf{Memory Thrashing during Densification}: Without periodic opacity pruning ($\alpha < 0.005$), Gaussian count explodes from $1\text{M} \to 12\text{M}$, exhausting GPU VRAM during training.
+\end{itemize}
+\end{trap}
