@@ -1,9 +1,9 @@
 \section{Geometry, Projection \& Classical Vision}\label{sec:geom}
 \lab{epipolar geometry \textperiodcentered\ pinhole optics \textperiodcentered\ feature detectors \textperiodcentered\ filtering \textperiodcentered\ optical flow}
 
-\noindent\begin{minipage}[t]{0.44\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \draw[draw=acc,thick] (0,0) -- (12,8) -- (12,-8) -- cycle;
 \node[acc,left] at (0,0) {$O$ (pinhole)};
 \draw[draw=mute,dashed] (0,0) -- (32,0);
@@ -15,14 +15,13 @@
 \draw[<->,mute] (0,-12) -- (19,-12) node[midway,below] {$f$ (focal)};
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.54\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{World to pixel coordinates.} 3D world point $\mathbf{X}_w = [X, Y, Z, 1]^\top$ maps to 2D homogeneous pixel $\mathbf{x} = [u, v, 1]^\top$ via:
 $$\lambda \begin{bmatrix} u \\ v \\ 1 \end{bmatrix} = \mathbf{K} [\mathbf{R} \mid \mathbf{t}] \begin{bmatrix} X \\ Y \\ Z \\ 1 \end{bmatrix}$$
 where $\mathbf{K}$ is the $3\times 3$ intrinsic matrix, $\mathbf{R} \in SO(3)$ is rotation, and $\mathbf{t} \in \mathbb{R}^3$ is translation.\\[2pt]
 {\color{acc2}$\blacktriangleright$} Intrinsic matrix: $f_x, f_y$ focal lengths, $c_x, c_y$ principal point, $s$ skew.\\
 {\color{acc2}$\blacktriangleright$} Depth ambiguity: $\lambda = Z_c$ is lost in projection.
-\end{minipage}
+}
 
 \begin{mem}[Epipolar Geometry \& Core Transformations]
 Two calibrated cameras observing scene point $X$ have image coordinates $x, x'$.
@@ -30,14 +29,16 @@ Two calibrated cameras observing scene point $X$ have image coordinates $x, x'$.
 \item \textbf{Essential Matrix} $\mathbf{E} = [\mathbf{t}]_\times \mathbf{R} \in \mathbb{R}^{3\times 3}$: relates normalized camera coordinates: $x'^\top \mathbf{E} x = 0$. $\mathbf{E}$ has 5 degrees of freedom (two equal singular values, one zero).
 \item \textbf{Fundamental Matrix} $\mathbf{F} = \mathbf{K}'^{-\top} \mathbf{E} \mathbf{K}^{-1}$: relates uncalibrated pixel coordinates: $x'^\top \mathbf{F} x = 0$. $\mathbf{F}$ has rank 2, 7 degrees of freedom. Epipolar line $l' = \mathbf{F} x$. Epipoles satisfy $\mathbf{F} e = 0, \mathbf{F}^\top e' = 0$.
 \item \textbf{Normalized 8-Point Algorithm}: Hartley's algorithm translates point centroid to $(0,0)$ and scales average distance to $\sqrt{2}$ before constructing matrix $A f = 0$. Enforces $\det(\mathbf{F})=0$ by zeroing smallest singular value in SVD.
-\item \textbf{Homography} $\mathbf{H} \in \mathbb{R}^{3\times 3}$: maps coplanar 3D points between two views: $x' \sim \mathbf{H} x$. Solved with 4 point pairs using Direct Linear Transformation (DLT) + RANSAC.
+\item \textbf{Homography} $\mathbf{H} \in \mathbb{R}^{3\times 3}$ (8 DoF): maps points on a 3D plane, or any scene under pure camera rotation, between two views: $x' \sim \mathbf{H} x$. Solved with 4 point pairs using Direct Linear Transformation (DLT) + RANSAC.
 \end{itemize}
 \end{mem}
 
 \begin{qa}[Classical Features, Edges \& Keypoints]
 \Q{Walk through the 4 stages of Canny edge detection in detail.}{
 \textbf{1. Gaussian smoothing}: Convolve image with Gaussian filter ($G_\sigma, \sigma \approx 1.4$) to suppress high-frequency sensor noise.
-\textbf{2. Gradient calculation}: Apply Sobel operators $G_x = \begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}, G_y = G_x^\top$ to compute gradient magnitude $|G| = \sqrt{G_x^2 + G_y^2}$ and direction $\theta = \arctan(G_y / G_x)$. Quantize $\theta$ into 4 canonical sectors: $0^\circ, 45^\circ, 90^\circ, 135^\circ$.
+\textbf{2. Gradient calculation}: Apply Sobel operators
+$$G_x = \begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}, \qquad G_y = G_x^\top$$
+to compute gradient magnitude $|G| = \sqrt{G_x^2 + G_y^2}$ and direction $\theta = \arctan(G_y / G_x)$. Quantize $\theta$ into 4 canonical sectors: $0^\circ, 45^\circ, 90^\circ, 135^\circ$.
 \textbf{3. Non-Maximum Suppression (NMS)}: Thin wide edges down to 1-pixel ridges. At each pixel, compare $|G|$ with its two neighbors along direction $\theta$. If $|G|$ is smaller than either neighbor, suppress it to 0.
 \textbf{4. Double thresholding \& Hysteresis}: Define high threshold $T_{\text{high}}$ and low threshold $T_{\text{low}}$ ($T_{\text{high}} \approx 2-3\times T_{\text{low}}$). Pixels with $|G| \ge T_{\text{high}}$ are marked as strong edges; pixels with $T_{\text{low}} \le |G| < T_{\text{high}}$ are weak edges. Retain weak edges \emph{only} if connected to a strong edge via 8-connectivity.}
 \Q{How does the Harris Corner Detector mathematically separate corners, edges, and flats?}{
@@ -59,8 +60,9 @@ $R > 0$ indicates a corner, $R < 0$ indicates an edge, and $|R| \approx 0$ indic
 \textbf{Brightness Constancy Assumption}: $I(x+u, y+v, t+1) = I(x, y, t)$. First-order Taylor expansion yields:
 $$I_x u + I_y v + I_t = 0 \iff \nabla I \cdot \mathbf{v} + I_t = 0$$
 This is 1 equation with 2 unknowns $(u, v)$ (Aperture Problem: flow parallel to edges is ambiguous).
-\textbf{Lucas-Kanade}: Assumes flow is constant within a small local $n\times n$ window ($n=5$). Solves overdetermined system via least squares:
-$\begin{bmatrix} u \\ v \end{bmatrix} = \left(\sum \begin{bmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{bmatrix}\right)^{-1} \left( -\sum \begin{bmatrix} I_x I_t \\ I_y I_t \end{bmatrix} \right)$.
+\textbf{Lucas-Kanade}: Assumes flow is constant within a small local $n\times n$ window (typically $5\times 5$). Solves the overdetermined system by least squares:
+$$\begin{bmatrix} u \\ v \end{bmatrix} = -\begin{bmatrix} \sum I_x^2 & \sum I_x I_y \\ \sum I_x I_y & \sum I_y^2 \end{bmatrix}^{-1} \begin{bmatrix} \sum I_x I_t \\ \sum I_y I_t \end{bmatrix}$$
+The $2\times 2$ matrix is Harris's $M$: LK is reliable exactly where Harris finds corners (both eigenvalues large).
 Fails on large displacements (requires multi-scale image pyramids).
 \textbf{Horn-Schunck}: Global variational formulation minimizing brightness error $+$ global smoothness:
 $E(u, v) = \iint \left( (I_x u + I_y v + I_t)^2 + \alpha^2 (\|\nabla u\|^2 + \|\nabla v\|^2) \right) dx dy$.

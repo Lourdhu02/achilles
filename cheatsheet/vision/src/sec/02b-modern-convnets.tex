@@ -1,9 +1,9 @@
 \section{Modern ConvNets: MobileNet, ShuffleNet \& ConvNeXt}\label{sec:modern-conv}
 \lab{Depthwise separable \textperiodcentered\ linear bottleneck \textperiodcentered\ channel shuffle \textperiodcentered\ compound scaling \textperiodcentered\ ConvNeXt \textperiodcentered\ GRN}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (in) {Input $C_{\text{in}}$ (narrow)};
 \node[bx,draw=acc2,fill=soft2,above=1.5mm of in] (exp) {$1\times 1\text{ Conv } (6\times C_{\text{in}})$};
@@ -15,13 +15,12 @@
 \draw[arr,acc2,thick] (in.east) -- ++(3.5mm,0) |- (add.east);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Inverted Residual.} MobileNetV2 expands to high dimension ($t=6$) for depthwise filtering, then projects to low dimension with a linear bottleneck.\\[2pt]
 {\color{acc2}$\blacktriangleright$} Standard ResNet: High $\to$ Low $\to$ High.\\
 {\color{acc2}$\blacktriangleright$} Inverted: Low $\to$ High ($6\times$) $\to$ Low.\\
 {\color{acc2}$\blacktriangleright$} Linear Bottleneck: Non-linear ReLU in low-dim collapses the manifold; projection must be purely linear.
-\end{minipage}
+}
 
 \begin{mem}[Architectural Milestones in Modern Convolutions]
 \begin{tabularx}{\columnwidth}{@{}p{19mm} p{23mm} X r@{}}

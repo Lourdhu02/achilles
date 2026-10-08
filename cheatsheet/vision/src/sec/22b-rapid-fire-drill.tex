@@ -1,5 +1,5 @@
 \section{High-Velocity Vision Interview Drill}\label{sec:rapid2}
-\lab{30 rapid-fire technical questions \textperiodcentered\ flashcards \textperiodcentered\ edge cases \textperiodcentered\ instant answers}
+\lab{20 rapid-fire technical questions \textperiodcentered\ flashcards \textperiodcentered\ edge cases \textperiodcentered\ instant answers}
 
 \begin{qa}[Rapid-Fire Architecture \& Mechanics Drills]
 \RF{Why do ViTs fail when trained from scratch on small datasets without pretraining?}{ViTs lack the inductive biases of convolutions (translation equivariance and local spatial locality); they must learn spatial relationships from scratch via massive data.}
@@ -10,8 +10,8 @@
 \RF{What is the Degenerate Grid trap in large atrous convolution dilation rates?}{When dilation rate $r$ approaches feature map size $W$, a $3 \times 3$ kernel samples outside bounds or only isolated pixels, degenerating into a trivial $1 \times 1$ convolution.}
 \RF{Why can't BatchNorm be used directly in Vision Transformers?}{Batch statistics fluctuate excessively across sequence lengths, and ViT token representations undergo covariate shifts along sequence dimensions; LayerNorm normalizes across feature channels per token independently.}
 \RF{What is the difference between Transposed Convolution and Bilinear Upsampling?}{Transposed convolutions learn upsampling weights but suffer from "checkerboard artifacts" when stride does not divide kernel size; Bilinear upsampling is non-parametric, smooth, and artifact-free.}
-\RF{Why does CLIP require a learned temperature parameter $\tau$?}{Unconstrained cosine similarity values lie in $[-1, 1]$, making cross-entropy probabilities too flat ($\max p \approx e^1 / e^1$); dividing by $\tau \approx 0.07$ scales logits to $[-14, 14]$, sharpening probability peaks.}
-\RF{What is the All-Gather gradient bottleneck in distributed CLIP?}{All-Gather gathers embeddings across GPUs; naive autograd gathers full backward gradients across all ranks, consuming immense network bandwidth; solution is manual local gradient scatter.}
+\RF{Why does CLIP require a learned temperature parameter $\tau$?}{Cosine similarities lie in $[-1, 1]$; with 32k negatives the softmax over such logits is almost uniform (the positive gets at most $e^{1}/(e^{1} + 32767\,e^{-1}) \approx 0.02\%$). Dividing by $\tau \approx 0.07$ stretches logits to $[-14, 14]$ so the positive can win.}
+\RF{What is the All-Gather gradient bottleneck in distributed CLIP?}{\texttt{all\_gather} is not differentiable, so gathered negatives carry no gradient. Fix: replace your own rank's slice with the local tensor (keeps its gradient), or use a differentiable gather and compute only the local rows of the logit matrix (OpenCLIP \texttt{local\_loss}).}
 \RF{Why does Min-SNR $\gamma$ loss weighting improve diffusion model convergence?}{Diffusion loss at small $t$ has massive SNR and over-supervises high-frequency noise; clamping loss weight $\min(\text{SNR}(t), \gamma)$ balances gradient contributions across all timesteps.}
 \RF{What is the difference between DDPM and DDIM sampling?}{DDPM is a stochastic Markov chain requiring 1000 steps; DDIM defines an equivalent non-Markovian process whose deterministic ODE allows skipping steps in 20--50 iterations.}
 \RF{Why does Flow Matching use straight trajectories instead of curved Brownian paths?}{Straight ODE paths minimize displacement length between noise and data, resulting in velocity fields that are nearly constant in time, enabling 1-step or 4-step Euler integration.}
@@ -26,7 +26,7 @@
 
 \begin{trap}[Crucial Interview Traps \& Failure Modes]
 \begin{itemize}
-\item \textbf{ViT Quadratic Complexity Assumption}: Candidates often say "ViT is always $\mathcal{O}(N^2)$". In production ViTs, windowed attention (Swin), linear attention, or FlashAttention-2 tiles computation into SRAM, reducing wall-clock runtime by $4\times$.
+\item \textbf{ViT Quadratic Complexity Assumption}: Candidates often say "ViT is always $\mathcal{O}(N^2)$". FlashAttention still does $\mathcal{O}(N^2)$ FLOPs but never materializes the $N\times N$ matrix, so memory is $\mathcal{O}(N)$ and it runs several times faster; only windowed (Swin) or linear attention changes the FLOP scaling.
 \item \textbf{Assuming Diffusion Directly Predicts the Clean Image $x_0$}: Predicting noise $\epsilon_t$ or velocity $v_t$ is dramatically more numerically stable than predicting clean image $x_0$, because at large $t$, $x_0$ has near-zero signal-to-noise ratio and predicting it causes blurry mean-image collapse.
 \item \textbf{Overlooking Bounding Box Coordinate Normalization}: Feeding absolute pixel coordinates $(x, y, w, h)$ into loss functions rather than normalized $[0, 1]$ coordinates breaks scale-invariance across different image sizes.
 \end{itemize}

@@ -1,39 +1,35 @@
 \section{Classical Vision: Keypoints, Geometry \& Flow}\label{sec:classical}
 \lab{Harris corner \textperiodcentered\ SIFT \textperiodcentered\ ORB \textperiodcentered\ RANSAC \textperiodcentered\ Essential/Fundamental \textperiodcentered\ Lucas-Kanade \textperiodcentered\ RAFT}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
-% Left Camera C1
-\fill[acc] (0,0) circle (0.8mm) node[below] {$C_1$};
-% Right Camera C2
-\fill[acc] (32,0) circle (0.8mm) node[below] {$C_2$};
-\draw[mute,thick] (0,0) -- (32,0) node[midway,below] {Baseline $b$};
-% 3D Point X
-\fill[acc2] (16,22) circle (0.8mm) node[above] {$X \in \mathbb{R}^3$};
-% Rays
-\draw[arr,acc] (0,0) -- (16,22);
-\draw[arr,acc] (32,0) -- (16,22);
-% Image planes
-\draw[draw=acc,fill=soft] (3,4) -- (11,10) -- (11,3) -- (3,-3) -- cycle;
-\draw[draw=acc,fill=soft] (21,10) -- (29,4) -- (29,-3) -- (21,3) -- cycle;
-% Epipoles and projected points
-\fill[acc3] (4,0) circle (0.5mm) node[above left] {$e_1$};
-\fill[acc3] (28,0) circle (0.5mm) node[above right] {$e_2$};
-\fill[acc2] (7,6) circle (0.5mm) node[above] {$x_1$};
-\fill[acc2] (25,6) circle (0.5mm) node[above] {$x_2$};
-\draw[draw=acc2,dashed] (4,0) -- (7,6) node[midway,left] {$l_1$};
-\draw[draw=acc2,dashed] (28,0) -- (25,6) node[midway,right] {$l_2$};
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1.05mm,y=1.05mm,every node/.style={font=\scriptsize}]
+\fill[acc!6] (0,0) -- (16,22) -- (32,0) -- cycle;
+\draw[mute,thick] (0,0) -- (32,0) node[midway,below=1pt] {baseline $b$};
+\draw[acc,line width=0.5pt] (0,0) -- (16,22);
+\draw[acc,line width=0.5pt] (32,0) -- (16,22);
+\draw[draw=acc,fill=soft,fill opacity=0.8] (2,-2) -- (9,1) -- (9,11) -- (2,8) -- cycle;
+\draw[draw=acc,fill=soft,fill opacity=0.8] (30,-2) -- (23,1) -- (23,11) -- (30,8) -- cycle;
+\draw[acc2,dashed,thick] (4,0) -- (6.5,10.25);
+\draw[acc2,dashed,thick] (28,0) -- (25.5,10.25);
+\fill[acc] (0,0) circle (0.8) node[below left=-1pt] {$C_1$};
+\fill[acc] (32,0) circle (0.8) node[below right=-1pt] {$C_2$};
+\fill[acc2] (16,22) circle (0.8) node[above] {$X \in \mathbb{R}^3$};
+\fill[acc2] (5.6,7.7) circle (0.6) node[left=1pt] {$x_1$};
+\fill[acc2] (26.4,7.7) circle (0.6) node[right=1pt] {$x_2$};
+\fill[acc3] (4,0) circle (0.6) node[below right=-1pt] {$e_1$};
+\fill[acc3] (28,0) circle (0.6) node[below left=-1pt] {$e_2$};
+\node[acc2] at (7.6,12.6) {$l_1$};
+\node[acc2] at (24.4,12.6) {$l_2$};
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The Epipolar Constraint.} $X, C_1, C_2$ define the epipolar plane.
 Baseline $b$ pierces image planes at epipoles $e_1, e_2$. Observing point $x_1$ constrains correspondence $x_2$ to lie along epipolar line $l_2 = \mathbf{F} x_1$.\\[2pt]
 {\color{acc2}$\blacktriangleright$} Calibrated: $\hat{x}_2^T \mathbf{E} \hat{x}_1 = 0$ ($5$ DoF, SVD $[\sigma, \sigma, 0]$).\\
 {\color{acc2}$\blacktriangleright$} Uncalibrated: $x_2^T \mathbf{F} x_1 = 0$ ($7$ DoF, rank 2).\\
 {\color{acc2}$\blacktriangleright$} Search: 2D correspondence reduced to 1D ray.
-\end{minipage}
+}
 
 \begin{mem}[Keypoint Detectors \& Descriptors at a Glance]
 \begin{tabularx}{\columnwidth}{@{}l l l X@{}}
@@ -50,20 +46,12 @@ Baseline $b$ pierces image planes at epipoles $e_1, e_2$. Observing point $x_1$ 
 \end{mem}
 
 \begin{qa}[Classical Corner Detection \& Invariant Descriptors]
-\Q{Derive the Harris Corner Detector response and explain why it is rotation-invariant but not scale-invariant.}{
-The local auto-correlation function measures intensity variation under shift $(\Delta x, \Delta y)$:
-$$E(\Delta x, \Delta y) \approx [\Delta x, \Delta y] \, M \, [\Delta x, \Delta y]^T$$
-$$\text{where } M = \sum_{(x,y) \in W} w(x,y) \begin{bmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{bmatrix}$$
-Let eigenvalues of $M$ be $\lambda_1, \lambda_2$:
-\begin{itemize}
-\item \textbf{Flat region}: $\lambda_1 \approx 0, \lambda_2 \approx 0$.
-\item \textbf{Edge}: $\lambda_1 \gg \lambda_2 \approx 0$ (or vice versa).
-\item \textbf{Corner}: $\lambda_1, \lambda_2 \gg 0$ (large variation in all spatial directions).
-\end{itemize}
-Harris avoids costly SVD eigenvalue computation using trace and determinant:
-$$R = \det(M) - k \cdot (\operatorname{Tr}(M))^2 = \lambda_1 \lambda_2 - k(\lambda_1 + \lambda_2)^2$$
-with $k \in [0.04, 0.06]$.
-\textbf{Invariance}: Rotation transforms $M \to R M R^T$, preserving trace and determinant ($\det(R M R^T) = \det(M)$). However, scaling an image shrinks or expands features: a corner at fine scale becomes a smooth curve at coarse scale, breaking fixed window $W$.}
+\Q{How do you recover depth from a rectified stereo pair, and why does depth error grow as $Z^2$?}{
+After rectification the epipolar lines are horizontal, so a point at depth $Z$ appears at $x_L$ and $x_R$ on the same row with disparity $d = x_L - x_R$. Similar triangles give
+$$Z = \frac{f\,B}{d} \qquad (f \text{ in pixels}, B \text{ baseline in metres})$$
+\textbf{Error propagation}: $\left|\frac{\partial Z}{\partial d}\right| = \frac{fB}{d^2} = \frac{Z^2}{fB} \implies \Delta Z \approx \frac{Z^2}{fB}\,\Delta d$.\\
+\textbf{Example}: $f = 1000$\,px, $B = 0.12$\,m, matching error $\Delta d = 0.25$\,px. At $Z = 10$\,m, $\Delta Z \approx 0.21$\,m; at $Z = 40$\,m, $\Delta Z \approx 3.3$\,m (16$\times$ worse for 4$\times$ the range).\\
+\textbf{Levers}: wider baseline (more occlusion, harder matching), longer focal length (narrower field of view), sub-pixel matching (SGM, RAFT-Stereo). Without rectification, \textbf{triangulate} by DLT: each view gives $x \times (P X) = 0$, two linear equations; stack and solve $A X = 0$ by SVD, then refine by minimizing reprojection error.}
 
 \Q{How does SIFT achieve scale invariance, and why does Lowe's Ratio Test reject false matches?}{
 \textbf{Scale Invariance}: SIFT builds an octave scale space by convolving the image with Gaussians of increasing variance $\sigma$, then computes Difference-of-Gaussians (DoG):
@@ -83,27 +71,21 @@ $(1 - \epsilon)^4 = (0.5)^4 = 0.0625$. For $p = 0.99$: $N = \frac{\ln(0.01)}{\ln
 \end{qa}
 
 \begin{qa}[Epipolar Geometry \& Optical Flow]
-\Q{Differentiate between Essential Matrix $E$ and Fundamental Matrix $F$.}{
-\begin{itemize}
-\item \textbf{Essential Matrix ($E$)}: Operates on \hl{calibrated} normalized camera coordinates ($\hat{x} = K^{-1} x$). Relates two views separated by rotation $R$ and translation $t$:
-$$E = [t]_\times R, \quad \hat{x}_2^T E \hat{x}_1 = 0 \quad (\text{5 degrees of freedom})$$
-Singular values of $E$ are constrained: $\Sigma_E = \operatorname{diag}(\sigma, \sigma, 0)$.
-\item \textbf{Fundamental Matrix ($F$)}: Operates on \hl{uncalibrated} raw pixel coordinates ($x$):
-$$F = K_2^{-T} E K_1^{-1}, \quad x_2^T F x_1 = 0 \quad (\text{7 degrees of freedom, rank 2})$$
-$l_2 = F x_1$ defines the epipolar line in image 2 upon which corresponding point $x_2$ must lie.
-\end{itemize}}
+\Q{How does Zhang's camera calibration work, and what does PnP solve?}{
+\textbf{Zhang (2000)}: photograph a planar checkerboard ($Z = 0$) in $\ge 3$ poses. Each view gives a homography $H = \lambda K[r_1\;r_2\;t]$. Because $r_1 \perp r_2$ and $\|r_1\| = \|r_2\|$, each view adds two linear constraints on the symmetric $B = K^{-\top}K^{-1}$:
+$$h_1^\top B\,h_2 = 0, \qquad h_1^\top B\,h_1 = h_2^\top B\,h_2$$
+$B$ has 6 unknowns up to scale, so 3 views suffice. Recover $K$ from $B$ (Cholesky), then refine $K$, lens distortion $(k_1, k_2, p_1, p_2)$ and all poses with Levenberg--Marquardt on reprojection error (good calibration: $< 0.3$\,px RMS).\\[2pt]
+\textbf{PnP (Perspective-n-Point)}: given known $K$ and $n$ 3D--2D matches, recover the 6-DoF pose $[R \mid t]$. Minimal P3P uses 3 points (up to 4 solutions; a 4th point disambiguates); EPnP is $\mathcal{O}(n)$. Wrap in RANSAC, then refine by minimizing reprojection error. Used for AR anchoring, visual relocalization and robot grasping.}
 
-\Q{Explain the Brightness Constancy Assumption, the Aperture Problem, and how RAFT revolutionizes Optical Flow.}{
-\textbf{Optical Flow Constraint}: Assumes $I(x+u, y+v, t+1) = I(x, y, t)$. First-order Taylor expansion yields:
-$$I_x u + I_y v + I_t = 0 \quad \text{or} \quad \nabla I^T \mathbf{v} + I_t = 0$$
-\textbf{Aperture Problem}: One equation with two unknowns $(u, v)$. We can only measure flow parallel to image gradient $\nabla I$ (normal flow); tangential flow is invisible along a straight line edge.\\[2pt]
-\textbf{Lucas-Kanade solution}: Assumes uniform motion in local $3 \times 3$ window $W$, solving overdetermined system $(A^T A) \mathbf{v} = -A^T b$.\\[2pt]
-\textbf{RAFT (Recurrent All-Pairs Field Transforms)}:
+\Q{How does RAFT estimate optical flow, and why does it beat coarse-to-fine pyramids?}{
+Classical flow (Q4) linearizes brightness constancy, so it only works for small motions and needs image pyramids, which blur away small fast objects.
+\textbf{RAFT (Teed \& Deng, 2020)}:
 \begin{enumerate}
-\item Computes 4D correlation volume of all pixel pairs between feature maps $f(I_1)$ and $f(I_2)$.
-\item Constructs multi-scale correlation pyramid via pooling.
-\item Uses a recurrent GRU operator to iteratively update flow field $\mathbf{f}_{k+1} = \mathbf{f}_k + \Delta \mathbf{f}$ by looking up local correlation features, replacing coarse-to-fine pyramids that miss fast-moving small objects.
-\end{enumerate}}
+\item Extracts $1/8$-resolution features $f(I_1), f(I_2)$ and builds a 4D \textbf{all-pairs correlation volume} $C_{ijkl} = \langle f_1(i,j), f_2(k,l)\rangle$, pooled into a 4-level pyramid over the last two dims.
+\item A recurrent \textbf{ConvGRU} iteratively updates a single high-resolution flow field, $\mathbf{f}_{k+1} = \mathbf{f}_k + \Delta \mathbf{f}$, by looking up correlations around the current estimate (radius 4, all pyramid levels).
+\item Loss: $\sum_k \gamma^{N-k}\|\mathbf{f}_{\text{gt}} - \mathbf{f}_k\|_1$ with $\gamma = 0.8$ over 12 training iterations.
+\end{enumerate}
+Large displacements are visible from step 0 through the coarse correlation levels, yet flow is never estimated at low resolution, so thin and fast objects survive. Cost: $\mathcal{O}((HW)^2)$ memory for the volume.}
 \end{qa}
 
 \begin{trap}[Classical CV Production Traps]

@@ -1,9 +1,9 @@
 \section{Image \& Video Segmentation: U-Net to SAM 2}\label{sec:seg}
 \lab{U-Net \textperiodcentered\ DeepLab ASPP \textperiodcentered\ Mask R-CNN \textperiodcentered\ Mask2Former \textperiodcentered\ SAM \textperiodcentered\ SAM 2}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (img) {Image};
 \node[bx,draw=acc,above=1.5mm of img] (enc) {ViT-H Image Encoder (632M)\\\emph{Run once per image}};
@@ -13,12 +13,11 @@
 \draw[arr] (img)--(enc); \draw[arr] (enc)--(dec); \draw[arr] (pr)--(dec); \draw[arr] (dec)--(mask);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The SAM Architecture.} Splits heavy perception from interactive decoding.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{Asymmetric design}: The heavy ViT image encoder produces a $64\times 64 \times 256$ spatial embedding once. Interactive clicks/prompts run purely through the sub-50ms decoder in real time.\\
 {\color{acc2}$\blacktriangleright$} \textbf{Ambiguity awareness}: Predicts 3 valid hierarchy masks (whole, part, subpart) to handle ambiguous single-point clicks.
-\end{minipage}
+}
 
 \begin{mem}[Segmentation Paradigms Compared]
 \begin{tabularx}{\linewidth}{@{}p{17mm} X X@{}}
@@ -60,15 +59,11 @@ Cheng et al. discard task-specific heads (RoIAlign, FCN) in favor of \textbf{Mas
 $$\mathcal{M}_{l-1}(x, y) = \begin{cases} 0 & \text{if } m_{l-1}(x, y) > 0.5 \\ -\infty & \text{otherwise} \end{cases}$$
 Focuses attention on relevant localized object features, dramatically accelerating convergence and outperforming specialized models across all 3 tasks.
 \end{enumerate}}
-\Q{How does SAM 2 extend promptable segmentation to video in real time?}{
-Video segmentation suffers from occlusion, drift, and deformation across frames.
-SAM 2 introduces a \textbf{Streaming Memory Architecture}:
-\begin{itemize}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{Memory Encoder}: Encodes the predicted frame mask and image embedding into a compact visual memory token.
-\item \textbf{Memory Bank}: Maintains a FIFO queue of recent frame features plus prompted keyframe memories.
-\item \textbf{Memory Attention}: Uses cross-attention in the mask decoder conditioned on past memory bank states to track targets continuously across thousands of frames.
-\end{itemize}
-Processes 1080p video at $44\text{ FPS}$ with zero pipeline stalls.}
+\Q{How does Mask R-CNN predict instance masks, and why a per-class sigmoid?}{
+A third head runs on every positive RoI: RoIAlign to $14\times 14$, four $3\times 3$ convs, a $2\times$ deconv, then a $1\times 1$ conv giving $K$ masks of $28\times 28$ (one per class).
+\textbf{Loss}: binary cross-entropy on the mask of the \emph{ground-truth class only}, $\mathcal{L} = \mathcal{L}_{\text{cls}} + \mathcal{L}_{\text{box}} + \mathcal{L}_{\text{mask}}$.\\
+\textbf{Why decouple}: a per-pixel softmax over classes makes masks compete; the paper reports about $+5.5$ mask AP for per-class sigmoids, because the box head already decides the class.\\
+\textbf{Inference}: take the mask for the predicted class, resize the $28\times 28$ map to the box, threshold at 0.5. The low $28^2$ resolution is why boundaries look blobby (PointRend and Mask2Former fix this).}
 \end{qa}
 
 \begin{trap}[Segmentation Metrics]

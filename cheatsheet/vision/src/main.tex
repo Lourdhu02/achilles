@@ -116,6 +116,31 @@
 \newcommand{\lab}[1]{{\color{mute}\scriptsize[#1]}}
 \newcommand{\cn}[1]{{\color{mute}\,[#1]}}
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\renewcommand{\tabularxcolumn}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage[export]{adjustbox}
+\usepackage{etoolbox}
+% never leave a section heading stranded at the bottom of a column
+\pretocmd{\section}{\needspace{16\baselineskip}}{}{}
+\pretocmd{\subsection}{\needspace{6\baselineskip}}{}{}
+\raggedbottom % no stretched glue gaps inside columns
+% keep a box title together with its first lines
+\BeforeBeginEnvironment{mem}{\needspace{14\baselineskip}}
+\BeforeBeginEnvironment{qa}{\needspace{7\baselineskip}}
+\BeforeBeginEnvironment{trap}{\needspace{5\baselineskip}}
+% Section opener: diagram beside its explanation when the diagram is narrow,
+% diagram on top at full column width when it is wide (keeps labels legible).
+\newsavebox{\dgbox}
+\newlength{\dgw}
+\newcommand{\diagpair}[2]{%
+  \par\sbox{\dgbox}{#1}%
+  \ifdim\wd\dgbox>0.47\columnwidth
+    \begin{center}\adjustbox{max width=\columnwidth}{\usebox{\dgbox}}\end{center}\vspace{-3pt}
+    {\small #2\par}\vspace{2pt}%
+  \else
+    \setlength{\dgw}{\wd\dgbox}%
+    \noindent\begin{minipage}[t]{\dgw}\vspace{0pt}\usebox{\dgbox}\end{minipage}\hfill
+    \begin{minipage}[t]{\dimexpr\columnwidth-\dgw-3mm\relax}\vspace{1pt}\small #2\end{minipage}\par\vspace{2pt}%
+  \fi}
 \newcommand{\tsmall}{\scriptsize}
 
 \begin{document}

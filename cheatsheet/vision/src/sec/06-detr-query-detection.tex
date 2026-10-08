@@ -1,9 +1,9 @@
 \section{Query-Based Detection: DETR, Deformable DETR \& RT-DETR}\label{sec:detr}
 \lab{DETR \textperiodcentered\ Hungarian matching \textperiodcentered\ bipartite set loss \textperiodcentered\ Deformable Attention \textperiodcentered\ DINO-DETR \textperiodcentered\ RT-DETR}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (bb) {Backbone Features};
 \node[bx,draw=acc,above=1.5mm of bb] (enc) {Transformer Encoder};
@@ -14,12 +14,11 @@
 \draw[arr] (bb)--(enc); \draw[arr] (enc)--(dec); \draw[arr] (q)--(dec); \draw[arr] (dec)--(ffn); \draw[arr] (ffn)--(hung);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{Direct Set Prediction.} Bypasses hand-designed anchor boxes and greedy NMS entirely. Formulates detection as predicting an unordered set of $N$ bounding boxes (e.g., $N=300$).\\[2pt]
 {\color{acc2}$\blacktriangleright$} One-to-one matching enforces that each ground-truth object is assigned to exactly \textbf{one} query.\\
 {\color{acc2}$\blacktriangleright$} No duplicate predictions $\implies$ zero NMS post-processing needed.
-\end{minipage}
+}
 
 \begin{mem}[Bipartite Matching Loss Formulation]
 Ground-truth objects padded with "no object" $\varnothing$ to size $N$: $y = (c_i, b_i)_{i=1}^N$.
@@ -55,7 +54,7 @@ Lv et al. identify that the multi-scale transformer encoder consumes $49\%$ of F
 \item \textbf{Efficient Hybrid Encoder}: Decouples multi-scale feature interaction. Cross-scale feature fusion is handled purely by an efficient convolutional CSPRepLayer path; self-attention is applied \emph{only} on the highest-level feature map ($S_5$), reducing encoder compute by $70\%$.
 \item \textbf{Uncertainty-Minimal Query Selection}: Selects top-$N$ queries based on classification confidence weighted by IoU scores, providing higher quality initial queries to the decoder.
 \end{enumerate}
-Achieves $53.1\text{ mAP}$ at $114\text{ FPS}$ on an NVIDIA T4, surpassing YOLOv8-X in both speed and accuracy.}
+RT-DETR-R50 reaches $53.1$ AP at $108$ FPS on a T4 (TensorRT FP16), beating similarly sized YOLOs once their NMS time is counted; R101 gives $54.3$ AP at $74$ FPS.}
 \end{qa}
 
 \begin{trap}[Hungarian Matching Pitfalls]

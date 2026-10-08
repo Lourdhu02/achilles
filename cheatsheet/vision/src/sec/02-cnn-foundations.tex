@@ -1,8 +1,8 @@
 \section{CNN Foundations, ResNet \& Modern Convolutions}\label{sec:cnn}
 \lab{receptive field \textperiodcentered\ residual learning \textperiodcentered\ depthwise separable \textperiodcentered\ ConvNeXt \textperiodcentered\ BatchNorm}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (in) {$x$ (input)};
 \node[bx,draw=acc2,fill=soft2,above=2mm of in] (c1) {$1\times 1\text{ conv, } C/4$};
@@ -13,12 +13,11 @@
 \draw[arr] (in)--(c1); \draw[arr] (c1)--(c2); \draw[arr] (c2)--(c3); \draw[arr] (c3)--(add); \draw[arr] (add)--(out);
 \draw[arr,acc2,thick] (in.east) -- ++(3mm,0) |- (add.east);
 \end{tikzpicture}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{The ResNet Bottleneck.} Stacks $1\times 1$ compress $\to 3\times 3$ spatial $\to 1\times 1$ expand. The skip connection carries the identity signal directly, preventing gradient vanishing:\\[2pt]
 $\frac{\partial \mathcal{E}}{\partial x_l} = \frac{\partial \mathcal{E}}{\partial x_L} \left( \mathbf{I} + \frac{\partial}{\partial x_l} \sum_{i=l}^{L-1} \mathcal{F}_i(x_i) \right)$\\[2pt]
 Even if gradients through $\mathcal{F}$ vanish ($\approx 0$), the identity $\mathbf{I}$ guarantees non-zero backpropagation back to layer $l$.
-\end{minipage}
+}
 
 \begin{mem}[Convolution Arithmetic Formulas]
 \begin{tabularx}{\linewidth}{@{}lL@{}}
@@ -53,15 +52,11 @@ At $B=2$, mini-batch mean $\mu_{\mathcal{B}}$ and variance $\sigma_{\mathcal{B}}
 \item \textbf{SyncBatchNorm}: Synchronizes mean and variance across all GPUs in distributed training via all-reduce, effectively restoring large virtual batch size ($B_{\text{effective}} = B_{\text{local}} \times N_{\text{GPUs}}$).
 \item \textbf{GroupNorm (Wu \& He, 2018)}: Divides channels into $G=32$ groups and normalizes purely across channels and spatial pixels $(C/G, H, W)$. Independent of batch size $B$, ensuring stable training even at $B=1$.
 \end{enumerate}}
-\Q{What architectural innovations transform ResNet into ConvNeXt and ConvNeXt-V2?}{
-Liu et al. modernize ResNet-50 by incorporating Vision Transformer design choices:
-\begin{enumerate}[leftmargin=*,itemsep=0.8pt]
-\item \textbf{Patchify Stem}: Replaces $7\times 7$ stride-2 conv $+$ max pooling with a non-overlapping $4\times 4$ stride-4 patchifying conv.
-\item \textbf{Depthwise Inverted Bottleneck}: Uses $7\times 7$ depthwise convs placed \emph{before} $1\times 1$ pointwise convs, mimicking inverted residuals and Swin local window attention.
-\item \textbf{Micro-Design}: Replaces BatchNorm with LayerNorm; replaces ReLU with GELU; reduces activation/normalization layers to one per block.
-\item \textbf{ConvNeXt-V2 (Global Response Normalization)}: When trained with Masked Autoencoders (FCMAE), depthwise convs suffer from feature collapse where channels become redundant. ConvNeXt-V2 introduces \textbf{GRN} (Global Response Normalization) which scales channels by their L2 norm across spatial pixels, restoring feature diversity.
-\end{enumerate}
-Outperforms Swin Transformers across ImageNet, COCO, and ADE20K with purely convolutional operations.}
+\Q{Derive He (Kaiming) initialization. When do you use Xavier instead?}{
+For $y_l = W_l x_l$ with fan-in $n_l$ and i.i.d.\ zero-mean weights, $\operatorname{Var}(y_l) = n_l \operatorname{Var}(w_l)\,\mathbb{E}[x_l^2]$. ReLU zeroes half of a symmetric input, so $\mathbb{E}[x_l^2] = \frac{1}{2}\operatorname{Var}(y_{l-1})$. Keeping the variance constant across depth requires
+$$\tfrac{1}{2} n_l \operatorname{Var}(w_l) = 1 \implies \operatorname{Var}(w) = \frac{2}{n_{\text{in}}}, \quad n_{\text{in}} = C_{\text{in}} K^2 \text{ for a conv.}$$
+\textbf{Xavier/Glorot}: $\operatorname{Var}(w) = \frac{2}{n_{\text{in}} + n_{\text{out}}}$, derived for tanh/linear units (balances forward and backward variance). Using it with ReLU halves the signal every layer: $2^{-30}$ after 30 layers.\\
+\textbf{Modern practice}: residuals plus normalization make nets far less sensitive; zero-init the last BN $\gamma$ of each residual block so it starts as identity (Goyal et al.); ViTs use truncated normal with std $0.02$.}
 \end{qa}
 
 \begin{trap}[Convolutional Gotchas]

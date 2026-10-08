@@ -1,9 +1,9 @@
 \section{Vision Transformers (ViT), Scaling \& Tokenization}\label{sec:vit}
 \lab{patch embedding \textperiodcentered\ inductive bias \textperiodcentered\ DeiT distillation \textperiodcentered\ 2D PosEnc \textperiodcentered\ NaViT patch packing}
 
-\noindent\begin{minipage}[t]{0.44\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\tiny}]
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[x=1mm,y=1mm,every node/.style={font=\scriptsize}]
 \draw[draw=acc,fill=soft] (0,0) rectangle (16,16);
 \foreach \x in {4,8,12} \draw[mute] (\x,0) -- (\x,16);
 \foreach \y in {4,8,12} \draw[mute] (0,\y) -- (16,\y);
@@ -14,23 +14,22 @@
 \node[box,draw=acc3,fill=acc3!8] at (58,8) {$N \times D$\\$+$ pos};
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.54\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{Image to Sequence.} An image $x \in \mathbb{R}^{H\times W\times C}$ is split into $N = \frac{HW}{P^2}$ patches of size $P\times P$. Linear projection projects each patch to dimension $D$ (equivalent to Conv2D with kernel $P$, stride $P$, $D$ filters):\\[2pt]
 $\mathbf{z}_0 = [\mathbf{x}_{\text{cls}};\, \mathbf{x}_p^1 \mathbf{E}; \dots;\, \mathbf{x}_p^N \mathbf{E}] + \mathbf{E}_{\text{pos}}$\\[2pt]
 where $\mathbf{E} \in \mathbb{R}^{(P^2 C)\times D}$ and $\mathbf{E}_{\text{pos}} \in \mathbb{R}^{(N+1)\times D}$.
-\end{minipage}
+}
 
 \begin{mem}[Standard ViT Model Configurations \& Scaling]
 \begin{tabularx}{\linewidth}{@{}lccccL@{}}
 \toprule
-\textbf{Model} & \textbf{Layers} & \textbf{Hidden $D$} & \textbf{Heads} & \textbf{MLP Dim} & \textbf{Params (FLOPs $224^2$)}\\
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden $D$} & \textbf{Heads} & \textbf{MLP Dim} & \textbf{Params (GMACs, $224^2$)}\\
 \midrule
-ViT-B/16 & 12 & 768 & 12 & 3072 & 86M (17.6 GFLOPs)\\
-ViT-L/16 & 24 & 1024 & 16 & 4048 & 307M (61.6 GFLOPs)\\
-ViT-H/14 & 32 & 1280 & 16 & 5120 & 632M (167.4 GFLOPs)\\
-ViT-g/14 & 40 & 1408 & 16 & 6144 & 1.0B (284.1 GFLOPs)\\
-ViT-22B  & 48 & 6144 & 48 & 24576& 22B (4.4 TFLOPs)\\
+ViT-B/16 & 12 & 768 & 12 & 3072 & 86M (17.6)\\
+ViT-L/16 & 24 & 1024 & 16 & 4096 & 307M (61.6)\\
+ViT-H/14 & 32 & 1280 & 16 & 5120 & 632M (167.4)\\
+ViT-g/14 & 40 & 1408 & 16 & 6144 & 1.0B (284.1)\\
+ViT-22B  & 48 & 6144 & 48 & 24576& 22B ($\sim$4.4k)\\
 \bottomrule
 \end{tabularx}
 \end{mem}

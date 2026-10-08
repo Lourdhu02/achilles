@@ -59,12 +59,12 @@ SAM 2 introduces a causal streaming architecture that processes video frame-by-f
 \Q{Why did SAM 2 replace the ViT backbone with Hiera, and what is the latency advantage?}{
 \textbf{ViT-H limitations}: Standard ViT operates at a single fixed scale with isotropic resolution, requiring costly windowed attention and large FLOP budgets ($\sim 632$M parameters, $\sim 50$ms per frame even after caching).\\[2pt]
 \textbf{Hiera Backbone}: A hierarchical vision transformer that produces multi-scale feature maps ($4\times, 8\times, 16\times, 32\times$) with simple masked autoencoder pretraining. It removes complex operations (no shifted windows, no relative position bias tables, no multi-path branches) and relies purely on simple spatial pooling.
-Result: SAM 2 achieves \hl{$6\times$ faster runtime} ($44$ FPS on A100 vs $7$ FPS for SAM), enabling true real-time video tracking.}
+Result: on images SAM 2 is \hl{about $6\times$ faster} than SAM at higher accuracy, and the Hiera-B$+$ model tracks video at $\sim$44 FPS on an A100.}
 \end{qa}
 
 \begin{trap}[SAM / SAM 2 Practical Traps]
 \begin{itemize}
 \item \textbf{Semantic Class Agnosticism}: SAM predicts \emph{masks}, not semantic \emph{categories}. It outputs "where" an object is, but has zero awareness of "what" it is. For semantic segmentation, SAM must be paired with CLIP/Grounding-DINO.
-\item \textbf{Memory Bank GPU Leak in SAM 2}: In long videos ($>1000$ frames), an unbounded memory bank exhausts GPU VRAM. In production streaming, enforce strict FIFO eviction capping unprompted history to $N=8$ frames.
+\item \textbf{Memory Bank GPU Leak in SAM 2}: In long videos ($>1000$ frames), an unbounded memory bank exhausts GPU VRAM. SAM 2 keeps only the 6 most recent unprompted frames plus prompted frames by default; when running your own streaming loop, cap both and evict FIFO.
 \end{itemize}
 \end{trap}

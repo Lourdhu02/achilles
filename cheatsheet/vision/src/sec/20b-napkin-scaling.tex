@@ -73,7 +73,7 @@ Frame latency $t_{\text{frame}} = \frac{1000}{272} \approx 3.67$\,ms.
 
 \begin{trap}[Scaling Traps in Vision Infrastructure]
 \begin{itemize}
-\item \textbf{Square-Root LR Pitfall on SGD}: Applying square-root scaling to SGD with momentum causes underfitting on large batches; SGD strictly requires linear scaling with momentum adjustment ($1 - \beta \to (1 - \beta) \times \frac{B}{B_0}$).
+\item \textbf{Linear LR scaling without warmup}: Goyal et al.\ scale SGD's LR linearly with batch (0.1 per 256 images) but need a 5-epoch warmup; without it, large-batch runs diverge early. Beyond $\sim$8k images per batch, linear scaling breaks down and LARS/LAMB are used.
 \item \textbf{NPU Memory Bandwidth Bottlenecks}: High TOPS cannot compensate for low LPDDR bandwidth ($<50$\,GB/s). High-resolution inputs saturate memory buses rather than compute units, capping real frame rates far below theoretical TOPS.
 \end{itemize}
 \end{trap}

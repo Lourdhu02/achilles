@@ -1,9 +1,9 @@
 \section{Latent Diffusion \& Diffusion Transformers (DiT)}\label{sec:ldm}
 \lab{LDM \textperiodcentered\ Stable Diffusion \textperiodcentered\ VAE compression \textperiodcentered\ DiT \textperiodcentered\ adaLN-Zero \textperiodcentered\ SDXL}
 
-\noindent\begin{minipage}[t]{0.42\columnwidth}\vspace{0pt}\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\tiny},
+\diagpair{%
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[node distance=1.1mm,every node/.style={font=\scriptsize},
   bx/.style={box,minimum width=21mm,minimum height=3.3mm,inner sep=1pt}]
 \node[bx,fill=soft] (img) {Pixel Image $512\times 512\times 3$};
 \node[bx,draw=acc,above=1.5mm of img] (vae) {Encoder $\mathcal{E}$ ($f{=}8$ downsample)};
@@ -13,12 +13,11 @@
 \draw[arr] (img)--(vae); \draw[arr] (vae)--(lat); \draw[arr] (lat)--(dit); \draw[arr] (dit)--(dec);
 \end{tikzpicture}%
 }
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\vspace{1pt}\small
+}{%
 \textbf{Perceptual vs Semantic Compression.} Pixel space diffusion wastes $>90\%$ of capacity on imperceptible high-frequency pixel noise.\\[2pt]
 {\color{acc2}$\blacktriangleright$} \textbf{$f=8$ Compression}: $512\times 512\times 3 = 786{,}432$ values compressed to $64\times 64\times 4 = 16{,}384$ values ($48\times$ memory reduction).\\
 {\color{acc2}$\blacktriangleright$} \textbf{Cross-modal injection}: Text conditioning injected into spatial latents via cross-attention.
-\end{minipage}
+}
 
 \begin{mem}[Latent Diffusion Models Compared]
 \begin{tabularx}{\linewidth}{@{}p{16mm} c p{22mm} X@{}}
