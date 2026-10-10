@@ -18,11 +18,7 @@ def sequence_logprobs(logits: Tensor, labels: Tensor, mask: Tensor, average: boo
 
     logits (B, T, V) predict the NEXT token, so logits[:, t] scores labels[:, t+1].
     """
-    logp = torch.log_softmax(logits[:, :-1], dim=-1)
-    tok = logp.gather(-1, labels[:, 1:, None]).squeeze(-1)
-    m = mask[:, 1:].to(tok.dtype)
-    total = (tok * m).sum(-1)
-    return total / m.sum(-1) if average else total
+    raise NotImplementedError("11_dpo: implement sequence_logprobs")
 
 
 def dpo_loss(pi_chosen, pi_rejected, ref_chosen, ref_rejected, beta: float = 0.1, label_smoothing=0.0):
@@ -31,22 +27,17 @@ def dpo_loss(pi_chosen, pi_rejected, ref_chosen, ref_rejected, beta: float = 0.1
     h = beta * [(pi_c - ref_c) - (pi_r - ref_r)];  loss = -(1-eps) log sig(h) - eps log sig(-h).
     Implicit reward = beta * (log pi - log ref).
     """
-    chosen = beta * (pi_chosen - ref_chosen)
-    rejected = beta * (pi_rejected - ref_rejected)
-    h = chosen - rejected
-    loss = -(1 - label_smoothing) * F.logsigmoid(h) - label_smoothing * F.logsigmoid(-h)
-    return loss.mean(), chosen.detach(), rejected.detach()
+    raise NotImplementedError("11_dpo: implement dpo_loss")
 
 
 def ipo_loss(pi_chosen, pi_rejected, ref_chosen, ref_rejected, beta: float = 0.1) -> Tensor:
     """IPO: regress the log-ratio margin to 1/(2 beta)."""
-    h = (pi_chosen - ref_chosen) - (pi_rejected - ref_rejected)
-    return ((h - 1 / (2 * beta)) ** 2).mean()
+    raise NotImplementedError("11_dpo: implement ipo_loss")
 
 
 def simpo_loss(avg_chosen, avg_rejected, beta: float = 2.0, gamma: float = 0.5) -> Tensor:
     """SimPO: reference-free, length-normalized log-probs with a target margin gamma."""
-    return -F.logsigmoid(beta * (avg_chosen - avg_rejected) - gamma).mean()
+    raise NotImplementedError("11_dpo: implement simpo_loss")
 
 
 def tabular_dpo(rewards: Tensor, ref_logp: Tensor, beta: float, steps: int = 3000, lr: float = 0.05) -> Tensor:

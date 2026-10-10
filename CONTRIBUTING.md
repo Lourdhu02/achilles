@@ -43,7 +43,7 @@ labs/NN_name/
 ```
 
 - **Edit `solution.py`, never `exercise.py` by hand.** Regenerate the stub with `python tools/make_exercises.py --force NN_name`. Lines starting with `# HINT:` inside a solution block survive into the stub.
-- **Tests must fail on the stub and pass on the solution.** Check both: `pytest labs/NN_name` should fail with `NotImplementedError`, and `pytest labs/NN_name --impl=solution` should pass.
+- **Implementation tests must fail on the stub and pass on the solution.** Check both: `pytest labs/NN_name` should report `NotImplementedError` for learner-code tests, and `pytest labs/NN_name --impl=solution` should pass. Tests that only validate a fixed formula or fixture may pass on the stub.
 - **Test properties, not implementations.** Compare against PyTorch or a closed form (bit-exact where possible), check invariants (for example, speculative decoding must be lossless), and include the edge case that catches the common bug.
 - **Keep every test fast and CPU-only.** Seed everything. A test that takes longer than about 10 seconds on a laptop CPU gets `@pytest.mark.slow`; one that needs CUDA gets `@pytest.mark.gpu` and must skip cleanly without it.
 - **Load the implementation through `labs/_impl.load`,** so `--impl` and `LABS_IMPL` keep working.
