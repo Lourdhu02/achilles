@@ -4,7 +4,7 @@ High-density, printable 2-column reference sheets that condense foundational mat
 
 | File | Specs | Description |
 |---|---|---|
-| [llm-genai-cheatsheet.pdf](llm-genai-cheatsheet.pdf) | 25 pages, 2 columns | **LLM & Generative AI Engineer**: Math, GPU hardware, pretraining, post-training (RLHF/GRPO), inference serving, RAG, agents, from-scratch code, debugging, formulas, and papers. |
+| [llm-genai-cheatsheet.pdf](llm-genai-cheatsheet.pdf) | 24 pages, 2 columns | **LLM & Generative AI Engineer**: Math, GPU hardware, pretraining, post-training (RLHF/GRPO), inference serving, RAG, agents, from-scratch code, debugging, formulas, and papers. |
 | [vision-cheatsheet.pdf](vision-cheatsheet.pdf) | 25 pages, 2 columns | **Vision & Multimodal AI Engineer**: Classical geometry, CNNs, ViTs, Detection (YOLOv1--v11, DETR), SAM 1/2, SSL (MAE/DINOv2), CLIP/SigLIP, VLMs (LLaVA/Qwen2-VL), Diffusion (DDPM/EDM), DiT, Flow Matching (Flux), Video, 3DGS, Edge NPUs, and training loops. |
 | [life-of-a-token.pdf](life-of-a-token.pdf) | 5 pages, 2 columns | Narrative recap: The life of a token told as one continuous story across 9 stages. |
 
