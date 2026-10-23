@@ -1,0 +1,3 @@
+# Keep GitHub's language bar honest: the LaTeX cheat-sheet sources outweigh the Python labs by bytes.
+cheatsheet/** linguist-documentation
+*.tex linguist-documentation

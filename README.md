@@ -21,13 +21,34 @@ Every lab runs on a laptop CPU. The scale-up runs are sized for one 8 GB GPU or 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Lourdhu02/achilles/blob/main/notebooks/colab_quickstart.ipynb)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Lourdhu02/achilles)
 
-**[Docs](https://lourdhu02.github.io/achilles/)** · **[Labs](labs/README.md)** · **[Curriculum](curriculum/README.md)** · **[Library](library/README.md)** · **[Companies](companies/README.md)** · **[Roadmap](ROADMAP.md)** · **[Setup](SETUP.md)**
+**[Cheat sheets](#free-print-ready-interview-cheat-sheets)** · **[Docs](https://lourdhu02.github.io/achilles/)** · **[Labs](labs/README.md)** · **[Curriculum](curriculum/README.md)** · **[Library](library/README.md)** · **[Companies](companies/README.md)** · **[Roadmap](ROADMAP.md)** · **[Setup](SETUP.md)**
 
 [`llm`](https://github.com/topics/llm) [`deep-learning`](https://github.com/topics/deep-learning) [`pytorch`](https://github.com/topics/pytorch) [`triton`](https://github.com/topics/triton) [`transformers`](https://github.com/topics/transformers) [`flash-attention`](https://github.com/topics/flash-attention) [`rlhf`](https://github.com/topics/rlhf) [`grpo`](https://github.com/topics/grpo) [`quantization`](https://github.com/topics/quantization) [`interpretability`](https://github.com/topics/interpretability) [`from-scratch`](https://github.com/topics/from-scratch) [`ai-engineering`](https://github.com/topics/ai-engineering)
 
 </div>
 
 <br/>
+
+## Free print-ready interview cheat sheets
+
+Dense, two-column PDFs written as interview answers: the mechanism, the derivation, the numbers, and the trap the interviewer is fishing for. Download, print, revise.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<a href="https://github.com/Lourdhu02/achilles/raw/main/cheatsheet/llm-genai-cheatsheet.pdf"><img src="assets/cheatsheets/llm-genai-cheatsheet.png" alt="LLM and GenAI engineer cheat sheet, first two pages"/></a><br/>
+<b><a href="https://github.com/Lourdhu02/achilles/raw/main/cheatsheet/llm-genai-cheatsheet.pdf">LLM &amp; GenAI Engineer</a></b> · 24 pages<br/>
+<sub>GPU math, pretraining, RLHF / DPO / GRPO, inference serving, KV cache, RAG, agents, from-scratch code, debugging, formulas, papers</sub>
+</td>
+<td width="50%" valign="top">
+<a href="https://github.com/Lourdhu02/achilles/raw/main/cheatsheet/vision-cheatsheet.pdf"><img src="assets/cheatsheets/vision-cheatsheet.png" alt="Vision and multimodal engineer cheat sheet, first two pages"/></a><br/>
+<b><a href="https://github.com/Lourdhu02/achilles/raw/main/cheatsheet/vision-cheatsheet.pdf">Vision &amp; Multimodal Engineer</a></b> · 25 pages<br/>
+<sub>Geometry, CNNs, ViT / Swin, YOLOv1 to v11, DETR, SAM 2, MAE / DINOv2, CLIP / SigLIP, VLMs, diffusion, DiT, flow matching, 3DGS, edge deployment</sub>
+</td>
+</tr>
+</table>
+
+Plus **[The life of a token](https://github.com/Lourdhu02/achilles/raw/main/cheatsheet/life-of-a-token.pdf)** (5 pages): the whole LLM stack told as one story, from tokenizer to sampled output. LaTeX sources and build steps are in [`cheatsheet/`](cheatsheet/README.md). If one helps you prepare, a ⭐ helps the next person find it.
 
 <table>
 <tr>
@@ -218,7 +239,7 @@ library/      90 visual guides and papers by topic, manifest.json
 companies/    Anthropic, OpenAI, Google DeepMind, Meta, NVIDIA and more labs
 tracks/       research-engineer/ and founder/
 career/       résumé, stories, outreach, negotiation, visas
-cheatsheet/   24-page interview cheat sheet and 5-page story version (PDF + LaTeX)
+cheatsheet/   LLM (24 pp) and vision (25 pp) interview cheat sheets, 5-page story version (PDF + LaTeX)
 journal/      templates for experiments, paper notes and reviews: your proof of work
 notebooks/    Colab and Kaggle quickstart
 tools/        stub generator · progress scoreboard · GPU roofline · PDF fetcher · link checker · docs build
